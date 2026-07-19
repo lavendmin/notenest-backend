@@ -1,0 +1,22 @@
+services:
+  notenest-db:
+    container_name: notenest-db
+    image: mariadb:10.11
+    ports:
+      - "3311:3306"          # sido(3310)와 병렬 작업 중이므로 3311 사용
+    environment:
+      MARIADB_DATABASE: notenest
+      MARIADB_ROOT_PASSWORD: local-only   # 로컬 전용
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - ./mariadb:/var/lib/mysql
+
+  # 로컬 가짜 SMTP — 이메일 인증/낙찰 메일을 실제 발송 없이 수신 (웹 UI: http://localhost:5001)
+  notenest-smtp:
+    container_name: notenest-smtp
+    image: rnwood/smtp4dev
+    ports:
+      - "2525:25"      # SMTP
+      - "5001:80"      # 수신 메일 확인용 웹 UI

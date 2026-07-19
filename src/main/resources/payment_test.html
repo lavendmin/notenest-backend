@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script
+            type="text/javascript"
+            src="https://code.jquery.com/jquery-1.12.4.min.js"
+    ></script>
+    <script
+            type="text/javascript"
+            src="https://cdn.iamport.kr/js/iamport.payment-1.2.0.js"
+    ></script>
+    <script>
+        var IMP = window.IMP;
+        IMP.init("YOUR_IMP_CODE"); // 포트원(아임포트) 가맹점 식별코드로 교체
+
+        function requestPay() {
+            IMP.request_pay(
+                {
+                    pg: "uplus",
+                    pay_method: "card",
+                    merchant_uid: "merchant_" + new Date().getTime(),
+                    name: "경매 상품",
+                    amount: 100,  // 테스트 금액
+                    buyer_email: "test@example.com",
+                    buyer_name: "테스트",
+                    buyer_tel: "010-0000-0000",
+                    buyer_addr: "서울특별시",
+                    buyer_postcode: "00000"
+                },
+                function (rsp) {
+                    if (rsp.success) {
+                        $.ajax({
+                            url: "api/payment/validate",
+                            method: "POST",
+                            contentType: "application/json",
+                            data: JSON.stringify({
+                                impUid: rsp.imp_uid,
+                                musicUuid: "e645b345-88a5-4639-9eb6-5fe78c15c6b1"  // 실제 Music UUID로 대체
+                            }),
+                            success: function (response) {
+                                alert("결제 검증 성공: " + response);
+                            },
+                            error: function (error) {
+                                alert("결제 검증 실패: " + error.responseText);
+                            }
+                        });
+                    } else {
+                        alert("결제에 실패하였습니다. 에러 내용: " + rsp.error_msg);
+                    }
+                }
+            );
+        }
+    </script>
+    <meta charset="UTF-8"/>
+    <title>Sample Payment</title>
+</head>
+<body>
+<button onclick="requestPay()">결제하기</button>
+</body>
+</html>
