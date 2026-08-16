@@ -324,21 +324,28 @@ public class BidServiceImpl implements BidService {
     @Scheduled(fixedRate = 10000) // 10초 간격으로 실행
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void checkAuctionEnd() throws IamportResponseException, IOException {
-        List<Music> musics = musicRepository.findAll();
-        for (Music music : musics) {
-            if (music.getAuctionEndTime() == null) { // 경매 마감 기한 null인 경우 예외 처리
-                continue;
-            }
-
-            if (music.getAuctionEndTime().isBefore(LocalDateTime.now())) {
-                // 경매 종료 처리
-                try {
-                    processAuctionEnd(music.getMusicUuid());
-                } catch (IamportResponseException | IOException e) {
-                    log.error("Error processing auction end for music ID: {}", music.getMusicUuid(), e);
-                }
+        // [PERF] Phase 1 before/after 측정용 — 사이클 시간·힙 사용량. 쿼리 수는 이 마커 사이의
+        // org.hibernate.SQL 로그(scheduling 스레드) 라인 수로 집계한다. 측정 조건은 docs/measurements 참고.
+        long perfStartMs = System.currentTimeMillis();
+        Runtime perfRt = Runtime.getRuntime();
+        long perfHeapBeforeMb = (perfRt.totalMemory() - perfRt.freeMemory()) / 1024 / 1024;
+        log.info("[PERF] checkAuctionEnd cycle start heapMB={}", perfHeapBeforeMb);
+        // [Phase 1] 전체 곡 findAll(Lob 포함) 대신, 마감 시각이 지난 곡의 UUID만 인덱스로 선별.
+        // 대상 집합은 기존 자바 루프 필터링(endTime != null && endTime < now)과 동일하다.
+        List<UUID> endedMusicUuids = musicRepository.findEndedMusicUuids(LocalDateTime.now());
+        long perfHeapLoadedMb = (perfRt.totalMemory() - perfRt.freeMemory()) / 1024 / 1024;
+        log.info("[PERF] ended targets loaded targets={} heapMB={}", endedMusicUuids.size(), perfHeapLoadedMb);
+        for (UUID musicUuid : endedMusicUuids) {
+            // 경매 종료 처리
+            try {
+                processAuctionEnd(musicUuid);
+            } catch (IamportResponseException | IOException e) {
+                log.error("Error processing auction end for music ID: {}", musicUuid, e);
             }
         }
+        long perfHeapEndMb = (perfRt.totalMemory() - perfRt.freeMemory()) / 1024 / 1024;
+        log.info("[PERF] checkAuctionEnd cycle end elapsedMs={} targets={} heapMB={}",
+                System.currentTimeMillis() - perfStartMs, endedMusicUuids.size(), perfHeapEndMb);
     }
 
     // 마이페이지 낙찰내역 - 결제 대기

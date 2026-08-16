@@ -190,21 +190,12 @@ public class MusicServiceImpl implements MusicService {
             throw new IllegalArgumentException("로그인 후 이용 가능합니다.");
         }
 
-        // 최신 음악 목록 가져오기
-        Page<Music> musicPage = musicRepository.findAllOngoingMusicByOrderByCreatedAtDesc(pageable);
-
-        // MusicDTO 리스트 초기화
-        List<MusicDTO> musicDTOList = new ArrayList<>();
-
-        // Music 엔티티를 MusicDTO로 변환하고 좋아요 여부 설정
-        for (Music music : musicPage.getContent()) {
-            /// 좋아요 여부 확인
-            boolean likedByUser = likeRepository.countByUserIdAndMusicId(user.getUserUUID(), music.getMusicUuid()) > 0;
-            musicDTOList.add(MusicDTO.fromMusic(music, likedByUser));
-        }
-
-        // MusicDTO 리스트와 페이지 정보를 사용하여 새로운 페이지 생성 및 반환
-        return new PageImpl<>(musicDTOList, pageable, musicPage.getTotalElements());
+        // [Phase 1] 엔티티(Lob 포함) 대신 DTO 프로젝션으로 목록에 필요한 컬럼만 조회.
+        // 좋아요 여부 조회(곡당 1쿼리)의 N+1은 세션 3에서 IN 배치 조회로 제거 예정.
+        Page<MusicDTO> musicDTOPage = musicRepository.findOngoingMusicSummariesByCreatedAtDesc(pageable);
+        musicDTOPage.forEach(dto -> dto.setLikedByUser(
+                likeRepository.countByUserIdAndMusicId(user.getUserUUID(), dto.getMusicUuid()) > 0));
+        return musicDTOPage;
     }
 
     @Override

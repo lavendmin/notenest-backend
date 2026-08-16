@@ -10,7 +10,8 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "music")
+// 스케줄러가 "마감 시각 지난 곡"을 인덱스로 선별하도록 (Phase 1 — 종료 대상 조회 쿼리화)
+@Table(name = "music", indexes = @Index(name = "idx_music_auction_end_time", columnList = "auction_end_time"))
 @Getter
 @Setter
 @AllArgsConstructor

@@ -21,6 +21,18 @@ public class MusicDTO {
     private byte[] image;
     private byte[] audio;
 
+    // [Phase 1] 목록 조회용 프로젝션 생성자 — audio/image 제외한 컬럼만 DB에서 가져온다.
+    // (jackson non_null 설정이라 null인 image/audio 필드는 응답 JSON에서 빠진다)
+    public MusicDTO(UUID musicUuid, String title, Double startingPrice, String userNickName,
+                    Double currentHighestBid, LocalDateTime auctionEndTime, int likeCount) {
+        this.musicUuid = musicUuid;
+        this.title = title;
+        this.startingPrice = startingPrice;
+        this.userNickName = userNickName;
+        this.currentHighestBid = currentHighestBid;
+        this.auctionEndTime = auctionEndTime;
+        this.likeCount = likeCount;
+    }
 
     // Music 엔티티를 MusicDTO로 변환하는 메서드
     public static MusicDTO fromMusic(Music music, boolean likedByUser) {
