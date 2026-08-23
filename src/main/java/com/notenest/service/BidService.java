@@ -27,6 +27,10 @@ public interface BidService {
 
     void processAuctionEnd(UUID musicUuid)throws IamportResponseException, IOException;
 
+    // 결제 후속(정산·차순위 승계) 단일 곡 처리
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    void processPaymentFollowUp(UUID musicUuid) throws IamportResponseException, IOException;
+
     // 마이페이지 입찰내역
     Page<MyBidListDTO> getUserBids(String loggedInUserEmail, LocalDateTime from, LocalDateTime to,
                                    String searchTerm, String sortBy, Pageable pageable);
@@ -42,4 +46,9 @@ public interface BidService {
     @Scheduled(fixedRate = 10000) // 10초 간격으로 실행
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     void checkAuctionEnd() throws IamportResponseException, IOException;
+
+    // 결제 대기(PENDING) 곡의 정산·차순위 승계 스케줄 잡
+    @Scheduled(fixedRate = 10000) // 10초 간격으로 실행
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    void checkPendingPayments() throws IamportResponseException, IOException;
 }

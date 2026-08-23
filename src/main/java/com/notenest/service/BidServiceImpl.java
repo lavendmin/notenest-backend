@@ -169,7 +169,9 @@ public class BidServiceImpl implements BidService {
     }
 
 
-    // 낙찰 (bid status 업데이트) 및 이메일 발송
+    // [경매 마감 작업] 종료 시각이 지난 status=0 곡의 최초 낙찰자 선정과 상태 전이를 "한 번만" 수행한다.
+    // 결제 기한·차순위 승계는 여기서 하지 않는다(→ processPaymentFollowUp). 마감 잡은 status=0 만
+    // 대상으로 하므로 한 곡당 한 번만 실행되고, 이후 결제 후속 잡과 대상이 겹치지 않는다.
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void processAuctionEnd(UUID musicUuid) throws IamportResponseException, IOException {
@@ -183,7 +185,7 @@ public class BidServiceImpl implements BidService {
 
         // 경매가 종료되었는지 확인
         if (music.getAuctionEndTime().isBefore(now)) {
-            // 음악 상태 업데이트
+            // 음악 상태 업데이트 (0→1, 마감 잡 대상에서 빠짐)
             music.setStatus(1);
             musicRepository.save(music);
 
@@ -192,156 +194,156 @@ public class BidServiceImpl implements BidService {
             if (highestBids.size() > 0) { // 입찰자 1명 이상
                 Bid highestBid = highestBids.get(0);
 
-                // 첫번째 입찰자에게 낙찰 성공 이메일 발송. 노션의 1-(1), 2-(1)
+                // 최고가 고유 사용자(1순위)에게 낙찰 성공 이메일 발송. 노션의 1-(1), 2-(1)
                 if (!highestBid.isBidderEmailSent()) {
                     emailService.sendBidSuccessToBidder(highestBid.getUser(), music);
                     highestBid.setBidderEmailSent(true);
                     bidRepository.save(highestBid);
                 }
 
-                // 첫번째 입찰자 bid status 업데이트 (낙찰내역-결제 대기)
+                // 1순위 bid status 업데이트 (낙찰내역-결제 대기)
                 highestBid.setStatus("PENDING");
                 bidRepository.save(highestBid);
 
-                // 첫번째 입찰자를 제외한 나머지 입찰자 bid status 업데이트 (낙찰 실패)
+                // 1순위를 제외한 나머지 입찰(동일인 하위 입찰 포함) status 업데이트 (낙찰 실패)
                 for (int i=1; i<highestBids.size(); i++) {
                     Bid otherBid = highestBids.get(i);
                     otherBid.setStatus("FAILED");
                     bidRepository.save(otherBid);
                 }
 
-                // 첫번째 입찰자 결제 기한 내 결제 여부 확인
-                checkAndProcessNextBidder(music, highestBids);
-
             } else {
                 // 입찰이 없었을 경우(경매 무산) 작곡가에게 이메일 발송. 노션의 3-(1)
-                if (!music.isAuctionFailureEmailSent()) {
-                    emailService.sendAuctionFailureToComposer(composer, music);
-                    music.setAuctionFailureEmailSent(true);
-                    musicRepository.save(music);
-                }
+                failAuction(music, composer);
             }
-
         }
     }
 
-    // 낙찰자 결제 기한 체크 및 다음 낙찰자 처리
+    // [결제 후속 작업] 결제 대기(PENDING) 입찰이 있는 곡의 정산·차순위 승계를 처리한다. 매 사이클마다
+    // "현재 PENDING 대상"을 기준으로 한 단계씩 전이하므로 반복 실행에 안전하다.
+    //  - 결제 완료(PAID): PENDING→COMPLETED, 작곡가 성공 메일
+    //  - 미결제 & 기한 만료: 현재 대기자 FAILED 후, 1순위였다면 다음 고유 사용자로 승계(하이브리드,
+    //    최대 2명), 이미 2순위(마지막 후보)였다면 경매 무산
+    //  - 기한 전: 아무 것도 하지 않음(다음 사이클 재검사)
+    @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void checkAndProcessNextBidder(Music music, List<Bid> highestBids) throws IamportResponseException, IOException{
+    public void processPaymentFollowUp(UUID musicUuid) throws IamportResponseException, IOException {
+        Music music = musicRepository.findById(musicUuid)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid music UUID: " + musicUuid));
         User composer = music.getUser();
 
+        List<Bid> bids = bidRepository.findByMusicOrderByPriceDescCreatedAtAsc(music);
+        if (bids.isEmpty()) {
+            return;
+        }
+
+        // 현재 결제 대기 중인 입찰 (없으면 정산할 것이 없음)
+        Bid pending = bids.stream()
+                .filter(b -> "PENDING".equals(b.getStatus()))
+                .findFirst()
+                .orElse(null);
+        if (pending == null) {
+            return;
+        }
+
         LocalDateTime now = LocalDateTime.ofInstant(Instant.now(), ZoneId.systemDefault());
-        LocalDateTime paymentDeadline1 = music.getAuctionEndTime().plusDays(3); // 첫번째 입찰자 결제 기한
-        LocalDateTime paymentDeadline2 = music.getAuctionEndTime().plusDays(6); // 두번째 입찰자 결제 기한
+        // 현재 대기자가 최고가(1순위)면 D+3, 승계된 다음 고유 사용자(2순위)면 D+6.
+        boolean isFirstCandidate = pending.getBidUuid().equals(bids.get(0).getBidUuid());
+        LocalDateTime deadline = isFirstCandidate
+                ? music.getAuctionEndTime().plusDays(3)
+                : music.getAuctionEndTime().plusDays(6);
 
-        Bid highestBid = highestBids.get(0);
+        Payment payment = paymentRepository.findByBid(pending);
+        boolean paid = payment != null && "PAID".equals(payment.getStatus());
 
-        // 첫번째 입찰자 결제 기한 내 결제 여부 확인
-        Payment firstPayment = paymentRepository.findByBid(highestBid);
-        if (firstPayment == null || !firstPayment.getStatus().equals("PAID")) {
-            if (paymentDeadline1.isBefore(now)) {
-                // 첫번째 입찰자 기한 내 결제 X -> 다음 입찰자 처리
+        if (paid) {
+            // 결제 완료 노션의 1-(1)-①, 1-(2)-①, 2-(1)-①
+            if (!pending.isComposerEmailSent()) {
+                emailService.sendBidSuccessToComposer(composer, music);
+                pending.setComposerEmailSent(true);
+            }
+            pending.setStatus("COMPLETED");
+            bidRepository.save(pending);
+            return;
+        }
 
-                // 첫번째 입찰자 bid status 업데이트 (결제 실패, 낙찰 실패)
-                highestBid.setStatus("FAILED");
-                bidRepository.save(highestBid);
+        // 미결제 상태에서 기한이 지났을 때만 다음 단계로 전이
+        if (deadline.isBefore(now)) {
+            pending.setStatus("FAILED");
+            bidRepository.save(pending);
 
-                // [하이브리드 정책] 동일인의 하위 입찰은 건너뛰고, 1순위와 "다른 사용자"의 최고 입찰을
-                // 차순위로 승계한다. highestBids 는 가격 내림차순이므로 조건을 만족하는 첫 항목이 곧
-                // 차순위 고유 사용자의 최고가다. 고유 사용자를 하나만 더 보므로 "최대 2명" 상한이 내재된다.
-                Bid secondBid = highestBids.stream()
-                        .filter(b -> !b.getUser().getUserUUID().equals(highestBid.getUser().getUserUUID()))
+            if (isFirstCandidate) {
+                // [하이브리드 정책] 1순위와 "다른 사용자"의 최고 입찰을 차순위로 승계. 가격 내림차순이라
+                // 조건을 만족하는 첫 항목이 곧 차순위 고유 사용자의 최고가. 고유 사용자를 하나만 더
+                // 보므로 "최대 2명" 상한이 내재된다.
+                Bid next = bids.stream()
+                        .filter(b -> !b.getUser().getUserUUID().equals(pending.getUser().getUserUUID()))
                         .findFirst()
                         .orElse(null);
 
-                if (secondBid != null) { // 1순위와 다른 사용자가 존재 → 차순위 승계. 노션의 1-(2)
-                    // 두번째 입찰자에게 낙찰 성공 이메일 발송
-                    if (!secondBid.isBidderEmailSent()) {
-                        emailService.sendBidSuccessToBidder(secondBid.getUser(), music);
-                        secondBid.setBidderEmailSent(true);
-                        bidRepository.save(secondBid);
+                if (next != null) { // 다음 고유 사용자 승계. 노션의 1-(2)
+                    if (!next.isBidderEmailSent()) {
+                        emailService.sendBidSuccessToBidder(next.getUser(), music);
+                        next.setBidderEmailSent(true);
                     }
-
-                    // 두번째 입찰자 bid status 업데이트 (결제 대기)
-                    secondBid.setStatus("PENDING");
-                    bidRepository.save(secondBid);
-
-                    // 두번째 결제 기한 내 결제 여부 확인
-                    Payment secondPayment = paymentRepository.findByBid(secondBid);
-                    if (secondPayment == null || !secondPayment.getStatus().equals("PAID")) {
-                        if (paymentDeadline2.isBefore(now)) {
-                            // 두번째 입찰자 기한 내 결제 X -> 경매 무산. 노션의 1-(2)-②
-                            if (!music.isAuctionFailureEmailSent()) {
-                                emailService.sendAuctionFailureToComposer(composer, music);
-                                music.setAuctionFailureEmailSent(true);
-                                musicRepository.save(music);
-                            }
-
-                            // 두번째 입찰자 bid status 업데이트 (결제 실패)
-                            secondBid.setStatus("FAILED");
-                            bidRepository.save(secondBid);
-                        }
-                    } else {
-                        // 두번째 입찰자 결제 O 노션의 1-(2)-①
-                        if (!secondBid.isComposerEmailSent()) {
-                            emailService.sendBidSuccessToComposer(composer, music);
-                            secondBid.setComposerEmailSent(true);
-                            bidRepository.save(secondBid);
-                        }
-
-                        // 두번째 입찰자 bid status 업데이트 (결제 완료)
-                        secondBid.setStatus("COMPLETED");
-                        bidRepository.save(secondBid);
-                    }
-
+                    next.setStatus("PENDING");
+                    bidRepository.save(next);
+                    // next 의 D+6 기한은 다음 사이클에서 검사한다.
                 } else { // 1순위와 다른 사용자가 없음(동일인 입찰뿐) → 경매 무산. 노션의 2-(1)-②
-                    if (!music.isAuctionFailureEmailSent()) {
-                        emailService.sendAuctionFailureToComposer(composer, music);
-                        music.setAuctionFailureEmailSent(true);
-                        musicRepository.save(music);
-                    }
+                    failAuction(music, composer);
                 }
+            } else { // 이미 2순위(마지막 후보)까지 실패 → 경매 무산. 노션의 1-(2)-②
+                failAuction(music, composer);
             }
-        } else {
-            // 첫번째 입찰자 결제 O 노션의 1-(1)-①, 2-(1)-①
-            if (!highestBid.isComposerEmailSent()) {
-                emailService.sendBidSuccessToComposer(composer, music);
-                highestBid.setComposerEmailSent(true);
-                bidRepository.save(highestBid);
-            }
-
-            // 첫번째 입찰자 bid status 업데이트 (결제 완료)
-            highestBid.setStatus("COMPLETED");
-            bidRepository.save(highestBid);
         }
     }
 
+    // 경매 무산 처리 — 작곡가에게 실패 메일 1회(멱등)
+    private void failAuction(Music music, User composer) {
+        if (!music.isAuctionFailureEmailSent()) {
+            emailService.sendAuctionFailureToComposer(composer, music);
+            music.setAuctionFailureEmailSent(true);
+            musicRepository.save(music);
+        }
+    }
+
+    // [경매 마감 잡] status=0 이면서 종료 시각이 지난 곡만 대상으로 최초 마감을 수행한다.
     @Override
     @Scheduled(fixedRate = 10000) // 10초 간격으로 실행
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void checkAuctionEnd() throws IamportResponseException, IOException {
-        // [PERF] Phase 1 before/after 측정용 — 사이클 시간·힙 사용량. 쿼리 수는 이 마커 사이의
-        // org.hibernate.SQL 로그(scheduling 스레드) 라인 수로 집계한다. 측정 조건은 docs/measurements 참고.
         long perfStartMs = System.currentTimeMillis();
-        Runtime perfRt = Runtime.getRuntime();
-        long perfHeapBeforeMb = (perfRt.totalMemory() - perfRt.freeMemory()) / 1024 / 1024;
-        log.info("[PERF] checkAuctionEnd cycle start heapMB={}", perfHeapBeforeMb);
-        // [Phase 1] 전체 곡 findAll(Lob 포함) 대신, 마감 시각이 지난 곡의 UUID만 인덱스로 선별.
-        // 대상 집합은 기존 자바 루프 필터링(endTime != null && endTime < now)과 동일하다.
-        List<UUID> endedMusicUuids = musicRepository.findEndedMusicUuids(LocalDateTime.now());
-        long perfHeapLoadedMb = (perfRt.totalMemory() - perfRt.freeMemory()) / 1024 / 1024;
-        log.info("[PERF] ended targets loaded targets={} heapMB={}", endedMusicUuids.size(), perfHeapLoadedMb);
-        for (UUID musicUuid : endedMusicUuids) {
-            // 경매 종료 처리
+        // 종료 대상 = status=0 AND 마감 시각 경과. 이미 마감(status=1)된 곡은 다시 선정되지 않는다.
+        List<UUID> targets = musicRepository.findUuidsToClose(LocalDateTime.now());
+        log.info("[BATCH] auction-close targets={}", targets.size());
+        for (UUID musicUuid : targets) {
             try {
                 processAuctionEnd(musicUuid);
             } catch (IamportResponseException | IOException e) {
-                log.error("Error processing auction end for music ID: {}", musicUuid, e);
+                log.error("Error closing auction for music ID: {}", musicUuid, e);
             }
         }
-        long perfHeapEndMb = (perfRt.totalMemory() - perfRt.freeMemory()) / 1024 / 1024;
-        log.info("[PERF] checkAuctionEnd cycle end elapsedMs={} targets={} heapMB={}",
-                System.currentTimeMillis() - perfStartMs, endedMusicUuids.size(), perfHeapEndMb);
+        log.info("[BATCH] auction-close done elapsedMs={} targets={}",
+                System.currentTimeMillis() - perfStartMs, targets.size());
+    }
+
+    // [결제 후속 잡] 결제 대기(PENDING) 입찰이 있는 곡만 대상으로 정산·승계를 처리한다.
+    @Override
+    @Scheduled(fixedRate = 10000) // 10초 간격으로 실행
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void checkPendingPayments() throws IamportResponseException, IOException {
+        long perfStartMs = System.currentTimeMillis();
+        List<UUID> targets = bidRepository.findMusicUuidsWithPendingBid();
+        log.info("[BATCH] payment-followup targets={}", targets.size());
+        for (UUID musicUuid : targets) {
+            try {
+                processPaymentFollowUp(musicUuid);
+            } catch (IamportResponseException | IOException e) {
+                log.error("Error processing payment follow-up for music ID: {}", musicUuid, e);
+            }
+        }
+        log.info("[BATCH] payment-followup done elapsedMs={} targets={}",
+                System.currentTimeMillis() - perfStartMs, targets.size());
     }
 
     // 마이페이지 낙찰내역 - 결제 대기

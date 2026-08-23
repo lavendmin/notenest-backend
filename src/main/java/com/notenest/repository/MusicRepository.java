@@ -16,10 +16,11 @@ import java.util.UUID;
 @Repository
 public interface MusicRepository extends JpaRepository<Music, UUID>, JpaSpecificationExecutor<Music>, MusicRepositoryCustom {
 
-    // [Phase 1] 스케줄러용 — 마감 시각이 지난 곡의 UUID만 조회 (Lob 컬럼을 SELECT 절에서 제외).
-    // 기존 findAll() 후 자바 루프 필터링과 동일한 대상 집합을 DB가 인덱스로 선별한다.
-    @Query("SELECT m.musicUuid FROM Music m WHERE m.auctionEndTime IS NOT NULL AND m.auctionEndTime < :now")
-    List<UUID> findEndedMusicUuids(@Param("now") LocalDateTime now);
+    // [경매 마감 잡] 아직 마감되지 않았고(status=0) 종료 시각이 지난 곡의 UUID만 조회.
+    // status=0 조건으로 이미 마감된 곡의 재선정을 막아, 마감을 한 곡당 한 번만 수행한다.
+    // (Lob 컬럼을 SELECT 절에서 제외해 대상 식별 단계에서 이미지·음원을 로딩하지 않는다.)
+    @Query("SELECT m.musicUuid FROM Music m WHERE m.status = 0 AND m.auctionEndTime IS NOT NULL AND m.auctionEndTime < :now")
+    List<UUID> findUuidsToClose(@Param("now") LocalDateTime now);
 
     // 최신 순으로 곡 리스트 가져오기 (진행 중인 곡만)
     @Query("SELECT m FROM Music m WHERE m.status = 0 ORDER BY m.createdAt DESC")

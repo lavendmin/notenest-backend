@@ -20,6 +20,10 @@ public interface BidRepository extends JpaRepository<Bid, UUID> {
     Page<Bid> findByMusicOrderByPriceDescCreatedAtAsc(Music music, Pageable pageable);
     List<Bid> findByMusicOrderByPriceDescCreatedAtAsc(Music music);
 
+    // [결제 후속 잡] 결제 대기(PENDING) 입찰이 있는 곡의 UUID만 조회. 결제 정산·차순위 승계 대상.
+    @Query("SELECT DISTINCT b.music.musicUuid FROM Bid b WHERE b.status = 'PENDING'")
+    List<UUID> findMusicUuidsWithPendingBid();
+
     Page<Bid> findByUser(User user, Pageable pageable);
 
     // 마이페이지 입찰내역 - 인기순 정렬 & 검색 (진행 중인 것만)

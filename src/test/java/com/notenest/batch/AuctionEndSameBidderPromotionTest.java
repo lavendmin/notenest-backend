@@ -42,8 +42,9 @@ class AuctionEndSameBidderPromotionTest extends AuctionEndCharacterizationSuppor
         Bid bidA2 = saveBid(music, bidderA, 2500);
         Bid bidB1 = saveBid(music, bidderB, 2000);
 
-        // when
+        // when: 마감 잡(최초 낙찰자 선정) → 결제 후속 잡 1회(1순위 기한 만료 → 차순위 승계)
         bidService.processAuctionEnd(music.getMusicUuid());
+        bidService.processPaymentFollowUp(music.getMusicUuid());
 
         // then: 곡은 종료 처리(status 0→1)
         Music after = musicRepository.findById(music.getMusicUuid()).orElseThrow();

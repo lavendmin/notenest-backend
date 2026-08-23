@@ -41,11 +41,11 @@ public class PaymentController {
         this.iamportClient = new IamportClient(apiKey, secretKey);
     }
 
-    //결제 생성
+    //결제 생성 — 결제 직후 해당 곡의 결제 후속(정산: PENDING→COMPLETED) 처리를 즉시 트리거한다.
     @PostMapping("/validate")
     public ResponseEntity<String> createPayment(@RequestBody PaymentReq paymentReq) {
         try {
-            bidService.processAuctionEnd(paymentReq.getMusicUuid());
+            bidService.processPaymentFollowUp(paymentReq.getMusicUuid());
             return ResponseEntity.status(HttpStatus.CREATED).body("Payment processing initiated.");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to process payment.");
