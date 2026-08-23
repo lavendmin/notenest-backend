@@ -181,6 +181,44 @@ class MusicFilterContractTest {
         }
     }
 
+    @Test
+    @DisplayName("무필터 요청(maxPrice 없음)도 커버 포함·audio 제외 계약을 유지한다")
+    void noFilterRequest_keepsContract() throws Exception {
+        // maxPrice/searchTerm 없이 순수 최신순 → getAllMusicByLatest 위임 경로 (Phase 1 커버 누락 회귀 방지)
+        MvcResult res = mockMvc.perform(get(FILTER)
+                        .param("page", "0")
+                        .with(r -> { r.setRemoteUser(BIDDER); return r; }))
+                .andExpect(status().isOk()).andReturn();
+        JsonNode root = objectMapper.readTree(res.getResponse().getContentAsByteArray());
+        JsonNode content = root.path("content");
+
+        assertThat(content.size()).isGreaterThan(0);
+        assertThat(root.path("totalElements").asLong()).isEqualTo(referenceOngoingCount);
+        for (JsonNode el : content) {
+            assertThat(el.hasNonNull("image")).as("무필터 커버 이미지 포함").isTrue();
+            assertThat(el.has("audio")).as("무필터 audio 부재").isFalse();
+        }
+    }
+
+    @Test
+    @DisplayName("검색어(searchTerm) 요청도 커버 포함·audio 제외 계약을 유지한다")
+    void searchRequest_keepsContract() throws Exception {
+        // 시드 제목이 'seed song N' 이라 'song' 은 진행중 곡을 매칭한다.
+        MvcResult res = mockMvc.perform(get(FILTER)
+                        .param("page", "0")
+                        .param("sortBy", "latest")
+                        .param("searchTerm", "song")
+                        .with(r -> { r.setRemoteUser(BIDDER); return r; }))
+                .andExpect(status().isOk()).andReturn();
+        JsonNode content = objectMapper.readTree(res.getResponse().getContentAsByteArray()).path("content");
+
+        assertThat(content.size()).as("검색 결과 존재").isGreaterThan(0);
+        for (JsonNode el : content) {
+            assertThat(el.hasNonNull("image")).as("검색 커버 이미지 포함").isTrue();
+            assertThat(el.has("audio")).as("검색 audio 부재").isFalse();
+        }
+    }
+
     // ── 아래는 리팩터(필터 경로 프로젝션 + audio 제거) 후에만 통과하는 목표 계약 ──
     //    지금 코드(엔티티 통짜 로딩 + fromMusic)에서는 audio 가 JSON·SQL 양쪽에 존재하므로
     //    빌드를 초록으로 유지하기 위해 @Disabled. 3단계 구현 커밋에서 활성화한다.
