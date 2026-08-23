@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -33,7 +32,7 @@ class AuctionLifecycleScenariosTest extends AuctionEndCharacterizationSupport {
     @DisplayName("① 무입찰 종료: 마감 잡에서 종료 처리 후 작곡가 실패 메일 1회, 결제 후속 잡은 무처리")
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     void noBids_endsAsFailure_composerNotifiedOnce() throws Exception {
-        Music music = saveEndedMusic(LocalDateTime.now().minusDays(1));
+        Music music = saveEndedMusic(now().minusDays(1));
 
         bidService.processAuctionEnd(music.getMusicUuid());
         bidService.processPaymentFollowUp(music.getMusicUuid()); // PENDING 없음 → no-op
@@ -51,7 +50,7 @@ class AuctionLifecycleScenariosTest extends AuctionEndCharacterizationSupport {
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     void firstBidderPaid_transitionsToCompleted_composerSuccessMailOnce() throws Exception {
         // 결제기한(D+3) 전. A@3000(1순위) 결제 완료, B@2000(다른 사용자)
-        Music music = saveEndedMusic(LocalDateTime.now().minusDays(1));
+        Music music = saveEndedMusic(now().minusDays(1));
         Bid bidA1 = saveBid(music, bidderA, 3000);
         Bid bidB1 = saveBid(music, bidderB, 2000);
         savePayment(bidA1, "PAID");
@@ -74,7 +73,7 @@ class AuctionLifecycleScenariosTest extends AuctionEndCharacterizationSupport {
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     void firstDeadlineExpired_differentSecondBidder_promotedToPending() throws Exception {
         // 1순위 기한(D+3)은 지났으나 2순위 기한(D+6)은 안 지남. A@3000(1순위), B@2000(2순위, 다른 사용자)
-        Music music = saveEndedMusic(LocalDateTime.now().minusDays(4));
+        Music music = saveEndedMusic(now().minusDays(4));
         Bid bidA1 = saveBid(music, bidderA, 3000);
         Bid bidB1 = saveBid(music, bidderB, 2000);
 
@@ -96,7 +95,7 @@ class AuctionLifecycleScenariosTest extends AuctionEndCharacterizationSupport {
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     void bothDeadlinesExpired_endsAsFailure_composerNotifiedOnce() throws Exception {
         // 1순위(D+3)·2순위(D+6) 기한 모두 경과. A@3000(1순위), B@2000(2순위, 다른 사용자), 결제 없음
-        Music music = saveEndedMusic(LocalDateTime.now().minusDays(7));
+        Music music = saveEndedMusic(now().minusDays(7));
         Bid bidA1 = saveBid(music, bidderA, 3000);
         Bid bidB1 = saveBid(music, bidderB, 2000);
 

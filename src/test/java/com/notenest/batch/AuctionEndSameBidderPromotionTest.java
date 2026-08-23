@@ -9,7 +9,6 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -37,7 +36,7 @@ class AuctionEndSameBidderPromotionTest extends AuctionEndCharacterizationSuppor
     void secondBidSameUser_isSkipped_andNextUniqueUserIsPromoted() throws Exception {
         // given: 1순위 결제기한(D+3)은 지났으나 2순위 기한(D+6)은 안 지난 곡.
         //        입찰 = A@3000(1순위), A@2500(2순위=동일인), B@2000(다음 고유 사용자)
-        Music music = saveEndedMusic(LocalDateTime.now().minusDays(4));
+        Music music = saveEndedMusic(now().minusDays(4));
         Bid bidA1 = saveBid(music, bidderA, 3000);
         Bid bidA2 = saveBid(music, bidderA, 2500);
         Bid bidB1 = saveBid(music, bidderB, 2000);

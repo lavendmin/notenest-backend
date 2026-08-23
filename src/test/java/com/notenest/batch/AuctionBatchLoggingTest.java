@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,11 +33,11 @@ class AuctionBatchLoggingTest extends AuctionEndCharacterizationSupport {
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     void bothJobs_logStructuredCounts_matchingTargetFilters() throws Exception {
         // given: 마감 대기(status=0, 종료 경과) 곡 2개 + 이미 마감·정산된 곡 1개(status=1, COMPLETED 입찰)
-        Music open1 = saveEndedMusic(LocalDateTime.now().minusDays(1));
+        Music open1 = saveEndedMusic(now().minusDays(1));
         saveBid(open1, bidderA, 3000);
-        Music open2 = saveEndedMusic(LocalDateTime.now().minusDays(1));
+        Music open2 = saveEndedMusic(now().minusDays(1));
         saveBid(open2, bidderA, 4000);
-        Music alreadyClosed = saveEndedMusic(LocalDateTime.now().minusDays(1));
+        Music alreadyClosed = saveEndedMusic(now().minusDays(1));
         alreadyClosed.setStatus(1);
         musicRepository.save(alreadyClosed);
         Bid settled = saveBid(alreadyClosed, bidderB, 5000);

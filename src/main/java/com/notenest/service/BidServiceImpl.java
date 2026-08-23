@@ -27,9 +27,8 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
-import java.time.Instant;
+import java.time.Clock;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 
@@ -54,6 +53,10 @@ public class BidServiceImpl implements BidService {
 
     @Autowired
     private DownloadService downloadService;
+
+    // 시간 소스 — 운영은 시스템 시계, 테스트는 고정 Clock 주입(반복 실행 멱등성 검증용)
+    @Autowired
+    private Clock clock;
 
     @Override
     public Bid createBid(CreateBidDTO createBidDTO, String loggedInUserEmail) {
@@ -180,8 +183,13 @@ public class BidServiceImpl implements BidService {
 
         User composer = music.getUser();
 
-        // 현재 시간 구하기 (Instant -> LocalDateTime 변환)
-        LocalDateTime now = LocalDateTime.ofInstant(Instant.now(), ZoneId.systemDefault());
+        // 이미 마감된 곡이면 재실행하지 않는다(멱등). 마감 잡은 status=0 만 조회하므로 정상 경로에선
+        // 걸리지 않지만, 직접 호출·중복 호출에도 최초 마감이 한 번만 일어나도록 방어한다.
+        if (music.getStatus() != 0) {
+            return;
+        }
+
+        LocalDateTime now = LocalDateTime.now(clock);
 
         // 경매가 종료되었는지 확인
         if (music.getAuctionEndTime().isBefore(now)) {
@@ -246,7 +254,7 @@ public class BidServiceImpl implements BidService {
             return;
         }
 
-        LocalDateTime now = LocalDateTime.ofInstant(Instant.now(), ZoneId.systemDefault());
+        LocalDateTime now = LocalDateTime.now(clock);
         // 현재 대기자가 최고가(1순위)면 D+3, 승계된 다음 고유 사용자(2순위)면 D+6.
         boolean isFirstCandidate = pending.getBidUuid().equals(bids.get(0).getBidUuid());
         LocalDateTime deadline = isFirstCandidate
@@ -314,7 +322,7 @@ public class BidServiceImpl implements BidService {
     public void checkAuctionEnd() throws IamportResponseException, IOException {
         long startMs = System.currentTimeMillis();
         // 종료 대상 = status=0 AND 마감 시각 경과. 이미 마감(status=1)된 곡은 다시 선정되지 않는다.
-        List<UUID> targets = musicRepository.findUuidsToClose(LocalDateTime.now());
+        List<UUID> targets = musicRepository.findUuidsToClose(LocalDateTime.now(clock));
         int processed = 0;
         int failed = 0;
         for (UUID musicUuid : targets) {

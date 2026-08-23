@@ -21,6 +21,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 
 /**
@@ -38,17 +39,18 @@ import java.time.LocalDateTime;
  *    @Transactional(NOT_SUPPORTED)(비트랜잭션)로 돌려 픽스처 저장을 즉시 커밋시킨다.
  *    그래야 내부 새 트랜잭션의 findById 가 픽스처를 READ_COMMITTED 로 볼 수 있다.
  *
- * 논리 시각 주입 불가 대응:
- *  - 현행 코드는 내부에서 LocalDateTime.now() 를 쓴다(Clock 주입 없음). 따라서 분기는
- *    auctionEndTime 을 now 기준 상대값으로 두어 재현한다.
- *      · 경매 종료:        auctionEndTime < now
- *      · 1순위 결제기한 만료: auctionEndTime < now-3d  (deadline1 = end+3d)
- *      · 2순위 결제기한 만료: auctionEndTime < now-6d  (deadline2 = end+6d)
+ * 논리 시각 제어:
+ *  - 서비스는 주입된 Clock({@link FixedClockTestConfig})을 통해 시각을 읽는다. 픽스처는 반드시
+ *    {@link #now()}(동일 Clock) 기준으로 auctionEndTime 을 잡아야 서비스 판단과 일치한다.
+ *      · 경매 종료:        auctionEndTime < now()
+ *      · 1순위 결제기한 만료: auctionEndTime < now()-3d  (deadline1 = end+3d)
+ *      · 2순위 결제기한 만료: auctionEndTime < now()-6d  (deadline2 = end+6d)
+ *  - Clock 이 고정이라 같은 논리 시각으로 잡을 여러 번 실행해 멱등성을 검증할 수 있다.
  */
 @DataJpaTest
 @ActiveProfiles("test")
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Import({QueryDslConfig.class, BidServiceImpl.class})
+@Import({QueryDslConfig.class, BidServiceImpl.class, FixedClockTestConfig.class})
 @TestPropertySource(properties = {
         // user 는 H2 예약어라 @Table(name="user") DDL/쿼리가 깨진다 → NON_KEYWORDS 로 제외.
         "spring.datasource.url=jdbc:h2:mem:auction-char;MODE=MySQL;DB_CLOSE_DELAY=-1;NON_KEYWORDS=USER",
@@ -84,9 +86,18 @@ abstract class AuctionEndCharacterizationSupport {
     @MockBean
     protected DownloadService downloadService;
 
+    // 서비스와 동일한 고정 Clock. 픽스처 시각을 이 시계 기준으로 잡아야 서비스의 시각 판단과 일치한다.
+    @Autowired
+    protected Clock clock;
+
     protected User composer;
     protected User bidderA;
     protected User bidderB;
+
+    /** 고정 Clock 기준 현재 시각. 픽스처의 auctionEndTime 은 반드시 이 값 기준으로 계산한다. */
+    protected LocalDateTime now() {
+        return LocalDateTime.now(clock);
+    }
 
     @BeforeEach
     void resetFixtures() {
