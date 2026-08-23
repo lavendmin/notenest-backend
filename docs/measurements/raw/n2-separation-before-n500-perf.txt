@@ -1,0 +1,11 @@
+ended targets loaded targets=250 heapMB=106
+checkAuctionEnd cycle end elapsedMs=34245 targets=250 heapMB=2213
+ended targets loaded targets=250 heapMB=2215
+checkAuctionEnd cycle end elapsedMs=32789 targets=250 heapMB=4021
+ended targets loaded targets=250 heapMB=4021
+checkAuctionEnd cycle end elapsedMs=31868 targets=250 heapMB=4385
+ended targets loaded targets=250 heapMB=4385
+checkAuctionEnd cycle end elapsedMs=32114 targets=250 heapMB=4419
+ended targets loaded targets=250 heapMB=4422
+checkAuctionEnd cycle end elapsedMs=32377 targets=250 heapMB=2749
+ended targets loaded targets=250 heapMB=2749

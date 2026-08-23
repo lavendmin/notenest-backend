@@ -1,0 +1,117 @@
+# N2 — 경매 배치 대상 분리 before/after 측정 (S3 도입 직전 스냅샷)
+
+측정일: 2026-08-23
+
+/ 대상: 경매 마감 배치를 **마감 잡(status=0 대상)** 과 **결제 후속 잡(PENDING 대상)** 으로 분리한 변경
+(브랜치 `fix/n2-auction-batch-targeting`). 문제 #2(이미 종료·정산된 곡의 10초 재처리)를 겨냥한다.
+
+> LOB 재조회(문제 #1)는 S3(바이너리 분리)의 몫이라 이번 범위에서 건드리지 않는다.
+> 따라서 이 문서는 "S3 직전" 상태의 스냅샷이며, 남은 LOB 비용을 정직하게 함께 기록한다.
+
+## 측정 환경 (before/after 동일)
+
+| 항목 | 값 |
+|---|---|
+| 실행 환경 | 로컬 Windows 11, 로컬 Docker MariaDB 10.11 (포트 3311), smtp4dev(2525) |
+| JVM | **Java 21.0.12, 최대 힙 ~8GB (8068MB)** |
+| 앱 | Spring Boot 3.2.5, `./gradlew bootRun`, 포트 8086 |
+| 시드 | `scripts/seed/seed-music.sql` — 오디오 3MB/이미지 300KB 더미, 짝수 곡=마감 과거(종료 대상), 곡당 입찰 0~5건(전부 서로 다른 사용자) |
+| SQL 수 | `Hibernate:` 문장 라인 수를 `[BATCH]`/`[PERF]` 사이클 경계로 브라켓 집계 |
+| 사이클 시간·힙·대상 수 | after=`[BATCH]` 로그(잡별 targets/processed/failed/elapsedMs/heap), before=`[PERF]` 로그 |
+
+> **주의**: 이 측정의 JVM은 Java 21 / 힙 8GB로, phase1 문서(Java 17 / 힙 3.9GB, [phase1-before.md](phase1-before.md))와
+> **환경이 다르다.** phase1 수치와 직접 비교하지 말 것. 아래 before/after 는 모두 이 환경에서 동일 조건으로 실측했다.
+> - **before** = 분리 직전 커밋 `1f412a4`(마감·결제·승계가 한 `processAuctionEnd` 에 통합, 종료 대상 조회에 status 필터 없음)
+> - **after**  = 분리 후 커밋 `d24d7e3`(마감 잡 + 결제 후속 잡)
+
+## 적용한 개선 (분리)
+
+1. **마감 잡** `checkAuctionEnd` → `findUuidsToClose`(= `status=0 AND auctionEndTime<now`)만 조회해 최초 낙찰자
+   선정·상태 전이를 곡당 한 번만. 마감 후 `status=1` 이 되어 다음 사이클엔 대상에서 빠진다.
+2. **결제 후속 잡** `checkPendingPayments` → `Bid.status='PENDING'` 곡만 조회해 정산·기한 만료·차순위 승계를
+   현재 대기자 기준 한 사이클 1전이. 반복 실행에 안전(멱등).
+3. **Clock 주입**으로 시각 제어 → 같은 논리 시각 반복 실행 멱등성 테스트.
+
+## 1. 사이클 시간·대상 수 (핵심)
+
+### N=100 (종료 대상 50곡, 입찰 있는 종료곡 34 / 무입찰 종료곡 16)
+
+| 구분 | before (통합 잡) | after (마감 잡 + 결제 잡) |
+|---|---|---|
+| catch-up 마감 | 12.7s (첫 사이클, 이메일 포함), 종료곡 50 | **마감 12.5s** (targets=50, heap 98→931MB, SQL 259) |
+| **웜 사이클** | **~3.35s** — 종료곡 **50을 매 사이클 재처리** | **~2.38s** — 마감 targets=**0**(2~3ms, SQL 1) + 결제 targets=**34**(~2.38s, SQL 103) |
+| 웜 대상 수 | 50 (재처리) | 마감 0 / 결제 34 |
+
+before 웜 5회: 3300·3307·3346·3363·3444ms → 평균 3352ms. after 결제 웜 5회: 2357·2358·2360·2368·2443ms → 평균 2377ms.
+
+### N=500 (종료 대상 250곡, 입찰 있는 종료곡 167 / 무입찰 종료곡 83)
+
+| 구분 | before (통합 잡) | after (마감 잡 + 결제 잡) |
+|---|---|---|
+| catch-up 마감 | — (아래 웜과 동일 비용) | **마감 69.4s** (targets=250, heap 55→2452MB, SQL 1241) |
+| **웜 사이클** | **~32.3s** — 종료곡 **250을 매 사이클 재처리**, heap ~4.4GB | **~20.5s** — 마감 targets=**0**(2~4ms, SQL 1) + 결제 targets=**167**(~20.5s, SQL 521) |
+| 웜 대상 수 | 250 (재처리) | 마감 0 / 결제 167 |
+| OOM | 없음(8GB 힙) | 없음 |
+
+before 웜 3회: 31868·32114·32789ms → 평균 32257ms. after 결제 웜 5회: 20352·20503·20514·20571·20865ms → 평균 20561ms.
+
+### 사이클당 SQL 수 (after)
+
+| 잡 | N=100 | N=500 |
+|---|---|---|
+| 마감 catch-up | 259 | 1241 |
+| 마감 웜 (0 대상) | **1** (findUuidsToClose 만) | **1** |
+| 결제 웜 | 103 (= 1 + 34×3) | 521 (≈ 1 + 167×3) |
+
+## 2. 무엇이 좋아졌나 / 무엇이 남았나
+
+**좋아진 것**
+- **마감 재처리 완전 제거**: 웜 사이클 마감 대상 0, 2~3ms, SQL 1. before 는 status 필터가 없어 매 사이클 종료곡
+  전체(50/250)를 다시 처리했다. 문제 #2 해소의 직접 증거.
+- **결제 후속은 PENDING 곡만 재방문**: N=500 기준 재방문 대상이 250(전 종료곡)→167(결제 대기 곡)로 줄고,
+  마감 중복 처리가 사라져 웜 사이클 **32.3s→20.5s**(N=500), **3.35s→2.38s**(N=100).
+- **정산 완료 곡의 이탈**: 결제가 끝나(COMPLETED) PENDING 이 사라진 곡은 두 잡 어디에도 다시 잡히지 않는다
+  (마감=status≠0 제외, 결제=PENDING 없음). before 는 종료곡을 영구히 재방문했다.
+
+**남은 것 (S3 몫, 문제 #1)**
+- 결제 후속 잡의 `findById(Music)` 가 PENDING 곡의 **LOB(오디오 3MB/이미지 300KB)를 매 사이클 로딩**한다.
+  이 때문에 N=500 웜 사이클이 20.5s로 **여전히 10초 주기를 초과**한다. 결제 대기 곡은 기한(D+3/D+6)까지
+  계속 재방문되므로 그동안 LOB 로딩 비용이 반복된다.
+- S3 로 바이너리를 별도 저장(객체 키만 남김)하면 `findById` 가 경량화되어 이 잔존 비용이 사라질 것으로 본다.
+  실제 수치는 S3 이후 별도 세션에서 동일 조건으로 재측정한다.
+
+## 3. 불변식 — 낙찰 결과 분포·이메일 플래그 (분리가 동작을 바꾸지 않았는가)
+
+시드의 한 곡 입찰자는 전부 서로 다른 사용자라 하이브리드 정책과 결과가 같고, 마감 시각이 시(hour) 단위 과거라
+결제 기한(D+3/D+6)은 미래 → 낙찰자는 PENDING 유지(전이 없음).
+
+| 대상 | N=100 | N=500 |
+|---|---|---|
+| `bid.status` | PENDING 34 / FAILED 68 / NULL 148 | PENDING 167 / FAILED 333 / NULL 748 |
+| `music.status` | 진행 0=50 / 마감 1=50 | 진행 0=250 / 마감 1=250 |
+| 낙찰 성공 메일(`bidder_email_sent`) | 34 | 167 |
+| 경매 무산 메일(`auction_failure_email_sent`) | 16 | 83 |
+
+- N=100 분포는 phase1 베이스라인(PENDING 34 / FAILED 68 / NULL 148)과 **완전 일치** — 분리가 낙찰 결과를 바꾸지 않음.
+- 낙찰 메일 수 = PENDING 낙찰자 수, 무산 메일 수 = 무입찰 종료곡 수(N=100:16, N=500:83)로 정합.
+
+## 4. 반복 실행 멱등성 (같은 논리 시각 2회)
+
+- **테스트**(고정 Clock): 마감 잡 2회 / 결제 완료 2회 / 차순위 승계 2회 실행 시 상태 전이·이메일 호출 무중복
+  ([AuctionBatchIdempotencyTest](../../src/test/java/com/notenest/batch/AuctionBatchIdempotencyTest.java)).
+- **실측 실증**: after 웜 사이클 5회 동안 결제 잡이 매번 processed=34(N=100)/167(N=500)로 대상을 처리했지만,
+  기한 전이라 상태 전이는 0 — `bid.status` 분포와 `bidder_email_sent` 수가 5사이클 내내 불변. **이메일 중복 발송 0건.**
+
+## 5. 한계
+
+- 로컬 단일 인스턴스 fixedRate 실행만 측정. 다중 인스턴스 동시 선점(분산 락/ShedLock)은 범위 밖.
+- before-N=500 은 직전 after 실행으로 이미 정산된 데이터 위에서 측정했다(이메일 플래그가 이미 set → 재발송
+  없음). 이는 곧 "정상 상태(steady-state) 웜 사이클"의 재처리 비용에 해당하며, 비교 대상인 after 웜 사이클과
+  같은 성격이라 비교가 성립한다. before-N=100 은 신규 시드에서 첫 사이클(12.7s, 이메일 포함)과 웜(3.35s)을 분리 관측.
+- catch-up 마감(50/250곡 LOB 로딩)과 결제 웜의 LOB 비용은 S3 전까지 남는다. 이 문서의 목적은 그 잔존을
+  숨기지 않고 "대상 분리로 무엇이 사라졌고 무엇이 남았는지"를 못박는 것이다.
+
+## 근거 원자료
+
+- after: [raw/n2-separation-after-n100-batch.txt](raw/n2-separation-after-n100-batch.txt), [raw/n2-separation-after-n500-batch.txt](raw/n2-separation-after-n500-batch.txt)
+- before: [raw/n2-separation-before-n100-perf.txt](raw/n2-separation-before-n100-perf.txt), [raw/n2-separation-before-n500-perf.txt](raw/n2-separation-before-n500-perf.txt)

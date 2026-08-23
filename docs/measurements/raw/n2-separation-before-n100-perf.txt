@@ -1,0 +1,18 @@
+ended targets loaded targets=50 heapMB=55
+checkAuctionEnd cycle end elapsedMs=12688 targets=50 heapMB=535
+ended targets loaded targets=50 heapMB=635
+checkAuctionEnd cycle end elapsedMs=3444 targets=50 heapMB=729
+ended targets loaded targets=50 heapMB=731
+checkAuctionEnd cycle end elapsedMs=3346 targets=50 heapMB=674
+ended targets loaded targets=50 heapMB=676
+checkAuctionEnd cycle end elapsedMs=3363 targets=50 heapMB=681
+ended targets loaded targets=50 heapMB=681
+checkAuctionEnd cycle end elapsedMs=3307 targets=50 heapMB=535
+ended targets loaded targets=50 heapMB=537
+checkAuctionEnd cycle end elapsedMs=3300 targets=50 heapMB=945
+ended targets loaded targets=50 heapMB=949
+checkAuctionEnd cycle end elapsedMs=3297 targets=50 heapMB=1039
+ended targets loaded targets=50 heapMB=1039
+checkAuctionEnd cycle end elapsedMs=3394 targets=50 heapMB=1054
+ended targets loaded targets=50 heapMB=1054
+checkAuctionEnd cycle end elapsedMs=3330 targets=50 heapMB=729
