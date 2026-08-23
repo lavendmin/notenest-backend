@@ -22,8 +22,6 @@ public interface MusicService {
 
     MusicDetailDTO getMusicDetail(UUID musicUuid);
 
-    Page<MusicSummaryDTO> getAllMusicByLatest(Pageable pageable, String loggedInUserEmail);
-
     Page<MusicSummaryDTO> getAllMusicByFilters(
             String majorGenre, String hashtags, Double minPrice, Double maxPrice,
             Pageable pageable, String sortBy, String loggedInUserEmail, String searchTerm);

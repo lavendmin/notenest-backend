@@ -120,20 +120,11 @@ public class MusicController {
             String loggedInUserEmail = (authentication != null && authentication.isAuthenticated()) ? authentication.getName() : null;
 
             Pageable pageable = PageRequest.of(page, size);
-            Page<MusicSummaryDTO> musicDTOPage;
 
-            // 필터링 조건이 있거나 검색어가 있는 경우
-            if ((majorGenre != null && !majorGenre.isEmpty()) ||
-                    (hashtag != null && !hashtag.isEmpty()) ||
-                    (minPrice != null || maxPrice != null) ||
-                    (searchTerm != null && !searchTerm.isEmpty())) {
-
-                musicDTOPage = musicService.getAllMusicByFilters(
-                        majorGenre, hashtag, minPrice, maxPrice, pageable, sortBy, loggedInUserEmail, searchTerm);
-            } else {
-                // 필터링 조건이 없으면 최신순으로 음악 목록을 가져오기
-                musicDTOPage = musicService.getAllMusicByLatest(pageable, loggedInUserEmail);
-            }
+            // 필터·검색 유무와 관계없이 단일 조회 경로(QueryDSL 프로젝션)를 탄다.
+            // 조건이 없으면 sortBy 만 적용된다 — sortBy 단독 요청(예: ?sortBy=price)도 정렬이 반영된다.
+            Page<MusicSummaryDTO> musicDTOPage = musicService.getAllMusicByFilters(
+                    majorGenre, hashtag, minPrice, maxPrice, pageable, sortBy, loggedInUserEmail, searchTerm);
 
             return ResponseEntity.ok(musicDTOPage);
         } catch (Exception e) {

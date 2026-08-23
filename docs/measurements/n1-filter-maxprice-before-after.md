@@ -32,7 +32,7 @@
 | 처리량 | 3.96 req/s (125 req/30s) | **42.87 req/s** (1297 req/30s) | **약 10.8배** |
 | 요청당 크기 | 약 46 MB | **약 4.1 MB** | **약 11.2배 감소** |
 | 요청당 SQL | 14개 (유저1+필터1+count1+좋아요×10 N+1) | **4개** (유저1+프로젝션1+count1+좋아요 IN 1) | 14→4 |
-| 실제 SELECT 열 | `m1_0.audio`·`m1_0.image` 포함 (audio 54회) | **audio 0회**, 커버 image만 | LOB 음원 제거 |
+| 목록 SELECT의 음원 열 | **포함** (`m1_0.audio` — 필터 페이지 SELECT 가 엔티티 전열) | **제외** (프로젝션 SELECT 에 `audio` 없음), 커버 image만 | LOB 음원 제거 |
 | 단독 요청 (부하 없이 1건) | 0.91s | **0.25s** | — |
 | 실패율 | 0% | 0% | — |
 
@@ -45,13 +45,19 @@
 - 교차검증(게이트 최초 before, 백투백과 거의 동일 → baseline 안정성 확인): p90 2.71s / 3.82 req/s — [`raw/before-maxprice-k6-warm-summary.txt`](raw/before-maxprice-k6-warm-summary.txt)
 
 ### 해석
-before: 목록 10건에 audio·image 바이너리가 통째로 실려 요청당 ~46MB, SELECT 절에 실제
-`m1_0.audio`가 54회 찍힘(LOB를 DB에서 읽는 증거). 좋아요 카운트 10회로 N+1 확인.
-after: QueryDSL DTO 프로젝션으로 audio를 SELECT에서 제외(0회)하고 커버 image만 유지,
+before: 목록 10건에 audio·image 바이너리가 통째로 실려 요청당 ~46MB, 목록 요청의 페이지 SELECT 절에
+실제 `m1_0.audio`가 포함됨(LOB를 DB에서 읽는 증거). 좋아요 카운트 10회로 N+1 확인.
+after: QueryDSL DTO 프로젝션으로 audio를 SELECT에서 제외하고 커버 image만 유지,
 좋아요는 IN 1회. 요청당 SQL 14→4, 크기 46MB→4.1MB, p90 2.65s→0.17s.
 
-**정직 규율**: QueryDSL 자체가 성능을 올린 것이 아니다(생성 SQL 동일). 개선은 프로젝션(음원 제외)과
-N+1 제거에서 나왔다. 무필터 1차 진단의 91MB→5.3KB(커버까지 제거)와 직접 비교하지 않는다.
+> 집계 주의: raw 로그 창에는 동시 가동 중인 스케줄러(`scheduling-1`)의 `findById` 반복 SELECT 가 섞여 있다.
+> 요청당 SQL 14/4 는 `nio-*-exec` 요청 스레드 기준 집계이며, 음원 열은 "목록 SELECT 에 포함→제외" 사실만
+> 주장한다. 로그 전체의 `audio` 등장 횟수(예: 54회)는 스케줄러 쿼리가 섞인 값이라 목록 API 수치로 쓰지 않는다.
+
+**정직 규율**: 개선은 QueryDSL 자체가 아니라 DTO 프로젝션(음원 열 제외)과 좋아요 IN 조회에서 나왔다.
+같은 SELECT·WHERE 를 표현하면 Criteria·JPQL·QueryDSL 어느 도구든 DB 실행 비용은 본질적으로 비슷하다 —
+QueryDSL 은 동적 조건의 타입 안전성과 프로젝션·count 재사용을 위한 작성 도구 선택이다.
+무필터 1차 진단의 91MB→5.3KB(커버까지 제거)와 직접 비교하지 않는다.
 
 ## 표 B — 무필터 1차 진단 (참고, 섞지 말 것)
 `docs/measurements/phase1-before.md` 참조. size=20, 요청당 91MB, 요청당 SQL 24.

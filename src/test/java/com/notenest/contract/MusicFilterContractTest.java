@@ -26,6 +26,7 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -104,6 +105,28 @@ class MusicFilterContractTest {
         return mockMvc.perform(req).andExpect(status().isOk()).andReturn();
     }
 
+    // 임의 파라미터 조합으로 /filter 를 호출해 JSON 루트를 돌려준다 (회귀 테스트용 범용 헬퍼).
+    private JsonNode getFilterWith(Map<String, String> params) throws Exception {
+        var req = get(FILTER).param("page", "0").with(r -> { r.setRemoteUser(BIDDER); return r; });
+        for (var e : params.entrySet()) req = req.param(e.getKey(), e.getValue());
+        MvcResult res = mockMvc.perform(req).andExpect(status().isOk()).andReturn();
+        return objectMapper.readTree(res.getResponse().getContentAsByteArray());
+    }
+
+    // 진행중(status=0) 곡 전체 엔티티 — 필터 결과 집합·정렬 불변식의 기준값. LOB 를 읽으므로 필요한 테스트에서만 호출.
+    private List<Music> loadOngoingEntities() {
+        return musicRepository.findAllOngoingMusicByOrderByCreatedAtDesc(PageRequest.of(0, 10_000)).getContent();
+    }
+
+    private static double effectivePrice(Music m) {
+        return m.getCurrentHighestBid() != null ? m.getCurrentHighestBid() : m.getStartingPrice();
+    }
+
+    private static double effectivePrice(JsonNode el) {
+        JsonNode bid = el.path("currentHighestBid");
+        return bid.isNumber() ? bid.asDouble() : el.path("startingPrice").asDouble();
+    }
+
     // org.hibernate.SQL 로그를 캡처해 likes 테이블을 조회하는 SQL 문 수를 센다.
     private long countLikesQueries(int size) throws Exception {
         Logger sqlLogger = (Logger) LoggerFactory.getLogger("org.hibernate.SQL");
@@ -172,19 +195,121 @@ class MusicFilterContractTest {
     }
 
     @Test
-    @DisplayName("가격순/좋아요순 분기도 200과 계약 필드를 유지한다")
-    void otherSorts_keepContract() throws Exception {
-        for (String sort : List.of("price", "like")) {
-            JsonNode content = getFilter(sort).path("content");
-            assertThat(content.size()).as("sort=" + sort + " content").isGreaterThan(0);
-            assertThat(content.get(0).hasNonNull("image")).as("sort=" + sort + " image").isTrue();
+    @DisplayName("가격순 정렬: 최고입찰가 내림차순(null 마지막) → 시작가 내림차순 불변식을 만족한다")
+    void priceSort_isDescendingWithNullsLast() throws Exception {
+        JsonNode content = getFilterWith(Map.of("sortBy", "price", "size", "100",
+                "maxPrice", String.valueOf(MAX_PRICE), "minPrice", "0")).path("content");
+        assertThat(content.size()).isEqualTo((int) referenceOngoingCount);
+
+        boolean seenNull = false;
+        Double prevBid = null, prevStart = null;
+        for (JsonNode el : content) {
+            JsonNode bidNode = el.path("currentHighestBid");
+            assertThat(el.hasNonNull("image")).as("가격순 커버 포함").isTrue();
+            if (!bidNode.isNumber()) { seenNull = true; continue; }
+            assertThat(seenNull).as("null 최고입찰가 뒤에 non-null 이 오면 안 됨").isFalse();
+            double bid = bidNode.asDouble(), start = el.path("startingPrice").asDouble();
+            if (prevBid != null) {
+                assertThat(bid).as("currentHighestBid 내림차순").isLessThanOrEqualTo(prevBid);
+                if (bid == prevBid) assertThat(start).as("동가면 startingPrice 내림차순").isLessThanOrEqualTo(prevStart);
+            }
+            prevBid = bid; prevStart = start;
         }
+    }
+
+    @Test
+    @DisplayName("좋아요순 정렬: likeCount 내림차순 불변식을 만족한다")
+    void likeSort_isDescending() throws Exception {
+        JsonNode content = getFilterWith(Map.of("sortBy", "like", "size", "100",
+                "maxPrice", String.valueOf(MAX_PRICE), "minPrice", "0")).path("content");
+        assertThat(content.size()).isEqualTo((int) referenceOngoingCount);
+        int prev = Integer.MAX_VALUE;
+        for (JsonNode el : content) {
+            int lc = el.path("likeCount").asInt();
+            assertThat(lc).as("likeCount 내림차순").isLessThanOrEqualTo(prev);
+            assertThat(el.hasNonNull("image")).as("좋아요순 커버 포함").isTrue();
+            prev = lc;
+        }
+    }
+
+    @Test
+    @DisplayName("sortBy 단독 요청(필터 없음)도 정렬이 적용된다 — price/like 가 최신순으로 무시되지 않는다")
+    void sortByOnly_isHonoredWithoutFilters() throws Exception {
+        // price: 필터 파라미터 없이 sortBy 만 → 가격 내림차순(coalesce) 불변식
+        JsonNode priceOnly = getFilterWith(Map.of("sortBy", "price", "size", "100")).path("content");
+        assertThat(priceOnly.size()).isEqualTo((int) referenceOngoingCount);
+        double prevPrice = Double.MAX_VALUE;
+        for (JsonNode el : priceOnly) {
+            double p = effectivePrice(el);
+            assertThat(p).as("sortBy=price 단독: 유효가격 내림차순").isLessThanOrEqualTo(prevPrice);
+            prevPrice = p;
+        }
+        // 가격순 단독 결과가 최신순 결과와 같은 순서라면(정렬이 무시됐다면) 실패해야 한다.
+        List<UUID> priceOrder = priceOnly.findValues("musicUuid").stream().map(n -> UUID.fromString(n.asText())).toList();
+        List<UUID> latestOrder = getFilterWith(Map.of("sortBy", "latest", "size", "100")).path("content")
+                .findValues("musicUuid").stream().map(n -> UUID.fromString(n.asText())).toList();
+        assertThat(priceOrder).as("가격순 단독 결과가 최신순과 동일하면 sortBy 가 무시된 것").isNotEqualTo(latestOrder);
+
+        // like: 필터 없이 sortBy=like → likeCount 내림차순
+        JsonNode likeOnly = getFilterWith(Map.of("sortBy", "like", "size", "100")).path("content");
+        int prev = Integer.MAX_VALUE;
+        for (JsonNode el : likeOnly) {
+            int lc = el.path("likeCount").asInt();
+            assertThat(lc).as("sortBy=like 단독: likeCount 내림차순").isLessThanOrEqualTo(prev);
+            prev = lc;
+        }
+    }
+
+    @Test
+    @DisplayName("검색 결과 집합: 전체 매칭어는 진행중 전체, 무매칭어는 0건")
+    void search_resultSetMatchesReference() throws Exception {
+        // 시드 제목 'seed song N' → 'song' 은 진행중 곡 전체와 일치해야 한다.
+        long all = getFilterWith(Map.of("searchTerm", "song", "sortBy", "latest")).path("totalElements").asLong();
+        assertThat(all).isEqualTo(referenceOngoingCount);
+        // 엔티티 기준 검증: 'song' 을 제목에 가진 진행중 곡 수와 같다.
+        long expected = loadOngoingEntities().stream().filter(m -> m.getTitle().contains("song")).count();
+        assertThat(all).isEqualTo(expected);
+
+        long none = getFilterWith(Map.of("searchTerm", "zz-no-such-term-zz")).path("totalElements").asLong();
+        assertThat(none).isZero();
+    }
+
+    @Test
+    @DisplayName("장르·해시태그 필터 결과 집합이 엔티티 기준과 같다")
+    void genreAndHashtag_resultSetMatchesReference() throws Exception {
+        List<Music> ongoing = loadOngoingEntities();
+        long popExpected = ongoing.stream().filter(m -> "POP".equals(m.getMajorGenre())).count();
+        long seedTagExpected = ongoing.stream().filter(m -> m.getHashtag() != null && m.getHashtag().contains("#seed")).count();
+
+        assertThat(getFilterWith(Map.of("majorGenre", "POP")).path("totalElements").asLong()).isEqualTo(popExpected);
+        assertThat(getFilterWith(Map.of("majorGenre", "NO_SUCH_GENRE")).path("totalElements").asLong()).isZero();
+        assertThat(getFilterWith(Map.of("hashtag", "#seed")).path("totalElements").asLong()).isEqualTo(seedTagExpected);
+        assertThat(getFilterWith(Map.of("hashtag", "#no-such-tag")).path("totalElements").asLong()).isZero();
+    }
+
+    @Test
+    @DisplayName("가격 경계(min/max)의 결과 집합이 coalesce(최고입찰가, 시작가) 기준과 같다")
+    void priceBoundary_resultSetMatchesReference() throws Exception {
+        List<Music> ongoing = loadOngoingEntities();
+        // 시드 가격대(10,000~15,000) 안쪽 경계값으로 포함/제외가 갈리는지 확인한다.
+        double max = 11000, min = 12000;
+        long leExpected = ongoing.stream().filter(m -> effectivePrice(m) <= max).count();
+        long geExpected = ongoing.stream().filter(m -> effectivePrice(m) >= min).count();
+        long betweenExpected = ongoing.stream().filter(m -> effectivePrice(m) >= 11000 && effectivePrice(m) <= 12000).count();
+
+        assertThat(getFilterWith(Map.of("maxPrice", "11000")).path("totalElements").asLong()).isEqualTo(leExpected);
+        assertThat(getFilterWith(Map.of("minPrice", "12000")).path("totalElements").asLong()).isEqualTo(geExpected);
+        assertThat(getFilterWith(Map.of("minPrice", "11000", "maxPrice", "12000")).path("totalElements").asLong()).isEqualTo(betweenExpected);
+        // 경계 밖 → 0
+        assertThat(getFilterWith(Map.of("maxPrice", "1000")).path("totalElements").asLong()).isZero();
+        // 경계값이 실제로 집합을 가르는지(전부/0 아닌 값) — 시드 구조상 보장되지만 명시한다
+        assertThat(leExpected).isGreaterThan(0).isLessThan(referenceOngoingCount);
     }
 
     @Test
     @DisplayName("무필터 요청(maxPrice 없음)도 커버 포함·audio 제외 계약을 유지한다")
     void noFilterRequest_keepsContract() throws Exception {
-        // maxPrice/searchTerm 없이 순수 최신순 → getAllMusicByLatest 위임 경로 (Phase 1 커버 누락 회귀 방지)
+        // maxPrice/searchTerm 없이 순수 최신순 — 필터 유무와 무관하게 같은 프로젝션 경로 (Phase 1 커버 누락 회귀 방지)
         MvcResult res = mockMvc.perform(get(FILTER)
                         .param("page", "0")
                         .with(r -> { r.setRemoteUser(BIDDER); return r; }))

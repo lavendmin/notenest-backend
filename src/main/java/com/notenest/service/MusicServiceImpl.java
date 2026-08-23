@@ -185,13 +185,7 @@ public class MusicServiceImpl implements MusicService {
     }
 
 
-    //최신 순으로 정렬
-    @Override
-    public Page<MusicSummaryDTO> getAllMusicByLatest(Pageable pageable, String loggedInUserEmail) {
-        // 무필터 최신순도 필터 경로와 같은 목록 DTO 프로젝션(QueryDSL)을 사용해 조회 전략을 통일한다.
-        return getAllMusicByFilters(null, null, null, null, pageable, "latest", loggedInUserEmail, null);
-    }
-
+    // 공개 경매 곡 목록 — 무필터·검색·필터·정렬 전 분기가 이 단일 경로(QueryDSL 프로젝션)를 탄다.
     @Override
     public Page<MusicSummaryDTO> getAllMusicByFilters(
             String majorGenre, String hashtags, Double minPrice, Double maxPrice,
