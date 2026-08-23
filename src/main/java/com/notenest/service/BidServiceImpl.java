@@ -321,6 +321,8 @@ public class BidServiceImpl implements BidService {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void checkAuctionEnd() throws IamportResponseException, IOException {
         long startMs = System.currentTimeMillis();
+        Runtime rt = Runtime.getRuntime();
+        long heapBeforeMb = (rt.totalMemory() - rt.freeMemory()) / 1024 / 1024;
         // 종료 대상 = status=0 AND 마감 시각 경과. 이미 마감(status=1)된 곡은 다시 선정되지 않는다.
         List<UUID> targets = musicRepository.findUuidsToClose(LocalDateTime.now(clock));
         int processed = 0;
@@ -334,9 +336,10 @@ public class BidServiceImpl implements BidService {
                 log.error("Error closing auction for music ID: {}", musicUuid, e);
             }
         }
-        // [BATCH] 대상/처리/실패/소요 — Step 5 성능 스냅샷의 측정 근거.
-        log.info("[BATCH] job=auction-close targets={} processed={} failed={} elapsedMs={}",
-                targets.size(), processed, failed, System.currentTimeMillis() - startMs);
+        long heapAfterMb = (rt.totalMemory() - rt.freeMemory()) / 1024 / 1024;
+        // [BATCH] 대상/처리/실패/소요/힙 — Step 5 성능 스냅샷의 측정 근거.
+        log.info("[BATCH] job=auction-close targets={} processed={} failed={} elapsedMs={} heapBeforeMb={} heapAfterMb={}",
+                targets.size(), processed, failed, System.currentTimeMillis() - startMs, heapBeforeMb, heapAfterMb);
     }
 
     // [결제 후속 잡] 결제 대기(PENDING) 입찰이 있는 곡만 대상으로 정산·승계를 처리한다.
@@ -345,6 +348,8 @@ public class BidServiceImpl implements BidService {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void checkPendingPayments() throws IamportResponseException, IOException {
         long startMs = System.currentTimeMillis();
+        Runtime rt = Runtime.getRuntime();
+        long heapBeforeMb = (rt.totalMemory() - rt.freeMemory()) / 1024 / 1024;
         List<UUID> targets = bidRepository.findMusicUuidsWithPendingBid();
         int processed = 0;
         int failed = 0;
@@ -357,9 +362,10 @@ public class BidServiceImpl implements BidService {
                 log.error("Error processing payment follow-up for music ID: {}", musicUuid, e);
             }
         }
-        // [BATCH] 대상/처리/실패/소요 — Step 5 성능 스냅샷의 측정 근거.
-        log.info("[BATCH] job=payment-followup targets={} processed={} failed={} elapsedMs={}",
-                targets.size(), processed, failed, System.currentTimeMillis() - startMs);
+        long heapAfterMb = (rt.totalMemory() - rt.freeMemory()) / 1024 / 1024;
+        // [BATCH] 대상/처리/실패/소요/힙 — Step 5 성능 스냅샷의 측정 근거.
+        log.info("[BATCH] job=payment-followup targets={} processed={} failed={} elapsedMs={} heapBeforeMb={} heapAfterMb={}",
+                targets.size(), processed, failed, System.currentTimeMillis() - startMs, heapBeforeMb, heapAfterMb);
     }
 
     // 마이페이지 낙찰내역 - 결제 대기
