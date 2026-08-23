@@ -1,0 +1,3072 @@
+2026-08-23T15:05:39.662+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+Hibernate: 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+2026-08-23T15:05:39.665+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        p1_0.payment_uuid,
+        p1_0.bid_uuid,
+        p1_0.created_at,
+        p1_0.imp_uid,
+        p1_0.price,
+        p1_0.status 
+    from
+        payment p1_0 
+    where
+        p1_0.bid_uuid=?
+Hibernate: 
+    select
+        p1_0.payment_uuid,
+        p1_0.bid_uuid,
+        p1_0.created_at,
+        p1_0.imp_uid,
+        p1_0.price,
+        p1_0.status 
+    from
+        payment p1_0 
+    where
+        p1_0.bid_uuid=?
+2026-08-23T15:05:39.667+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+Hibernate: 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+2026-08-23T15:05:39.720+09:00 DEBUG 4408 --- [notenest-backend] [nio-8086-exec-3] org.hibernate.SQL                        : 
+    select
+        u1_0.user_uuid,
+        u1_0.agreement,
+        u1_0.email,
+        u1_0.email_verified,
+        u1_0.name,
+        u1_0.nickname,
+        u1_0.password,
+        u1_0.phone_no,
+        u1_0.role 
+    from
+        user u1_0 
+    where
+        u1_0.email=?
+Hibernate: 
+    select
+        u1_0.user_uuid,
+        u1_0.agreement,
+        u1_0.email,
+        u1_0.email_verified,
+        u1_0.name,
+        u1_0.nickname,
+        u1_0.password,
+        u1_0.phone_no,
+        u1_0.role 
+    from
+        user u1_0 
+    where
+        u1_0.email=?
+2026-08-23T15:05:39.742+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+Hibernate: 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+2026-08-23T15:05:39.743+09:00 DEBUG 4408 --- [notenest-backend] [nio-8086-exec-3] org.hibernate.SQL                        : 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.status=? 
+        and coalesce(m1_0.current_highest_bid, m1_0.starting_price) between ? and ? 
+    order by
+        m1_0.created_at desc 
+    limit
+        ?, ?
+Hibernate: 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.status=? 
+        and coalesce(m1_0.current_highest_bid, m1_0.starting_price) between ? and ? 
+    order by
+        m1_0.created_at desc 
+    limit
+        ?, ?
+2026-08-23T15:05:39.745+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        p1_0.payment_uuid,
+        p1_0.bid_uuid,
+        p1_0.created_at,
+        p1_0.imp_uid,
+        p1_0.price,
+        p1_0.status 
+    from
+        payment p1_0 
+    where
+        p1_0.bid_uuid=?
+Hibernate: 
+    select
+        p1_0.payment_uuid,
+        p1_0.bid_uuid,
+        p1_0.created_at,
+        p1_0.imp_uid,
+        p1_0.price,
+        p1_0.status 
+    from
+        payment p1_0 
+    where
+        p1_0.bid_uuid=?
+2026-08-23T15:05:39.745+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+Hibernate: 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+2026-08-23T15:05:39.812+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+Hibernate: 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+2026-08-23T15:05:39.815+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        p1_0.payment_uuid,
+        p1_0.bid_uuid,
+        p1_0.created_at,
+        p1_0.imp_uid,
+        p1_0.price,
+        p1_0.status 
+    from
+        payment p1_0 
+    where
+        p1_0.bid_uuid=?
+Hibernate: 
+    select
+        p1_0.payment_uuid,
+        p1_0.bid_uuid,
+        p1_0.created_at,
+        p1_0.imp_uid,
+        p1_0.price,
+        p1_0.status 
+    from
+        payment p1_0 
+    where
+        p1_0.bid_uuid=?
+2026-08-23T15:05:39.816+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+Hibernate: 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+2026-08-23T15:05:39.849+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+Hibernate: 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+2026-08-23T15:05:39.853+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        p1_0.payment_uuid,
+        p1_0.bid_uuid,
+        p1_0.created_at,
+        p1_0.imp_uid,
+        p1_0.price,
+        p1_0.status 
+    from
+        payment p1_0 
+    where
+        p1_0.bid_uuid=?
+Hibernate: 
+    select
+        p1_0.payment_uuid,
+        p1_0.bid_uuid,
+        p1_0.created_at,
+        p1_0.imp_uid,
+        p1_0.price,
+        p1_0.status 
+    from
+        payment p1_0 
+    where
+        p1_0.bid_uuid=?
+2026-08-23T15:05:39.855+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+Hibernate: 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+2026-08-23T15:05:39.951+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+Hibernate: 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+2026-08-23T15:05:39.957+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        p1_0.payment_uuid,
+        p1_0.bid_uuid,
+        p1_0.created_at,
+        p1_0.imp_uid,
+        p1_0.price,
+        p1_0.status 
+    from
+        payment p1_0 
+    where
+        p1_0.bid_uuid=?
+Hibernate: 
+    select
+        p1_0.payment_uuid,
+        p1_0.bid_uuid,
+        p1_0.created_at,
+        p1_0.imp_uid,
+        p1_0.price,
+        p1_0.status 
+    from
+        payment p1_0 
+    where
+        p1_0.bid_uuid=?
+2026-08-23T15:05:39.957+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+Hibernate: 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+2026-08-23T15:05:40.060+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+Hibernate: 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+2026-08-23T15:05:40.064+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        p1_0.payment_uuid,
+        p1_0.bid_uuid,
+        p1_0.created_at,
+        p1_0.imp_uid,
+        p1_0.price,
+        p1_0.status 
+    from
+        payment p1_0 
+    where
+        p1_0.bid_uuid=?
+Hibernate: 
+    select
+        p1_0.payment_uuid,
+        p1_0.bid_uuid,
+        p1_0.created_at,
+        p1_0.imp_uid,
+        p1_0.price,
+        p1_0.status 
+    from
+        payment p1_0 
+    where
+        p1_0.bid_uuid=?
+2026-08-23T15:05:40.065+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+Hibernate: 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+2026-08-23T15:05:40.173+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+Hibernate: 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+2026-08-23T15:05:40.179+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        p1_0.payment_uuid,
+        p1_0.bid_uuid,
+        p1_0.created_at,
+        p1_0.imp_uid,
+        p1_0.price,
+        p1_0.status 
+    from
+        payment p1_0 
+    where
+        p1_0.bid_uuid=?
+Hibernate: 
+    select
+        p1_0.payment_uuid,
+        p1_0.bid_uuid,
+        p1_0.created_at,
+        p1_0.imp_uid,
+        p1_0.price,
+        p1_0.status 
+    from
+        payment p1_0 
+    where
+        p1_0.bid_uuid=?
+2026-08-23T15:05:40.182+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+Hibernate: 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+2026-08-23T15:05:40.226+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+Hibernate: 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+2026-08-23T15:05:40.236+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        p1_0.payment_uuid,
+        p1_0.bid_uuid,
+        p1_0.created_at,
+        p1_0.imp_uid,
+        p1_0.price,
+        p1_0.status 
+    from
+        payment p1_0 
+    where
+        p1_0.bid_uuid=?
+Hibernate: 
+    select
+        p1_0.payment_uuid,
+        p1_0.bid_uuid,
+        p1_0.created_at,
+        p1_0.imp_uid,
+        p1_0.price,
+        p1_0.status 
+    from
+        payment p1_0 
+    where
+        p1_0.bid_uuid=?
+2026-08-23T15:05:40.238+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+Hibernate: 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+2026-08-23T15:05:40.352+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+Hibernate: 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+2026-08-23T15:05:40.353+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+Hibernate: 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+2026-08-23T15:05:40.371+09:00 DEBUG 4408 --- [notenest-backend] [nio-8086-exec-3] org.hibernate.SQL                        : 
+    select
+        count(m1_0.music_uuid) 
+    from
+        music m1_0 
+    where
+        m1_0.status=? 
+        and coalesce(m1_0.current_highest_bid, m1_0.starting_price) between ? and ?
+Hibernate: 
+    select
+        count(m1_0.music_uuid) 
+    from
+        music m1_0 
+    where
+        m1_0.status=? 
+        and coalesce(m1_0.current_highest_bid, m1_0.starting_price) between ? and ?
+2026-08-23T15:05:40.380+09:00 DEBUG 4408 --- [notenest-backend] [nio-8086-exec-3] org.hibernate.SQL                        : 
+    select
+        count(l1_0.like_uuid) 
+    from
+        likes l1_0 
+    where
+        l1_0.user_uuid=? 
+        and l1_0.music_uuid=?
+Hibernate: 
+    select
+        count(l1_0.like_uuid) 
+    from
+        likes l1_0 
+    where
+        l1_0.user_uuid=? 
+        and l1_0.music_uuid=?
+2026-08-23T15:05:40.382+09:00 DEBUG 4408 --- [notenest-backend] [nio-8086-exec-3] org.hibernate.SQL                        : 
+    select
+        u1_0.user_uuid,
+        u1_0.agreement,
+        u1_0.email,
+        u1_0.email_verified,
+        u1_0.name,
+        u1_0.nickname,
+        u1_0.password,
+        u1_0.phone_no,
+        u1_0.role 
+    from
+        user u1_0 
+    where
+        u1_0.user_uuid=?
+Hibernate: 
+    select
+        u1_0.user_uuid,
+        u1_0.agreement,
+        u1_0.email,
+        u1_0.email_verified,
+        u1_0.name,
+        u1_0.nickname,
+        u1_0.password,
+        u1_0.phone_no,
+        u1_0.role 
+    from
+        user u1_0 
+    where
+        u1_0.user_uuid=?
+2026-08-23T15:05:40.383+09:00 DEBUG 4408 --- [notenest-backend] [nio-8086-exec-3] org.hibernate.SQL                        : 
+    select
+        count(l1_0.like_uuid) 
+    from
+        likes l1_0 
+    where
+        l1_0.user_uuid=? 
+        and l1_0.music_uuid=?
+Hibernate: 
+    select
+        count(l1_0.like_uuid) 
+    from
+        likes l1_0 
+    where
+        l1_0.user_uuid=? 
+        and l1_0.music_uuid=?
+2026-08-23T15:05:40.385+09:00 DEBUG 4408 --- [notenest-backend] [nio-8086-exec-3] org.hibernate.SQL                        : 
+    select
+        count(l1_0.like_uuid) 
+    from
+        likes l1_0 
+    where
+        l1_0.user_uuid=? 
+        and l1_0.music_uuid=?
+Hibernate: 
+    select
+        count(l1_0.like_uuid) 
+    from
+        likes l1_0 
+    where
+        l1_0.user_uuid=? 
+        and l1_0.music_uuid=?
+2026-08-23T15:05:40.386+09:00 DEBUG 4408 --- [notenest-backend] [nio-8086-exec-3] org.hibernate.SQL                        : 
+    select
+        count(l1_0.like_uuid) 
+    from
+        likes l1_0 
+    where
+        l1_0.user_uuid=? 
+        and l1_0.music_uuid=?
+Hibernate: 
+    select
+        count(l1_0.like_uuid) 
+    from
+        likes l1_0 
+    where
+        l1_0.user_uuid=? 
+        and l1_0.music_uuid=?
+2026-08-23T15:05:40.387+09:00 DEBUG 4408 --- [notenest-backend] [nio-8086-exec-3] org.hibernate.SQL                        : 
+    select
+        count(l1_0.like_uuid) 
+    from
+        likes l1_0 
+    where
+        l1_0.user_uuid=? 
+        and l1_0.music_uuid=?
+Hibernate: 
+    select
+        count(l1_0.like_uuid) 
+    from
+        likes l1_0 
+    where
+        l1_0.user_uuid=? 
+        and l1_0.music_uuid=?
+2026-08-23T15:05:40.388+09:00 DEBUG 4408 --- [notenest-backend] [nio-8086-exec-3] org.hibernate.SQL                        : 
+    select
+        count(l1_0.like_uuid) 
+    from
+        likes l1_0 
+    where
+        l1_0.user_uuid=? 
+        and l1_0.music_uuid=?
+Hibernate: 
+    select
+        count(l1_0.like_uuid) 
+    from
+        likes l1_0 
+    where
+        l1_0.user_uuid=? 
+        and l1_0.music_uuid=?
+2026-08-23T15:05:40.389+09:00 DEBUG 4408 --- [notenest-backend] [nio-8086-exec-3] org.hibernate.SQL                        : 
+    select
+        count(l1_0.like_uuid) 
+    from
+        likes l1_0 
+    where
+        l1_0.user_uuid=? 
+        and l1_0.music_uuid=?
+Hibernate: 
+    select
+        count(l1_0.like_uuid) 
+    from
+        likes l1_0 
+    where
+        l1_0.user_uuid=? 
+        and l1_0.music_uuid=?
+2026-08-23T15:05:40.390+09:00 DEBUG 4408 --- [notenest-backend] [nio-8086-exec-3] org.hibernate.SQL                        : 
+    select
+        count(l1_0.like_uuid) 
+    from
+        likes l1_0 
+    where
+        l1_0.user_uuid=? 
+        and l1_0.music_uuid=?
+Hibernate: 
+    select
+        count(l1_0.like_uuid) 
+    from
+        likes l1_0 
+    where
+        l1_0.user_uuid=? 
+        and l1_0.music_uuid=?
+2026-08-23T15:05:40.391+09:00 DEBUG 4408 --- [notenest-backend] [nio-8086-exec-3] org.hibernate.SQL                        : 
+    select
+        count(l1_0.like_uuid) 
+    from
+        likes l1_0 
+    where
+        l1_0.user_uuid=? 
+        and l1_0.music_uuid=?
+Hibernate: 
+    select
+        count(l1_0.like_uuid) 
+    from
+        likes l1_0 
+    where
+        l1_0.user_uuid=? 
+        and l1_0.music_uuid=?
+2026-08-23T15:05:40.392+09:00 DEBUG 4408 --- [notenest-backend] [nio-8086-exec-3] org.hibernate.SQL                        : 
+    select
+        count(l1_0.like_uuid) 
+    from
+        likes l1_0 
+    where
+        l1_0.user_uuid=? 
+        and l1_0.music_uuid=?
+Hibernate: 
+    select
+        count(l1_0.like_uuid) 
+    from
+        likes l1_0 
+    where
+        l1_0.user_uuid=? 
+        and l1_0.music_uuid=?
+2026-08-23T15:05:40.432+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+Hibernate: 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+2026-08-23T15:05:40.434+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+Hibernate: 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+2026-08-23T15:05:40.513+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+Hibernate: 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+2026-08-23T15:05:40.515+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+Hibernate: 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+2026-08-23T15:05:40.548+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+Hibernate: 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+2026-08-23T15:05:40.550+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+Hibernate: 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+2026-08-23T15:05:40.633+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+Hibernate: 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+2026-08-23T15:05:40.640+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        p1_0.payment_uuid,
+        p1_0.bid_uuid,
+        p1_0.created_at,
+        p1_0.imp_uid,
+        p1_0.price,
+        p1_0.status 
+    from
+        payment p1_0 
+    where
+        p1_0.bid_uuid=?
+Hibernate: 
+    select
+        p1_0.payment_uuid,
+        p1_0.bid_uuid,
+        p1_0.created_at,
+        p1_0.imp_uid,
+        p1_0.price,
+        p1_0.status 
+    from
+        payment p1_0 
+    where
+        p1_0.bid_uuid=?
+2026-08-23T15:05:40.641+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+Hibernate: 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+2026-08-23T15:05:40.716+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+Hibernate: 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+2026-08-23T15:05:40.722+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        p1_0.payment_uuid,
+        p1_0.bid_uuid,
+        p1_0.created_at,
+        p1_0.imp_uid,
+        p1_0.price,
+        p1_0.status 
+    from
+        payment p1_0 
+    where
+        p1_0.bid_uuid=?
+Hibernate: 
+    select
+        p1_0.payment_uuid,
+        p1_0.bid_uuid,
+        p1_0.created_at,
+        p1_0.imp_uid,
+        p1_0.price,
+        p1_0.status 
+    from
+        payment p1_0 
+    where
+        p1_0.bid_uuid=?
+2026-08-23T15:05:40.723+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+Hibernate: 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+2026-08-23T15:05:40.796+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+Hibernate: 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+2026-08-23T15:05:40.804+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        p1_0.payment_uuid,
+        p1_0.bid_uuid,
+        p1_0.created_at,
+        p1_0.imp_uid,
+        p1_0.price,
+        p1_0.status 
+    from
+        payment p1_0 
+    where
+        p1_0.bid_uuid=?
+Hibernate: 
+    select
+        p1_0.payment_uuid,
+        p1_0.bid_uuid,
+        p1_0.created_at,
+        p1_0.imp_uid,
+        p1_0.price,
+        p1_0.status 
+    from
+        payment p1_0 
+    where
+        p1_0.bid_uuid=?
+2026-08-23T15:05:40.806+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+Hibernate: 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+2026-08-23T15:05:40.834+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+Hibernate: 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+2026-08-23T15:05:40.845+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        p1_0.payment_uuid,
+        p1_0.bid_uuid,
+        p1_0.created_at,
+        p1_0.imp_uid,
+        p1_0.price,
+        p1_0.status 
+    from
+        payment p1_0 
+    where
+        p1_0.bid_uuid=?
+Hibernate: 
+    select
+        p1_0.payment_uuid,
+        p1_0.bid_uuid,
+        p1_0.created_at,
+        p1_0.imp_uid,
+        p1_0.price,
+        p1_0.status 
+    from
+        payment p1_0 
+    where
+        p1_0.bid_uuid=?
+2026-08-23T15:05:40.847+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+Hibernate: 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+2026-08-23T15:05:40.917+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+Hibernate: 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+2026-08-23T15:05:40.925+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        p1_0.payment_uuid,
+        p1_0.bid_uuid,
+        p1_0.created_at,
+        p1_0.imp_uid,
+        p1_0.price,
+        p1_0.status 
+    from
+        payment p1_0 
+    where
+        p1_0.bid_uuid=?
+Hibernate: 
+    select
+        p1_0.payment_uuid,
+        p1_0.bid_uuid,
+        p1_0.created_at,
+        p1_0.imp_uid,
+        p1_0.price,
+        p1_0.status 
+    from
+        payment p1_0 
+    where
+        p1_0.bid_uuid=?
+2026-08-23T15:05:40.927+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+Hibernate: 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+2026-08-23T15:05:40.998+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+Hibernate: 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+2026-08-23T15:05:41.006+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        p1_0.payment_uuid,
+        p1_0.bid_uuid,
+        p1_0.created_at,
+        p1_0.imp_uid,
+        p1_0.price,
+        p1_0.status 
+    from
+        payment p1_0 
+    where
+        p1_0.bid_uuid=?
+Hibernate: 
+    select
+        p1_0.payment_uuid,
+        p1_0.bid_uuid,
+        p1_0.created_at,
+        p1_0.imp_uid,
+        p1_0.price,
+        p1_0.status 
+    from
+        payment p1_0 
+    where
+        p1_0.bid_uuid=?
+2026-08-23T15:05:41.008+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+Hibernate: 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+2026-08-23T15:05:41.078+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+Hibernate: 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+2026-08-23T15:05:41.086+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        p1_0.payment_uuid,
+        p1_0.bid_uuid,
+        p1_0.created_at,
+        p1_0.imp_uid,
+        p1_0.price,
+        p1_0.status 
+    from
+        payment p1_0 
+    where
+        p1_0.bid_uuid=?
+Hibernate: 
+    select
+        p1_0.payment_uuid,
+        p1_0.bid_uuid,
+        p1_0.created_at,
+        p1_0.imp_uid,
+        p1_0.price,
+        p1_0.status 
+    from
+        payment p1_0 
+    where
+        p1_0.bid_uuid=?
+2026-08-23T15:05:41.087+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+Hibernate: 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+2026-08-23T15:05:41.117+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+Hibernate: 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+2026-08-23T15:05:41.127+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        p1_0.payment_uuid,
+        p1_0.bid_uuid,
+        p1_0.created_at,
+        p1_0.imp_uid,
+        p1_0.price,
+        p1_0.status 
+    from
+        payment p1_0 
+    where
+        p1_0.bid_uuid=?
+Hibernate: 
+    select
+        p1_0.payment_uuid,
+        p1_0.bid_uuid,
+        p1_0.created_at,
+        p1_0.imp_uid,
+        p1_0.price,
+        p1_0.status 
+    from
+        payment p1_0 
+    where
+        p1_0.bid_uuid=?
+2026-08-23T15:05:41.129+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+Hibernate: 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+2026-08-23T15:05:41.196+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+Hibernate: 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+2026-08-23T15:05:41.198+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+Hibernate: 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+2026-08-23T15:05:41.284+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+Hibernate: 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+2026-08-23T15:05:41.289+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+Hibernate: 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+2026-08-23T15:05:41.359+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+Hibernate: 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+2026-08-23T15:05:41.361+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+Hibernate: 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+2026-08-23T15:05:41.396+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+Hibernate: 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+2026-08-23T15:05:41.398+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+Hibernate: 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+2026-08-23T15:05:41.479+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+Hibernate: 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+2026-08-23T15:05:41.489+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        p1_0.payment_uuid,
+        p1_0.bid_uuid,
+        p1_0.created_at,
+        p1_0.imp_uid,
+        p1_0.price,
+        p1_0.status 
+    from
+        payment p1_0 
+    where
+        p1_0.bid_uuid=?
+Hibernate: 
+    select
+        p1_0.payment_uuid,
+        p1_0.bid_uuid,
+        p1_0.created_at,
+        p1_0.imp_uid,
+        p1_0.price,
+        p1_0.status 
+    from
+        payment p1_0 
+    where
+        p1_0.bid_uuid=?
+2026-08-23T15:05:41.491+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+Hibernate: 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+2026-08-23T15:05:41.571+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+Hibernate: 
+    select
+        b1_0.bid_uuid,
+        b1_0.bidder_email_sent,
+        b1_0.composer_email_sent,
+        b1_0.created_at,
+        b1_0.imp_uid,
+        b1_0.music_uuid,
+        b1_0.price,
+        b1_0.status,
+        b1_0.user_uuid 
+    from
+        bid b1_0 
+    where
+        b1_0.music_uuid=? 
+    order by
+        b1_0.price desc,
+        b1_0.created_at
+2026-08-23T15:05:41.582+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        p1_0.payment_uuid,
+        p1_0.bid_uuid,
+        p1_0.created_at,
+        p1_0.imp_uid,
+        p1_0.price,
+        p1_0.status 
+    from
+        payment p1_0 
+    where
+        p1_0.bid_uuid=?
+Hibernate: 
+    select
+        p1_0.payment_uuid,
+        p1_0.bid_uuid,
+        p1_0.created_at,
+        p1_0.imp_uid,
+        p1_0.price,
+        p1_0.status 
+    from
+        payment p1_0 
+    where
+        p1_0.bid_uuid=?
+2026-08-23T15:05:41.584+09:00 DEBUG 4408 --- [notenest-backend] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?
+Hibernate: 
+    select
+        m1_0.music_uuid,
+        m1_0.auction_end_time,
+        m1_0.auction_failure_email_sent,
+        m1_0.audio,
+        m1_0.created_at,
+        m1_0.current_highest_bid,
+        m1_0.details,
+        m1_0.hashtag,
+        m1_0.hit_song_composer,
+        m1_0.image,
+        m1_0.like_count,
+        m1_0.major_genre,
+        m1_0.music_period,
+        m1_0.popular_composer,
+        m1_0.show_all_bids,
+        m1_0.starting_price,
+        m1_0.status,
+        m1_0.steady_work_composer,
+        m1_0.subtitle,
+        m1_0.title,
+        m1_0.user_uuid 
+    from
+        music m1_0 
+    where
+        m1_0.music_uuid=?

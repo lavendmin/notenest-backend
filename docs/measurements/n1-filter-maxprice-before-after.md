@@ -15,6 +15,7 @@
 | 부하 | k6 10 VU × 30s, `scripts/k6/list-api-perf-maxprice.js`, 콜드 1회 버리고 웜 2회차 채택 |
 | 환경 | 로컬 Windows 11, Docker MariaDB 10.11 (3311), Spring Boot 3.2.5 bootRun(8086), 스케줄러 동시 가동 |
 | SQL 집계 | `org.hibernate.SQL` DEBUG 로그의 http-nio 스레드 라인 수 (단독 요청 1건) |
+| **측정 방식** | **before/after 백투백** — 같은 머신 상태에서 재시드 후 옛 코드(`ada5174`) 측정 → 새 코드(`ec71b50`) 측정. 머신 상태 드리프트 confound 제거. |
 
 ### maxPrice=1000 → 100000 변경 사유
 플랜 원 요청은 `maxPrice=1000`이었으나, 현재 시드 곡 가격이 11,000~15,000원이라
@@ -22,28 +23,35 @@
 시드 가격대를 포함하는 `maxPrice=100000`으로 측정하며 before/after 동일 요청을 유지한다.
 (소민님 확인, 2026-08-23)
 
-## 표 A — maxPrice 필터 경로 before/after
+## 표 A — maxPrice 필터 경로 before/after (백투백, 2026-08-23)
 
-| 측정 항목 | **before** (2026-08-23) | after |
-|---|---|---|
-| p(90) / p(95) | **2.71s / 2.75s** | _(미측정)_ |
-| avg / med | 2.46s / 2.56s | _(미측정)_ |
-| 처리량 | **3.82 req/s** (122 req / 30s) | _(미측정)_ |
-| 30초 총 수신량 | **5.6 GB — 요청당 약 46 MB** | _(미측정)_ |
-| 요청당 SQL | **14개** (유저 1 + 필터 1 + count 1 + 좋아요 카운트 × 10 = N+1) | _(미측정)_ |
-| 실제 SELECT 열 | **`m1_0.audio`, `m1_0.image` 포함** (LOB를 SELECT 절에서 읽음) | _(미측정)_ |
-| 단독 요청 (부하 없이 1건) | 0.79s | _(미측정)_ |
+| 측정 항목 | **before** (`ada5174`, Specification+findAll) | **after** (`ec71b50`, QueryDSL 프로젝션+IN) | 개선 |
+|---|---|---|---|
+| p(90) / p(95) | 2.65s / 2.70s | **0.17s / 0.19s** | **약 15.6배** |
+| avg | 2.38s | **0.13s** | — |
+| 처리량 | 3.96 req/s (125 req/30s) | **42.87 req/s** (1297 req/30s) | **약 10.8배** |
+| 요청당 크기 | 약 46 MB | **약 4.1 MB** | **약 11.2배 감소** |
+| 요청당 SQL | 14개 (유저1+필터1+count1+좋아요×10 N+1) | **4개** (유저1+프로젝션1+count1+좋아요 IN 1) | 14→4 |
+| 실제 SELECT 열 | `m1_0.audio`·`m1_0.image` 포함 (audio 54회) | **audio 0회**, 커버 image만 | LOB 음원 제거 |
+| 단독 요청 (부하 없이 1건) | 0.91s | **0.25s** | — |
+| 실패율 | 0% | 0% | — |
 
-### before 원시 증거
-- k6 웜 요약: [`raw/before-maxprice-k6-warm-summary.txt`](raw/before-maxprice-k6-warm-summary.txt)
-- 단독 요청 Hibernate SQL 로그(SELECT에 audio/image 포함 증거): [`raw/before-maxprice-single-request-hibernate-sql.txt`](raw/before-maxprice-single-request-hibernate-sql.txt)
-- 46MB 응답 프리뷰: [`raw/before-maxprice-single-response-preview.json`](raw/before-maxprice-single-response-preview.json)
+**핵심**: 커버 이미지는 before/after 양쪽 모두 포함(기능 동등성 보존). 개선은 순수하게
+**음원 LOB를 SELECT에서 제거 + 좋아요 N+1 제거**에서 나온다.
+
+### 원시 증거 (raw/)
+- before k6 웜: [`raw/backtoback-before-k6-warm.txt`](raw/backtoback-before-k6-warm.txt) · before SQL(audio 포함): [`raw/backtoback-before-single-hibernate-sql.txt`](raw/backtoback-before-single-hibernate-sql.txt)
+- after k6 웜: [`raw/backtoback-after-k6-warm.txt`](raw/backtoback-after-k6-warm.txt) · after SQL(audio 0): [`raw/backtoback-after-single-hibernate-sql.txt`](raw/backtoback-after-single-hibernate-sql.txt) · after 응답 프리뷰: [`raw/backtoback-after-single-response-preview.json`](raw/backtoback-after-single-response-preview.json)
+- 교차검증(게이트 최초 before, 백투백과 거의 동일 → baseline 안정성 확인): p90 2.71s / 3.82 req/s — [`raw/before-maxprice-k6-warm-summary.txt`](raw/before-maxprice-k6-warm-summary.txt)
 
 ### 해석
-목록 10건에 audio·image 바이너리가 통째로 실려 요청당 ~46MB. SELECT 절에 실제
-`m1_0.audio`가 찍혀 LOB를 DB에서 읽는 것이 로그로 증명됨(JSON 필드 제거만으로 주장하지 않음).
-좋아요 카운트 10회(페이지 크기=10)로 N+1도 확인. 개선 목표: audio를 SELECT/응답에서 제거,
-좋아요 조회를 IN 1회로 → 요청당 SQL 14 → 목표 3~4, 응답 크기 대폭 감소.
+before: 목록 10건에 audio·image 바이너리가 통째로 실려 요청당 ~46MB, SELECT 절에 실제
+`m1_0.audio`가 54회 찍힘(LOB를 DB에서 읽는 증거). 좋아요 카운트 10회로 N+1 확인.
+after: QueryDSL DTO 프로젝션으로 audio를 SELECT에서 제외(0회)하고 커버 image만 유지,
+좋아요는 IN 1회. 요청당 SQL 14→4, 크기 46MB→4.1MB, p90 2.65s→0.17s.
+
+**정직 규율**: QueryDSL 자체가 성능을 올린 것이 아니다(생성 SQL 동일). 개선은 프로젝션(음원 제외)과
+N+1 제거에서 나왔다. 무필터 1차 진단의 91MB→5.3KB(커버까지 제거)와 직접 비교하지 않는다.
 
 ## 표 B — 무필터 1차 진단 (참고, 섞지 말 것)
 `docs/measurements/phase1-before.md` 참조. size=20, 요청당 91MB, 요청당 SQL 24.
