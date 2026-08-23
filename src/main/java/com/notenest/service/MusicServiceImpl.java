@@ -7,6 +7,7 @@ import com.notenest.dto.BidListDTO;
 import com.notenest.dto.CreateMusicDTO;
 import com.notenest.dto.MusicDTO;
 import com.notenest.dto.MusicDetailDTO;
+import com.notenest.dto.MusicSummaryDTO;
 import com.notenest.dto.UpdateMusicDTO;
 import com.notenest.repository.LikeRepository;
 import com.notenest.repository.MusicRepository;
@@ -183,23 +184,13 @@ public class MusicServiceImpl implements MusicService {
 
     //최신 순으로 정렬
     @Override
-    public Page<MusicDTO> getAllMusicByLatest(Pageable pageable, String loggedInUserEmail) {
-        // 사용자 정보 가져오기
-        User user = userRepository.findByEmail(loggedInUserEmail);
-        if (user == null) {
-            throw new IllegalArgumentException("로그인 후 이용 가능합니다.");
-        }
-
-        // [Phase 1] 엔티티(Lob 포함) 대신 DTO 프로젝션으로 목록에 필요한 컬럼만 조회.
-        // 좋아요 여부 조회(곡당 1쿼리)의 N+1은 세션 3에서 IN 배치 조회로 제거 예정.
-        Page<MusicDTO> musicDTOPage = musicRepository.findOngoingMusicSummariesByCreatedAtDesc(pageable);
-        musicDTOPage.forEach(dto -> dto.setLikedByUser(
-                likeRepository.countByUserIdAndMusicId(user.getUserUUID(), dto.getMusicUuid()) > 0));
-        return musicDTOPage;
+    public Page<MusicSummaryDTO> getAllMusicByLatest(Pageable pageable, String loggedInUserEmail) {
+        // 무필터 최신순도 필터 경로와 같은 목록 DTO 프로젝션(QueryDSL)을 사용해 조회 전략을 통일한다.
+        return getAllMusicByFilters(null, null, null, null, pageable, "latest", loggedInUserEmail, null);
     }
 
     @Override
-    public Page<MusicDTO> getAllMusicByFilters(
+    public Page<MusicSummaryDTO> getAllMusicByFilters(
             String majorGenre, String hashtags, Double minPrice, Double maxPrice,
             Pageable pageable, String sortBy, String loggedInUserEmail, String searchTerm) {
 
@@ -209,78 +200,15 @@ public class MusicServiceImpl implements MusicService {
             throw new IllegalArgumentException("로그인 후 이용 가능합니다.");
         }
 
-        // 검색 조건 및 필터링 추가
-        Specification<Music> spec = Specification.where((root, query, cb) -> {
-            Predicate statusPredicate = cb.equal(root.get("status"), 0); // status가 0인 음악만 검색
-            List<Predicate> predicates = new ArrayList<>();
-            predicates.add(statusPredicate);
+        // QueryDSL DTO 프로젝션 — 엔티티(LOB) 대신 목록에 필요한 컬럼만 SELECT (audio 제외, image 포함).
+        Page<MusicSummaryDTO> page = musicRepository.searchSummaries(
+                majorGenre, hashtags, minPrice, maxPrice, searchTerm, sortBy, pageable);
 
-            if (StringUtils.isNotBlank(searchTerm)) {
-                String searchPattern = "%" + searchTerm.trim() + "%";
-                // 조인을 통해 User 엔티티와 연결
-                Join<Music, User> userJoin = root.join("user", JoinType.LEFT);
+        // 좋아요 여부 — 곡당 1쿼리(N+1). 4단계에서 페이지 UUID IN 배치 조회로 대체 예정.
+        page.forEach(dto -> dto.setLikedByUser(
+                likeRepository.countByUserIdAndMusicId(user.getUserUUID(), dto.getMusicUuid()) > 0));
 
-                predicates.add(cb.or(
-                        cb.like(root.get("title"), searchPattern),
-                        cb.like(root.get("subtitle"), searchPattern),
-                        cb.like(root.get("majorGenre"), searchPattern),
-                        cb.like(root.get("hashtag"), searchPattern),
-                        cb.like(userJoin.get("nickname"), searchPattern)
-                ));
-            }
-
-            // 장르에 따라 필터링 추가
-            if (majorGenre != null && !majorGenre.isEmpty()) {
-                predicates.add(cb.equal(root.get("majorGenre"), majorGenre));
-            }
-
-            return cb.and(predicates.toArray(new Predicate[0]));
-        });
-
-        // 해시태그에 따라 필터링 추가
-        if (hashtags != null && !hashtags.isEmpty()) {
-            String[] hashtagArray = hashtags.split(",");
-            for (String hashtag : hashtagArray) {
-                spec = spec.and((root, query, cb) -> cb.like(root.get("hashtag"), "%" + hashtag.trim() + "%"));
-            }
-        }
-
-        // 가격 범위에 따라 필터링 추가 (currentHighestBid가 null일 경우 startingPrice 사용)
-        if (minPrice != null && maxPrice != null) {
-            spec = spec.and((root, query, cb) -> cb.between(cb.coalesce(root.get("currentHighestBid"), root.get("startingPrice")), minPrice, maxPrice));
-        } else if (minPrice != null) {
-            spec = spec.and((root, query, cb) -> cb.greaterThanOrEqualTo(cb.coalesce(root.get("currentHighestBid"), root.get("startingPrice")), minPrice));
-        } else if (maxPrice != null) {
-            spec = spec.and((root, query, cb) -> cb.lessThanOrEqualTo(cb.coalesce(root.get("currentHighestBid"), root.get("startingPrice")), maxPrice));
-        }
-
-        // 정렬 조건 추가
-        Sort sort = Sort.by(Sort.Direction.DESC, "createdAt"); // 기본 정렬은 최신 순으로
-
-        if ("price".equals(sortBy)) {
-            sort = Sort.by(Sort.Order.desc("currentHighestBid").nullsLast())
-                    .and(Sort.by(Sort.Order.desc("startingPrice")));
-        } else if ("like".equals(sortBy)) {
-            sort = Sort.by(Sort.Direction.DESC, "likeCount");
-        }
-
-        Pageable sortedPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
-
-
-        // 해당 조건에 맞는 음악 목록 가져오기
-        Page<Music> musicPage = musicRepository.findAll(spec, sortedPageable);
-
-        // MusicDTO 리스트 초기화
-        List<MusicDTO> musicDTOList = new ArrayList<>();
-
-        for (Music music : musicPage.getContent()) {
-            // 좋아요 여부 확인
-            boolean likedByUser = likeRepository.countByUserIdAndMusicId(user.getUserUUID(), music.getMusicUuid()) > 0;
-            musicDTOList.add(MusicDTO.fromMusic(music, likedByUser));
-        }
-
-        // MusicDTO 리스트와 페이지 정보를 사용하여 새로운 페이지 생성 및 반환
-        return new PageImpl<>(musicDTOList, sortedPageable, musicPage.getTotalElements());
+        return page;
     }
 
 

@@ -4,6 +4,7 @@ import com.notenest.domain.Music;
 import com.notenest.dto.CreateMusicDTO;
 import com.notenest.dto.MusicDTO;
 import com.notenest.dto.MusicDetailDTO;
+import com.notenest.dto.MusicSummaryDTO;
 import com.notenest.dto.UpdateMusicDTO;
 import com.notenest.service.LikeMusicService;
 import com.notenest.service.MusicService;
@@ -105,7 +106,7 @@ public class MusicController {
     }
 
     @GetMapping("/filter")
-    public ResponseEntity<Page<MusicDTO>> getAllMusic(
+    public ResponseEntity<Page<MusicSummaryDTO>> getAllMusic(
             @RequestParam(required = false) String majorGenre,
             @RequestParam(required = false) String hashtag,
             @RequestParam(required = false) Double minPrice,
@@ -119,7 +120,7 @@ public class MusicController {
             String loggedInUserEmail = (authentication != null && authentication.isAuthenticated()) ? authentication.getName() : null;
 
             Pageable pageable = PageRequest.of(page, size);
-            Page<MusicDTO> musicDTOPage;
+            Page<MusicSummaryDTO> musicDTOPage;
 
             // 필터링 조건이 있거나 검색어가 있는 경우
             if ((majorGenre != null && !majorGenre.isEmpty()) ||

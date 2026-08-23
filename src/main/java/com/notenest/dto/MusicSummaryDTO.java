@@ -1,0 +1,46 @@
+package com.notenest.dto;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+/**
+ * 공개 경매 곡 목록 전용 DTO.
+ *
+ * 상세/다운로드 DTO와 분리하며 <b>audio(음원) 필드를 두지 않는다</b> — 목록 조회가
+ * 음원 LOB 를 절대 실어 나르지 않도록 타입 수준에서 차단한다. 커버 이미지(image)는
+ * 목록 계약에 필요하므로 포함한다.
+ *
+ * JSON 필드명은 기존 MusicDTO 와 동일하게 유지해 응답 계약을 보존한다.
+ * likedByUser 는 프로젝션 이후 좋아요 IN 조회 결과로 채운다.
+ */
+@Getter
+@Setter
+@NoArgsConstructor
+public class MusicSummaryDTO {
+    private UUID musicUuid;
+    private String title;
+    private Double startingPrice;
+    private String userNickName;
+    private Double currentHighestBid;
+    private LocalDateTime auctionEndTime;
+    private int likeCount;
+    private byte[] image;
+    private boolean likedByUser;
+
+    // QueryDSL Projections.constructor 대상 — SELECT 절에 audio 는 포함하지 않는다.
+    public MusicSummaryDTO(UUID musicUuid, String title, Double startingPrice, String userNickName,
+                           Double currentHighestBid, LocalDateTime auctionEndTime, int likeCount, byte[] image) {
+        this.musicUuid = musicUuid;
+        this.title = title;
+        this.startingPrice = startingPrice;
+        this.userNickName = userNickName;
+        this.currentHighestBid = currentHighestBid;
+        this.auctionEndTime = auctionEndTime;
+        this.likeCount = likeCount;
+        this.image = image;
+    }
+}

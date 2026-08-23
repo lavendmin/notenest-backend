@@ -11,7 +11,6 @@ import com.notenest.repository.MusicRepository;
 import org.slf4j.LoggerFactory;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -163,8 +162,7 @@ class MusicFilterContractTest {
     //    빌드를 초록으로 유지하기 위해 @Disabled. 3단계 구현 커밋에서 활성화한다.
 
     @Test
-    @Disabled("필터 경로 DTO 프로젝션 후 활성화 — audio 는 목록 JSON 에 없어야 한다")
-    @DisplayName("[목표] 모든 정렬/필터 분기 JSON 응답에 audio 필드가 없다")
+    @DisplayName("모든 정렬/필터 분기 JSON 응답에 audio 필드가 없다")
     void audioAbsentInJson() throws Exception {
         for (String sort : List.of("latest", "price", "like")) {
             JsonNode content = getFilter(sort).path("content");
@@ -175,8 +173,7 @@ class MusicFilterContractTest {
     }
 
     @Test
-    @Disabled("필터 경로 DTO 프로젝션 후 활성화 — 실제 SQL SELECT 절에 audio 컬럼이 없어야 한다")
-    @DisplayName("[목표] maxPrice 필터 요청의 Hibernate SELECT 절에 audio 컬럼이 없다")
+    @DisplayName("maxPrice 필터 요청의 Hibernate SELECT 절에 audio 컬럼이 없다")
     void audioAbsentInSqlSelect() throws Exception {
         Logger sqlLogger = (Logger) LoggerFactory.getLogger("org.hibernate.SQL");
         Level previous = sqlLogger.getLevel();
