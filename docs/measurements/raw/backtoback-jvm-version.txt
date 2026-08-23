@@ -1,0 +1,5 @@
+# before/after 백투백 측정 시 bootRun 시작 로그 — JVM 버전 증거 (Java 21.0.12)
+# before-code app (ada5174):
+2026-08-23T15:02:15.308+09:00  INFO 4408 --- [notenest-backend] [           main] com.notenest.NoteNestApplication         : Starting NoteNestApplication using Java 21.0.12 with PID 4408 (C:\MyProjects\NOTENEST\N1\build\classes\java\main started by SSAFY in C:\MyProjects\NOTENEST\N1)
+# after-code app (ec71b50 계열):
+2026-08-23T15:08:16.431+09:00  INFO 39368 --- [notenest-backend] [           main] com.notenest.NoteNestApplication         : Starting NoteNestApplication using Java 21.0.12 with PID 39368 (C:\MyProjects\NOTENEST\N1\build\classes\java\main started by SSAFY in C:\MyProjects\NOTENEST\N1)

@@ -160,6 +160,31 @@ class MusicFilterContractTest {
         return bid.isNumber() ? bid.asDouble() : el.path("startingPrice").asDouble();
     }
 
+    // 가격 정렬 계약(실제 코드와 동일): currentHighestBid DESC(null 마지막) → startingPrice DESC.
+    // coalesce 기준이 아니라 "최고입찰가 우선, null 은 무조건 뒤" 임에 주의.
+    private static void assertPriceOrderInvariant(JsonNode content) {
+        boolean seenNull = false;
+        Double prevBid = null, prevStart = null;
+        for (JsonNode el : content) {
+            JsonNode bidNode = el.path("currentHighestBid");
+            double start = el.path("startingPrice").asDouble();
+            if (!bidNode.isNumber()) { // null 최고입찰가 구간(맨 뒤). 그 안에서 startingPrice DESC.
+                if (seenNull && prevStart != null) {
+                    assertThat(start).as("null 최고가 구간 startingPrice 내림차순").isLessThanOrEqualTo(prevStart);
+                }
+                seenNull = true; prevBid = null; prevStart = start;
+                continue;
+            }
+            assertThat(seenNull).as("null 최고입찰가 뒤에 non-null 이 오면 안 됨(nulls last)").isFalse();
+            double bid = bidNode.asDouble();
+            if (prevBid != null) {
+                assertThat(bid).as("currentHighestBid 내림차순").isLessThanOrEqualTo(prevBid);
+                if (bid == prevBid) assertThat(start).as("최고가 동가면 startingPrice 내림차순").isLessThanOrEqualTo(prevStart);
+            }
+            prevBid = bid; prevStart = start;
+        }
+    }
+
     // org.hibernate.SQL 로그를 캡처해 likes 테이블을 조회하는 SQL 문 수를 센다.
     private long countLikesQueries(int size) throws Exception {
         Logger sqlLogger = (Logger) LoggerFactory.getLogger("org.hibernate.SQL");
@@ -233,21 +258,34 @@ class MusicFilterContractTest {
         JsonNode content = getFilterWith(Map.of("sortBy", "price", "size", "100",
                 "maxPrice", String.valueOf(MAX_PRICE), "minPrice", "0")).path("content");
         assertThat(content.size()).isEqualTo((int) referenceOngoingCount);
+        content.forEach(el -> assertThat(el.hasNonNull("image")).as("가격순 커버 포함").isTrue());
+        assertPriceOrderInvariant(content);
+    }
 
-        boolean seenNull = false;
-        Double prevBid = null, prevStart = null;
-        for (JsonNode el : content) {
-            JsonNode bidNode = el.path("currentHighestBid");
-            assertThat(el.hasNonNull("image")).as("가격순 커버 포함").isTrue();
-            if (!bidNode.isNumber()) { seenNull = true; continue; }
-            assertThat(seenNull).as("null 최고입찰가 뒤에 non-null 이 오면 안 됨").isFalse();
-            double bid = bidNode.asDouble(), start = el.path("startingPrice").asDouble();
-            if (prevBid != null) {
-                assertThat(bid).as("currentHighestBid 내림차순").isLessThanOrEqualTo(prevBid);
-                if (bid == prevBid) assertThat(start).as("동가면 startingPrice 내림차순").isLessThanOrEqualTo(prevStart);
-            }
-            prevBid = bid; prevStart = start;
-        }
+    @Test
+    @Transactional // 시드는 시작가가 전부 10,000원이라 tie-break(시작가 DESC)를 검증할 수 없다 → 전용 픽스처를 만들고 롤백한다.
+    @DisplayName("가격순 정렬: 최고가 동가 시 시작가 DESC, null 최고가는 시작가 DESC로 맨 뒤 — 예상 UUID 순서")
+    void priceSort_tieBreakAndNullsLast_withFixture() throws Exception {
+        List<Music> ongoing = loadOngoingEntities();
+        Assumptions.assumeTrue(ongoing.size() >= 4, "픽스처에 진행중 곡 4개 이상 필요");
+        // b,a: 최고가 90000 동가 → 시작가로 b(20000) > a(10000).  c,d: 최고가 null → 시작가로 c(31000) > d(29000).
+        Music b = ongoing.get(0), a = ongoing.get(1), c = ongoing.get(2), d = ongoing.get(3);
+        b.setCurrentHighestBid(90000.0); b.setStartingPrice(20000.0);
+        a.setCurrentHighestBid(90000.0); a.setStartingPrice(10000.0);
+        c.setCurrentHighestBid(null);    c.setStartingPrice(31000.0);
+        d.setCurrentHighestBid(null);    d.setStartingPrice(29000.0);
+        musicRepository.saveAll(List.of(b, a, c, d));
+        entityManager.flush();
+
+        JsonNode content = getFilterWith(Map.of("sortBy", "price", "size", ALL, "maxPrice", "100000", "minPrice", "0")).path("content");
+        assertPriceOrderInvariant(content); // 전체 불변식
+        List<UUID> order = content.findValues("musicUuid").stream().map(n -> UUID.fromString(n.asText())).collect(Collectors.toList());
+
+        // 최고가 90000 은 다른 곡(≤15,000)보다 커서 b,a 가 맨 앞 — 동가 tie-break 로 시작가 큰 b 먼저
+        assertThat(order.subList(0, 2)).as("최고가 동가 → 시작가 DESC").containsExactly(b.getMusicUuid(), a.getMusicUuid());
+        // null 최고가 c,d 는 non-null(a) 뒤(nulls last), 그중 시작가 DESC 로 c 먼저 d 나중
+        assertThat(order.indexOf(a.getMusicUuid())).as("non-null(a) 는 null(c) 앞").isLessThan(order.indexOf(c.getMusicUuid()));
+        assertThat(order.indexOf(c.getMusicUuid())).as("c(null,31000) < d(null,29000)").isLessThan(order.indexOf(d.getMusicUuid()));
     }
 
     @Test
@@ -307,15 +345,10 @@ class MusicFilterContractTest {
     @Test
     @DisplayName("sortBy 단독 요청(필터 없음)도 정렬이 적용된다 — price/like 가 최신순으로 무시되지 않는다")
     void sortByOnly_isHonoredWithoutFilters() throws Exception {
-        // price: 필터 파라미터 없이 sortBy 만 → 가격 내림차순(coalesce) 불변식
+        // price: 필터 파라미터 없이 sortBy 만 → 가격 정렬 계약(최고입찰가 DESC nulls last → 시작가 DESC) 유지
         JsonNode priceOnly = getFilterWith(Map.of("sortBy", "price", "size", "100")).path("content");
         assertThat(priceOnly.size()).isEqualTo((int) referenceOngoingCount);
-        double prevPrice = Double.MAX_VALUE;
-        for (JsonNode el : priceOnly) {
-            double p = effectivePrice(el);
-            assertThat(p).as("sortBy=price 단독: 유효가격 내림차순").isLessThanOrEqualTo(prevPrice);
-            prevPrice = p;
-        }
+        assertPriceOrderInvariant(priceOnly);
         // 가격순 단독 결과가 최신순 결과와 같은 순서라면(정렬이 무시됐다면) 실패해야 한다.
         List<UUID> priceOrder = priceOnly.findValues("musicUuid").stream().map(n -> UUID.fromString(n.asText())).toList();
         List<UUID> latestOrder = getFilterWith(Map.of("sortBy", "latest", "size", "100")).path("content")
@@ -439,9 +472,7 @@ class MusicFilterContractTest {
         }
     }
 
-    // ── 아래는 리팩터(필터 경로 프로젝션 + audio 제거) 후에만 통과하는 목표 계약 ──
-    //    지금 코드(엔티티 통짜 로딩 + fromMusic)에서는 audio 가 JSON·SQL 양쪽에 존재하므로
-    //    빌드를 초록으로 유지하기 위해 @Disabled. 3단계 구현 커밋에서 활성화한다.
+    // 음원(audio)이 목록 계약에서 제외됨을 JSON·실제 SQL SELECT 양쪽에서 검증한다.
 
     @Test
     @DisplayName("모든 정렬/필터 분기 JSON 응답에 audio 필드가 없다")
