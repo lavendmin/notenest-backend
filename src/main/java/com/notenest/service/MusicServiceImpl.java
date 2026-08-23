@@ -28,7 +28,10 @@ import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 
@@ -204,9 +207,14 @@ public class MusicServiceImpl implements MusicService {
         Page<MusicSummaryDTO> page = musicRepository.searchSummaries(
                 majorGenre, hashtags, minPrice, maxPrice, searchTerm, sortBy, pageable);
 
-        // 좋아요 여부 — 곡당 1쿼리(N+1). 4단계에서 페이지 UUID IN 배치 조회로 대체 예정.
-        page.forEach(dto -> dto.setLikedByUser(
-                likeRepository.countByUserIdAndMusicId(user.getUserUUID(), dto.getMusicUuid()) > 0));
+        // 좋아요 여부 — 페이지의 곡 UUID를 모아 IN 조회 1회로 처리(N+1 제거).
+        List<UUID> pageMusicIds = page.getContent().stream()
+                .map(MusicSummaryDTO::getMusicUuid)
+                .toList();
+        Set<UUID> likedMusicIds = pageMusicIds.isEmpty()
+                ? Collections.emptySet()
+                : new HashSet<>(likeRepository.findLikedMusicIds(user.getUserUUID(), pageMusicIds));
+        page.forEach(dto -> dto.setLikedByUser(likedMusicIds.contains(dto.getMusicUuid())));
 
         return page;
     }

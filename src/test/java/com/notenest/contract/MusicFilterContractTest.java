@@ -88,16 +88,40 @@ class MusicFilterContractTest {
     }
 
     private JsonNode getFilter(String sortBy) throws Exception {
-        MvcResult res = mockMvc.perform(get(FILTER)
-                        .param("searchTerm", "")
-                        .param("sortBy", sortBy)
-                        .param("page", "0")
-                        .param("maxPrice", String.valueOf(MAX_PRICE))
-                        .param("minPrice", "0")
-                        .with(req -> { req.setRemoteUser(BIDDER); return req; }))
-                .andExpect(status().isOk())
-                .andReturn();
+        MvcResult res = performFilter(sortBy, 0, MAX_PRICE);
         return objectMapper.readTree(res.getResponse().getContentAsByteArray());
+    }
+
+    private MvcResult performFilter(String sortBy, int size, int maxPrice) throws Exception {
+        var req = get(FILTER)
+                .param("searchTerm", "")
+                .param("sortBy", sortBy)
+                .param("page", "0")
+                .param("maxPrice", String.valueOf(maxPrice))
+                .param("minPrice", "0")
+                .with(r -> { r.setRemoteUser(BIDDER); return r; });
+        if (size > 0) req = req.param("size", String.valueOf(size));
+        return mockMvc.perform(req).andExpect(status().isOk()).andReturn();
+    }
+
+    // org.hibernate.SQL 로그를 캡처해 likes 테이블을 조회하는 SQL 문 수를 센다.
+    private long countLikesQueries(int size) throws Exception {
+        Logger sqlLogger = (Logger) LoggerFactory.getLogger("org.hibernate.SQL");
+        Level previous = sqlLogger.getLevel();
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        sqlLogger.setLevel(Level.DEBUG);
+        sqlLogger.addAppender(appender);
+        try {
+            performFilter("latest", size, MAX_PRICE);
+        } finally {
+            sqlLogger.detachAppender(appender);
+            sqlLogger.setLevel(previous);
+        }
+        return appender.list.stream()
+                .map(ILoggingEvent::getFormattedMessage)
+                .filter(sql -> sql.contains("likes"))
+                .count();
     }
 
     @Test
@@ -195,5 +219,20 @@ class MusicFilterContractTest {
         assertThat(selects).as("music 관련 SQL 이 최소 1건 캡처되어야 한다").isNotEmpty();
         // JSON 필드 제거가 아니라 실제 SELECT 절에서 LOB 컬럼이 빠졌는지 검증
         assertThat(selects).noneMatch(sql -> sql.contains(".audio"));
+    }
+
+    @Test
+    @DisplayName("좋아요 조회 쿼리 수가 페이지 크기(1·20·50)에 비례하지 않는다 (N+1 제거)")
+    void likesQuery_doesNotScaleWithPageSize() throws Exception {
+        long q1 = countLikesQueries(1);
+        long q20 = countLikesQueries(20);
+        long q50 = countLikesQueries(50);
+
+        // N+1이면 1, 20, 50 으로 늘어난다. IN 배치면 페이지 크기와 무관하게 최대 1건.
+        assertThat(q1).as("size=1 likes 쿼리").isLessThanOrEqualTo(1);
+        assertThat(q20).as("size=20 likes 쿼리").isLessThanOrEqualTo(1);
+        assertThat(q50).as("size=50 likes 쿼리").isLessThanOrEqualTo(1);
+        assertThat(q20).as("페이지 크기와 무관하게 일정").isEqualTo(q1);
+        assertThat(q50).as("페이지 크기와 무관하게 일정").isEqualTo(q1);
     }
 }
