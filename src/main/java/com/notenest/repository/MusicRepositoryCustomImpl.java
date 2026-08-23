@@ -10,7 +10,9 @@ import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
@@ -54,7 +56,22 @@ public class MusicRepositoryCustomImpl implements MusicRepositoryCustom {
                 .where(where)
                 .fetchOne();
 
-        return new PageImpl<>(rows, pageable, total == null ? 0L : total);
+        // 응답 Page 메타데이터(sort.sorted 등)에 실제 적용한 정렬을 담는다 — 기존 필터 경로가 정렬 정보를 가진
+        // sortedPageable 을 반환하던 계약을 유지한다.
+        Pageable sortedPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), toSort(sortBy));
+        return new PageImpl<>(rows, sortedPageable, total == null ? 0L : total);
+    }
+
+    // 응답 메타데이터용 Spring Sort — toOrders 와 동일한 정렬 의미를 표현한다.
+    private Sort toSort(String sortBy) {
+        if ("price".equals(sortBy)) {
+            return Sort.by(Sort.Order.desc("currentHighestBid").nullsLast())
+                    .and(Sort.by(Sort.Order.desc("startingPrice")));
+        }
+        if ("like".equals(sortBy)) {
+            return Sort.by(Sort.Direction.DESC, "likeCount");
+        }
+        return Sort.by(Sort.Direction.DESC, "createdAt");
     }
 
     private BooleanBuilder buildWhere(QMusic m, QUser u, String majorGenre, String hashtags,

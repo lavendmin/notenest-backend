@@ -14,6 +14,7 @@
 | 페이지 크기 | 10 (요청에 size 미지정 → 컨트롤러 기본값) |
 | 부하 | k6 10 VU × 30s, `scripts/k6/list-api-perf-maxprice.js`, 콜드 1회 버리고 웜 2회차 채택 |
 | 환경 | 로컬 Windows 11, Docker MariaDB 10.11 (3311), Spring Boot 3.2.5 bootRun(8086), 스케줄러 동시 가동 |
+| JVM | **Java 21.0.12** — before/after 두 bootRun 로그 모두 `Starting ... using Java 21.0.12` (`sourceCompatibility=17`은 바이트코드 대상이지 측정 런타임이 아님). 계약 테스트(`gradlew test`)도 Java 21에서 실행 |
 | SQL 집계 | `org.hibernate.SQL` DEBUG 로그의 http-nio 스레드 라인 수 (단독 요청 1건) |
 | **측정 방식** | **before/after 백투백** — 같은 머신 상태에서 재시드 후 옛 코드(`ada5174`) 측정 → 새 코드(`ec71b50`) 측정. 머신 상태 드리프트 confound 제거. |
 
@@ -58,6 +59,15 @@ after: QueryDSL DTO 프로젝션으로 audio를 SELECT에서 제외하고 커버
 같은 SELECT·WHERE 를 표현하면 Criteria·JPQL·QueryDSL 어느 도구든 DB 실행 비용은 본질적으로 비슷하다 —
 QueryDSL 은 동적 조건의 타입 안전성과 프로젝션·count 재사용을 위한 작성 도구 선택이다.
 무필터 1차 진단의 91MB→5.3KB(커버까지 제거)와 직접 비교하지 않는다.
+
+### 계약 검증 범위와 알려진 메타데이터 변화
+- 계약 테스트 16개(`MusicFilterContractTest`)로 고정: 커버 바이트 동일, 최신순 UUID 순서·총건수, 가격순 불변식,
+  **좋아요순 예상 UUID 순서와 `likedByUser` true/false 매핑(픽스처: 서로 다른 likeCount + bidder 실제 좋아요, 롤백)**,
+  `sortBy` 단독 정렬, **검색(제목·작곡가 닉네임·부제·장르·해시태그)·장르·해시태그·가격 경계의 결과 집합을 UUID 로 비교**,
+  음원이 JSON·SQL SELECT 양쪽에 없음, 좋아요 쿼리 수 페이지 크기 무관, **Page 메타데이터 `sort.sorted=true`**.
+- Page 메타데이터: 정렬 정보를 담은 Pageable 을 `PageImpl` 에 넘겨 기존 필터 경로의 `sort.sorted=true` 계약을 유지한다.
+  단, 무필터 요청은 이전에 정렬 정보 없는 Pageable(`sort.sorted=false`)을 반환했는데 이제 경로가 통일되어
+  `sorted=true` 로 바뀐다 — content 는 동일하며 프론트는 `content`·`totalPages` 만 사용한다. 의도된 메타데이터 변화로 기록한다.
 
 ## 표 B — 무필터 1차 진단 (참고, 섞지 말 것)
 `docs/measurements/phase1-before.md` 참조. size=20, 요청당 91MB, 요청당 SQL 24.
