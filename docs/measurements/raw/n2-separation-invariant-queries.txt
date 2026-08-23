@@ -4,20 +4,20 @@
 #   SELECT status, COUNT(*) c FROM music GROUP BY status;
 #   SELECT SUM(bidder_email_sent) FROM bid;  SELECT SUM(auction_failure_email_sent) FROM music;
 
-== N=100 (현재 DB에서 실측 캡처) ==
+== N=500 (신규 시드, after 코드 실행 후 실측 캡처) ==
 s	c
-FAILED	68
-NULL	148
-PENDING	34
+FAILED	333
+NULL	748
+PENDING	167
 status	c
-0	50
-1	50
+0	250
+1	250
 bidder_sent
-34
+167
 fail_sent
-16
+83
 
-== N=500 (2026-08-23 측정 세션 기록; 현재 DB는 재시드로 N=500 아님) ==
-bid.status : PENDING 167 / FAILED 333 / NULL 748  (합 1248)
-music.status: 0=250 / 1=250
-bidder_email_sent = 167,  auction_failure_email_sent = 83
+== N=100 (별도 실행 시 실측 캡처, 참고) ==
+bid.status : PENDING 34 / FAILED 68 / NULL 148  (합 250) — phase1 베이스라인과 일치
+music.status: 0=50 / 1=50
+bidder_email_sent = 34,  auction_failure_email_sent = 16
