@@ -312,19 +312,23 @@ public class BidServiceImpl implements BidService {
     @Scheduled(fixedRate = 10000) // 10초 간격으로 실행
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void checkAuctionEnd() throws IamportResponseException, IOException {
-        long perfStartMs = System.currentTimeMillis();
+        long startMs = System.currentTimeMillis();
         // 종료 대상 = status=0 AND 마감 시각 경과. 이미 마감(status=1)된 곡은 다시 선정되지 않는다.
         List<UUID> targets = musicRepository.findUuidsToClose(LocalDateTime.now());
-        log.info("[BATCH] auction-close targets={}", targets.size());
+        int processed = 0;
+        int failed = 0;
         for (UUID musicUuid : targets) {
             try {
                 processAuctionEnd(musicUuid);
+                processed++;
             } catch (IamportResponseException | IOException e) {
+                failed++;
                 log.error("Error closing auction for music ID: {}", musicUuid, e);
             }
         }
-        log.info("[BATCH] auction-close done elapsedMs={} targets={}",
-                System.currentTimeMillis() - perfStartMs, targets.size());
+        // [BATCH] 대상/처리/실패/소요 — Step 5 성능 스냅샷의 측정 근거.
+        log.info("[BATCH] job=auction-close targets={} processed={} failed={} elapsedMs={}",
+                targets.size(), processed, failed, System.currentTimeMillis() - startMs);
     }
 
     // [결제 후속 잡] 결제 대기(PENDING) 입찰이 있는 곡만 대상으로 정산·승계를 처리한다.
@@ -332,18 +336,22 @@ public class BidServiceImpl implements BidService {
     @Scheduled(fixedRate = 10000) // 10초 간격으로 실행
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void checkPendingPayments() throws IamportResponseException, IOException {
-        long perfStartMs = System.currentTimeMillis();
+        long startMs = System.currentTimeMillis();
         List<UUID> targets = bidRepository.findMusicUuidsWithPendingBid();
-        log.info("[BATCH] payment-followup targets={}", targets.size());
+        int processed = 0;
+        int failed = 0;
         for (UUID musicUuid : targets) {
             try {
                 processPaymentFollowUp(musicUuid);
+                processed++;
             } catch (IamportResponseException | IOException e) {
+                failed++;
                 log.error("Error processing payment follow-up for music ID: {}", musicUuid, e);
             }
         }
-        log.info("[BATCH] payment-followup done elapsedMs={} targets={}",
-                System.currentTimeMillis() - perfStartMs, targets.size());
+        // [BATCH] 대상/처리/실패/소요 — Step 5 성능 스냅샷의 측정 근거.
+        log.info("[BATCH] job=payment-followup targets={} processed={} failed={} elapsedMs={}",
+                targets.size(), processed, failed, System.currentTimeMillis() - startMs);
     }
 
     // 마이페이지 낙찰내역 - 결제 대기
