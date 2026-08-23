@@ -316,6 +316,17 @@ public class BidServiceImpl implements BidService {
     }
 
     // [경매 마감 잡] status=0 이면서 종료 시각이 지난 곡만 대상으로 최초 마감을 수행한다.
+    //
+    // [트랜잭션 경계 주의 — N5] 아래 루프의 processAuctionEnd(uuid)는 "같은 빈의 자기 호출"이라
+    // Spring AOP 프록시를 거치지 않는다. 따라서 processAuctionEnd 에 붙은 @Transactional(REQUIRES_NEW)는
+    // 이 경로에서 무시되고, 스케줄러 메서드 하나가 사이클 전체의 단일 트랜잭션이 된다(곡별 격리 아님).
+    // 한 곡의 런타임 예외는 사이클 전체를 되돌리고 루프를 중단시킬 수 있다. 곡별 실패 격리는 N5에서
+    // self-invocation 제거(별도 빈/트랜잭션)로 해결한다. ※ REQUIRES_NEW 는 PaymentController가
+    // 프록시로 외부 호출하는 processPaymentFollowUp 경로에서는 정상 적용된다.
+    //
+    // [failed 집계 한계] 아래 catch 는 IamportResponseException·IOException 만 센다. 그 외 런타임
+    // 예외(DB 오류·IllegalArgumentException·NPE 등)는 잡히지 않아 failed 에 반영되지 않고 요약 로그도
+    // 남지 않을 수 있다 → "실패 건수 관측 완성"이라고 주장하지 않는다.
     @Override
     @Scheduled(fixedRate = 10000) // 10초 간격으로 실행
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -343,6 +354,7 @@ public class BidServiceImpl implements BidService {
     }
 
     // [결제 후속 잡] 결제 대기(PENDING) 입찰이 있는 곡만 대상으로 정산·승계를 처리한다.
+    // 트랜잭션 경계·failed 집계 한계는 checkAuctionEnd 주석 참고(자기 호출로 곡별 REQUIRES_NEW 무효, N5).
     @Override
     @Scheduled(fixedRate = 10000) // 10초 간격으로 실행
     @Transactional(propagation = Propagation.REQUIRES_NEW)
