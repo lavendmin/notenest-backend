@@ -60,4 +60,8 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+    // 계약 테스트가 현재(프로젝션 전) 필터 경로를 태우면 곡당 3MB LOB 엔티티가 로딩되어
+    // 기본 테스트 힙(512m)을 넘긴다. 프로젝션 리팩터 후에는 가벼워지지만, before 상태
+    // 특성화를 돌리기 위해 힙을 넉넉히 준다.
+    maxHeapSize = '2g'
 }
