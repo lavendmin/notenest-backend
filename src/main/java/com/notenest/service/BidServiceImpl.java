@@ -246,59 +246,55 @@ public class BidServiceImpl implements BidService {
                 highestBid.setStatus("FAILED");
                 bidRepository.save(highestBid);
 
-                if (highestBids.size() > 1) { // 입찰자 2명 이상. 노션의 1-(1)-②
-                    Bid secondBid = highestBids.get(1);
+                // [하이브리드 정책] 동일인의 하위 입찰은 건너뛰고, 1순위와 "다른 사용자"의 최고 입찰을
+                // 차순위로 승계한다. highestBids 는 가격 내림차순이므로 조건을 만족하는 첫 항목이 곧
+                // 차순위 고유 사용자의 최고가다. 고유 사용자를 하나만 더 보므로 "최대 2명" 상한이 내재된다.
+                Bid secondBid = highestBids.stream()
+                        .filter(b -> !b.getUser().getUserUUID().equals(highestBid.getUser().getUserUUID()))
+                        .findFirst()
+                        .orElse(null);
 
-                    if (secondBid.getUser().equals(highestBid.getUser())) { // 첫번째 입찰자와 두번째 입찰자 같은 경우
-                        if (!music.isAuctionFailureEmailSent()) {
-                            emailService.sendAuctionFailureToComposer(composer, music);
-                            music.setAuctionFailureEmailSent(true);
-                            musicRepository.save(music);
-                        }
-                    } else { // 첫번째 입찰자와 두번째 입찰자 다른 경우
-                        // 두번째 입찰자에게 낙찰 성공 이메일 발송. 노션의 1-(2)
-                        if (!secondBid.isBidderEmailSent()) {
-                            emailService.sendBidSuccessToBidder(secondBid.getUser(), music);
-                            secondBid.setBidderEmailSent(true);
-                            bidRepository.save(secondBid);
-                        }
-
-                        // 두번째 입찰자 bid status 업데이트 (결제 대기)
-                        secondBid.setStatus("PENDING");
+                if (secondBid != null) { // 1순위와 다른 사용자가 존재 → 차순위 승계. 노션의 1-(2)
+                    // 두번째 입찰자에게 낙찰 성공 이메일 발송
+                    if (!secondBid.isBidderEmailSent()) {
+                        emailService.sendBidSuccessToBidder(secondBid.getUser(), music);
+                        secondBid.setBidderEmailSent(true);
                         bidRepository.save(secondBid);
-
-                        // 두번째 결제 기한 내 결제 여부 확인
-                        Payment secondPayment = paymentRepository.findByBid(secondBid);
-                        if (secondPayment == null || !secondPayment.getStatus().equals("PAID")) {
-                            if (paymentDeadline2.isBefore(now)) {
-                                // 두번째 입찰자 기한 내 결제 X -> 경매 무산. 노션의 1-(2)-②
-                                if (!music.isAuctionFailureEmailSent()) {
-                                    emailService.sendAuctionFailureToComposer(composer, music);
-                                    music.setAuctionFailureEmailSent(true);
-                                    musicRepository.save(music);
-                                }
-
-                                // 두번째 입찰자 bid status 업데이트 (결제 실패)
-                                secondBid.setStatus("FAILED");
-                                bidRepository.save(secondBid);
-                            }
-                        } else {
-                            // 두번째 입찰자 결제 O 노션의 1-(2)-①
-                            if (!secondBid.isComposerEmailSent()) {
-                                emailService.sendBidSuccessToComposer(composer, music);
-                                secondBid.setComposerEmailSent(true);
-                                bidRepository.save(secondBid);
-                            }
-
-
-                            // 두번째 입찰자 bid status 업데이트 (결제 완료)
-                            secondBid.setStatus("COMPLETED");
-                            bidRepository.save(secondBid);
-                        }
                     }
 
-                } else { // 입찰자 1명
-                    // 두번째 입찰자 없으면 경매 무산. 노션의 2-(1)-②
+                    // 두번째 입찰자 bid status 업데이트 (결제 대기)
+                    secondBid.setStatus("PENDING");
+                    bidRepository.save(secondBid);
+
+                    // 두번째 결제 기한 내 결제 여부 확인
+                    Payment secondPayment = paymentRepository.findByBid(secondBid);
+                    if (secondPayment == null || !secondPayment.getStatus().equals("PAID")) {
+                        if (paymentDeadline2.isBefore(now)) {
+                            // 두번째 입찰자 기한 내 결제 X -> 경매 무산. 노션의 1-(2)-②
+                            if (!music.isAuctionFailureEmailSent()) {
+                                emailService.sendAuctionFailureToComposer(composer, music);
+                                music.setAuctionFailureEmailSent(true);
+                                musicRepository.save(music);
+                            }
+
+                            // 두번째 입찰자 bid status 업데이트 (결제 실패)
+                            secondBid.setStatus("FAILED");
+                            bidRepository.save(secondBid);
+                        }
+                    } else {
+                        // 두번째 입찰자 결제 O 노션의 1-(2)-①
+                        if (!secondBid.isComposerEmailSent()) {
+                            emailService.sendBidSuccessToComposer(composer, music);
+                            secondBid.setComposerEmailSent(true);
+                            bidRepository.save(secondBid);
+                        }
+
+                        // 두번째 입찰자 bid status 업데이트 (결제 완료)
+                        secondBid.setStatus("COMPLETED");
+                        bidRepository.save(secondBid);
+                    }
+
+                } else { // 1순위와 다른 사용자가 없음(동일인 입찰뿐) → 경매 무산. 노션의 2-(1)-②
                     if (!music.isAuctionFailureEmailSent()) {
                         emailService.sendAuctionFailureToComposer(composer, music);
                         music.setAuctionFailureEmailSent(true);
