@@ -12,9 +12,9 @@ import java.util.UUID;
 public class MusicDTO {
     private UUID musicUuid;
     private String title;
-    private Double startingPrice;
+    private Long startingPrice;
     private String userNickName;
-    private Double currentHighestBid;
+    private Long currentHighestBid;
     private LocalDateTime auctionEndTime;
     private boolean likedByUser;
     private int likeCount;
@@ -23,8 +23,8 @@ public class MusicDTO {
 
     // [Phase 1] 목록 조회용 프로젝션 생성자 — audio/image 제외한 컬럼만 DB에서 가져온다.
     // (jackson non_null 설정이라 null인 image/audio 필드는 응답 JSON에서 빠진다)
-    public MusicDTO(UUID musicUuid, String title, Double startingPrice, String userNickName,
-                    Double currentHighestBid, LocalDateTime auctionEndTime, int likeCount) {
+    public MusicDTO(UUID musicUuid, String title, Long startingPrice, String userNickName,
+                    Long currentHighestBid, LocalDateTime auctionEndTime, int likeCount) {
         this.musicUuid = musicUuid;
         this.title = title;
         this.startingPrice = startingPrice;

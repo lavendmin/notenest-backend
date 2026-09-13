@@ -35,8 +35,9 @@ public class Bid {
     @JoinColumn(name = "user_uuid", nullable = false)
     private User user;
 
+    // 입찰가 — 원(KRW) 단위 정수(long). NB2 금액 계약: 소수·배율(*100) 없음.
     @Column(name = "price")
-    private double price;
+    private long price;
 
     //impUid 필드 (결제 고유 ID)
     @Column(name = "imp_uid")

@@ -16,13 +16,13 @@ public class MusicDetailDTO {
     private String title;
     private String subtitle;
     private String majorGenre;
-    private Double startingPrice;
+    private Long startingPrice;
     private Integer musicPeriod;
     private String details;
     private String hashtag;
     private byte[] image;
     private byte[] audio;
-    private Double currentHighestBid;
+    private Long currentHighestBid;
     private LocalDateTime auctionEndTime;
     private Boolean popularComposer;
     private Boolean steadyWorkComposer;

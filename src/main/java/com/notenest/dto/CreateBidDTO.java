@@ -11,7 +11,7 @@ import java.util.UUID;
 public class CreateBidDTO {
     private UUID musicUuid;
     private UUID userUuid;
-    private double Price; // 입찰 가격
+    private long Price; // 입찰 가격 — 원(KRW) 단위 정수(NB2 금액 계약)
     private LocalDateTime createdAt;
 
     private String password;

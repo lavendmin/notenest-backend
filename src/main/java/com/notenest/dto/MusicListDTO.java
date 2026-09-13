@@ -16,8 +16,8 @@ public class MusicListDTO {
     private UUID musicUuid;
     private String title;
     private String userNickName;
-    private Double startingPrice;
-    private Double currentHighestBid;
+    private Long startingPrice;
+    private Long currentHighestBid;
     private LocalDateTime auctionEndTime;
     private int likeCount;
     private byte[] image;

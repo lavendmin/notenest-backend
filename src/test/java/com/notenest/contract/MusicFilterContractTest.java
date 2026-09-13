@@ -270,10 +270,10 @@ class MusicFilterContractTest {
         Assumptions.assumeTrue(ongoing.size() >= 4, "픽스처에 진행중 곡 4개 이상 필요");
         // b,a: 최고가 90000 동가 → 시작가로 b(20000) > a(10000).  c,d: 최고가 null → 시작가로 c(31000) > d(29000).
         Music b = ongoing.get(0), a = ongoing.get(1), c = ongoing.get(2), d = ongoing.get(3);
-        b.setCurrentHighestBid(90000.0); b.setStartingPrice(20000.0);
-        a.setCurrentHighestBid(90000.0); a.setStartingPrice(10000.0);
-        c.setCurrentHighestBid(null);    c.setStartingPrice(31000.0);
-        d.setCurrentHighestBid(null);    d.setStartingPrice(29000.0);
+        b.setCurrentHighestBid(90000L); b.setStartingPrice(20000L);
+        a.setCurrentHighestBid(90000L); a.setStartingPrice(10000L);
+        c.setCurrentHighestBid(null);   c.setStartingPrice(31000L);
+        d.setCurrentHighestBid(null);   d.setStartingPrice(29000L);
         musicRepository.saveAll(List.of(b, a, c, d));
         entityManager.flush();
 

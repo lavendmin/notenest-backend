@@ -36,8 +36,9 @@ public class Music {
     @Column(name = "major_genre")
     private String majorGenre;
 
+    // 금액은 원(KRW) 단위 정수(long). 소수 통화·배율(*100) 없음 — NB2 금액 계약.
     @Column(name = "starting_price")
-    private Double startingPrice;
+    private Long startingPrice;
 
     @Column(name = "music_period")
     private Integer musicPeriod;
@@ -66,9 +67,9 @@ public class Music {
     @OneToMany(mappedBy = "music", cascade = CascadeType.ALL)
     private List<Bid> bids = new ArrayList<>();
 
-    // 현재 최고 입찰가를 저장할 속성
+    // 현재 최고 입찰가를 저장할 속성 — 원(KRW) 단위 정수(long)
     @Column(name = "current_highest_bid")
-    private Double currentHighestBid;
+    private Long currentHighestBid;
 
     @Column(name = "auction_end_time")
     private LocalDateTime auctionEndTime;

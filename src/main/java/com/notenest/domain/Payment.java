@@ -26,8 +26,9 @@ public class Payment {
     @Column(name = "imp_uid", nullable = false)
     private String impUid;
 
+    // 결제 금액 — 원(KRW) 단위 정수(long). PG 응답 금액을 무손실 변환해 저장한다(NB2 금액 계약).
     @Column(name = "price", nullable = false)
-    private Double price;
+    private Long price;
 
     @Column(name = "status", nullable = false)
     private String status;

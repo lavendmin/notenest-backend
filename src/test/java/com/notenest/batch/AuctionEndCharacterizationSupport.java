@@ -141,7 +141,7 @@ abstract class AuctionEndCharacterizationSupport {
         return musicRepository.save(music);
     }
 
-    protected Bid saveBid(Music music, User user, double price) {
+    protected Bid saveBid(Music music, User user, long price) {
         Bid bid = new Bid();
         bid.setMusic(music);
         bid.setUser(user);

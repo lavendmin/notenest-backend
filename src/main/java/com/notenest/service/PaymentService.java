@@ -5,17 +5,13 @@ import com.notenest.domain.Payment;
 import com.notenest.domain.User;
 import com.notenest.dto.PaymentReq;
 import com.notenest.dto.PaymentRes;
+import com.notenest.payment.PaymentGateway;
 import com.notenest.repository.BidRepository;
 import com.notenest.repository.PaymentRepository;
 import com.notenest.repository.UserRepository;
-import com.siot.IamportRestClient.IamportClient;
 import com.siot.IamportRestClient.exception.IamportResponseException;
-import com.siot.IamportRestClient.request.CancelData;
-import com.siot.IamportRestClient.response.IamportResponse;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,49 +23,29 @@ import java.io.IOException;
 @Slf4j
 public class PaymentService {
 
-    private IamportClient iamportClient;
-
     private final BidRepository bidRepository;
     private final PaymentRepository paymentRepository;
     private final UserRepository userRepository;
-
-    @Value("${imp.api.key}")
-    private String apiKey;
-
-    @Value("${imp.api.secretkey}")
-    private String secretKey;
-
-    @PostConstruct
-    public void inint() {
-        this.iamportClient = new IamportClient(apiKey, secretKey);
-    }
+    private final PaymentGateway paymentGateway;
 
     @Transactional
     public PaymentRes createPayment(PaymentReq paymentReq) throws IamportResponseException, IOException {
         try {
-            // 아임포트 API를 통해 결제 정보 조회
-            IamportResponse<com.siot.IamportRestClient.response.Payment> iamResponse = iamportClient.paymentByImpUid(paymentReq.getImpUid());
-
-            if (iamResponse == null || iamResponse.getResponse() == null) {
-                throw new IllegalArgumentException("Invalid payment response from Iamport");
-            }
-
-            // 결제된 금액 가져오기
-            int paidAmount = iamResponse.getResponse().getAmount().intValue();
+            // PG 응답 결제 금액(원 단위 정수). 소수·범위 초과는 게이트웨이에서 예외로 거른다.
+            long paidAmount = paymentGateway.fetchPaidAmountWon(paymentReq.getImpUid());
 
             // 결제하려는 입찰 가져오기
             Bid bid = bidRepository.findById(paymentReq.getBidUuid())
                     .orElseThrow(() -> new IllegalArgumentException("Invalid bid UUID"));
 
-            // 현재 입찰가 가져오기
-            int priceToPay = (int) (bid.getPrice() * 100);
+            // 입찰가(원 단위 정수)와 그대로 비교 — 배율(*100) 없음(NB2 금액 계약).
+            long priceToPay = bid.getPrice();
 
             // 결제된 금액과 입찰가 비교
             if (paidAmount != priceToPay) {
                 log.warn("Payment amount {} does not match expected amount {}", paidAmount, priceToPay);
                 // 결제 금액이 맞지 않을 경우 결제 취소하고 예외 발생
-                CancelData cancelData = new CancelData(paymentReq.getImpUid(), true);
-                iamportClient.cancelPaymentByImpUid(cancelData);
+                paymentGateway.cancelPayment(paymentReq.getImpUid(), "결제 금액 불일치");
                 throw new IllegalArgumentException("결제 금액이 맞지 않습니다.");
             }
 
@@ -79,7 +55,7 @@ public class PaymentService {
 
             Payment payment = new Payment();
             payment.setImpUid(paymentReq.getImpUid());
-            payment.setPrice((double) paidAmount);
+            payment.setPrice(paidAmount);
             payment.setStatus("PAID");
             payment.setBid(bid);
             paymentRepository.save(payment);

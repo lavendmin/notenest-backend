@@ -8,6 +8,6 @@ import java.util.UUID;
 @Setter
 public class BidListDTO {
     private UUID bidUuid;
-    private double price;
+    private long price;
     private LocalDateTime createdAt;
 }

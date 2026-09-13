@@ -188,7 +188,7 @@ public class MusicServiceImpl implements MusicService {
     // 공개 경매 곡 목록 — 무필터·검색·필터·정렬 전 분기가 이 단일 경로(QueryDSL 프로젝션)를 탄다.
     @Override
     public Page<MusicSummaryDTO> getAllMusicByFilters(
-            String majorGenre, String hashtags, Double minPrice, Double maxPrice,
+            String majorGenre, String hashtags, Long minPrice, Long maxPrice,
             Pageable pageable, String sortBy, String loggedInUserEmail, String searchTerm) {
 
         // 사용자 정보 가져오기

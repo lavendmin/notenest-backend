@@ -109,8 +109,8 @@ public class MusicController {
     public ResponseEntity<Page<MusicSummaryDTO>> getAllMusic(
             @RequestParam(required = false) String majorGenre,
             @RequestParam(required = false) String hashtag,
-            @RequestParam(required = false) Double minPrice,
-            @RequestParam(required = false) Double maxPrice,
+            @RequestParam(required = false) Long minPrice,
+            @RequestParam(required = false) Long maxPrice,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "latest") String sortBy,

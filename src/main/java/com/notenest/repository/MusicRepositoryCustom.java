@@ -11,6 +11,6 @@ import org.springframework.data.domain.Pageable;
 public interface MusicRepositoryCustom {
 
     Page<MusicSummaryDTO> searchSummaries(
-            String majorGenre, String hashtags, Double minPrice, Double maxPrice,
+            String majorGenre, String hashtags, Long minPrice, Long maxPrice,
             String searchTerm, String sortBy, Pageable pageable);
 }

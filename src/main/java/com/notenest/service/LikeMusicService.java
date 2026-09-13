@@ -151,8 +151,8 @@ public class LikeMusicService {
     // 가격순 정렬
     public List<MusicListDTO> sortByPrice(List<MusicListDTO> musicListDTOS) {
         return musicListDTOS.stream()
-                .sorted(Comparator.comparingDouble(dto -> {
-                    Double currentHighestBid = dto.getCurrentHighestBid();
+                .sorted(Comparator.comparingLong(dto -> {
+                    Long currentHighestBid = dto.getCurrentHighestBid();
                     return currentHighestBid != null ? -currentHighestBid : -dto.getStartingPrice();
                 }))
                 .collect(Collectors.toList());

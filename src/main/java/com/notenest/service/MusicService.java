@@ -23,7 +23,7 @@ public interface MusicService {
     MusicDetailDTO getMusicDetail(UUID musicUuid);
 
     Page<MusicSummaryDTO> getAllMusicByFilters(
-            String majorGenre, String hashtags, Double minPrice, Double maxPrice,
+            String majorGenre, String hashtags, Long minPrice, Long maxPrice,
             Pageable pageable, String sortBy, String loggedInUserEmail, String searchTerm);
 
     Page<MusicDTO> getMusicByUser(Pageable pageable, String loggedInUserEmail, String searchTerm, String sortBy);

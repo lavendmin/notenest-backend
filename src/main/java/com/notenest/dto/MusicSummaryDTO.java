@@ -23,17 +23,17 @@ import java.util.UUID;
 public class MusicSummaryDTO {
     private UUID musicUuid;
     private String title;
-    private Double startingPrice;
+    private Long startingPrice;
     private String userNickName;
-    private Double currentHighestBid;
+    private Long currentHighestBid;
     private LocalDateTime auctionEndTime;
     private int likeCount;
     private byte[] image;
     private boolean likedByUser;
 
     // QueryDSL Projections.constructor 대상 — SELECT 절에 audio 는 포함하지 않는다.
-    public MusicSummaryDTO(UUID musicUuid, String title, Double startingPrice, String userNickName,
-                           Double currentHighestBid, LocalDateTime auctionEndTime, int likeCount, byte[] image) {
+    public MusicSummaryDTO(UUID musicUuid, String title, Long startingPrice, String userNickName,
+                           Long currentHighestBid, LocalDateTime auctionEndTime, int likeCount, byte[] image) {
         this.musicUuid = musicUuid;
         this.title = title;
         this.startingPrice = startingPrice;

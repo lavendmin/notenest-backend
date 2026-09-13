@@ -27,7 +27,7 @@ public class MusicRepositoryCustomImpl implements MusicRepositoryCustom {
 
     @Override
     public Page<MusicSummaryDTO> searchSummaries(
-            String majorGenre, String hashtags, Double minPrice, Double maxPrice,
+            String majorGenre, String hashtags, Long minPrice, Long maxPrice,
             String searchTerm, String sortBy, Pageable pageable) {
 
         QMusic m = QMusic.music;
@@ -75,7 +75,7 @@ public class MusicRepositoryCustomImpl implements MusicRepositoryCustom {
     }
 
     private BooleanBuilder buildWhere(QMusic m, QUser u, String majorGenre, String hashtags,
-                                      Double minPrice, Double maxPrice, String searchTerm) {
+                                      Long minPrice, Long maxPrice, String searchTerm) {
         BooleanBuilder where = new BooleanBuilder();
         where.and(m.status.eq(0)); // 진행 중인 곡만
 
@@ -100,8 +100,8 @@ public class MusicRepositoryCustomImpl implements MusicRepositoryCustom {
             }
         }
 
-        // 가격은 최고 입찰가(없으면 시작가)로 판단
-        NumberExpression<Double> price = m.currentHighestBid.coalesce(m.startingPrice);
+        // 가격은 최고 입찰가(없으면 시작가)로 판단 — 원 단위 정수(long)
+        NumberExpression<Long> price = m.currentHighestBid.coalesce(m.startingPrice);
         if (minPrice != null && maxPrice != null) {
             where.and(price.between(minPrice, maxPrice));
         } else if (minPrice != null) {

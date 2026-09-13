@@ -13,7 +13,7 @@ public class CompletedBidDTO {
     private byte[] musicImage;
     private String musicTitle;
     private String composer;
-    private double bidPrice;
+    private long bidPrice;
     private boolean paid;
     private String downloadUrl;
     private int downloadCount;

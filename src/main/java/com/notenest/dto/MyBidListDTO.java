@@ -14,7 +14,7 @@ public class MyBidListDTO {
     private byte[] musicImage;
     private String musicTitle;
     private String composer;
-    private double bidPrice;
+    private long bidPrice;
     private LocalDateTime auctionEndTime;
     private LocalDateTime bidCreatedAt;
     private String status;

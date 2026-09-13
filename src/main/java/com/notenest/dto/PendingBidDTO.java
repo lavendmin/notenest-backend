@@ -14,7 +14,7 @@ public class PendingBidDTO {
     private byte[] musicImage;
     private String musicTitle;
     private String composer;
-    private double bidPrice;
+    private long bidPrice;
     private LocalDateTime auctionEndTime;
     private String paymentUrl;
 }
