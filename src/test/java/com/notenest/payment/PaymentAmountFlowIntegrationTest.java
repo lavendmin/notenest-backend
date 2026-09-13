@@ -165,6 +165,15 @@ class PaymentAmountFlowIntegrationTest {
         assertThatThrownBy(() -> bidService.createBid(tooLow, bidderA.getEmail()))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("시작 가격");
+
+        // 결제 상한(KrwAmounts.MAX_WON)을 넘는 입찰은 저장 단계에서 거부된다 —
+        // 나중에 PG 응답 검증에서 거부될 금액이 입찰로 남지 않도록 범위를 맞춘다(P2).
+        CreateBidDTO overCap = new CreateBidDTO();
+        overCap.setMusicUuid(music.getMusicUuid());
+        overCap.setPrice(com.notenest.payment.KrwAmounts.MAX_WON + 1);
+        assertThatThrownBy(() -> bidService.createBid(overCap, bidderA.getEmail()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("허용 범위");
     }
 
     @Test
@@ -219,5 +228,27 @@ class PaymentAmountFlowIntegrationTest {
         assertThat(paymentRepository.findByBid(reloaded)).isNull();
         assertThat(reloaded.getImpUid()).isNull();
         assertThat(gateway.cancellations).anyMatch(c -> c.startsWith("imp_flow_bad:"));
+    }
+
+    @Test
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    @DisplayName("PG 조회 실패: 예외 전파 + 결제 레코드 미저장 + 입찰 impUid 미기록")
+    void gatewayFetchFailure_persistsNothing() throws Exception {
+        Music music = saveEndedMusicWithStartingPrice(10000L);
+        Bid bid = saveBid(music, bidderA, 11000L);
+        bidService.processAuctionEnd(music.getMusicUuid());
+
+        gateway.failFetch = true; // PG 조회가 실패하는 상황
+        PaymentReq req = new PaymentReq();
+        req.setImpUid("imp_flow_fetchfail");
+        req.setBidUuid(bid.getBidUuid());
+
+        assertThatThrownBy(() -> paymentService.processPayment(req, bidderA.getEmail()))
+                .isInstanceOf(java.io.IOException.class);
+
+        Bid reloaded = bidRepository.findById(bid.getBidUuid()).orElseThrow();
+        assertThat(paymentRepository.findByBid(reloaded)).isNull();
+        assertThat(reloaded.getImpUid()).isNull();
+        gateway.failFetch = false;
     }
 }

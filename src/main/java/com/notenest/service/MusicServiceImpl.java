@@ -9,6 +9,7 @@ import com.notenest.dto.MusicDTO;
 import com.notenest.dto.MusicDetailDTO;
 import com.notenest.dto.MusicSummaryDTO;
 import com.notenest.dto.UpdateMusicDTO;
+import com.notenest.payment.KrwAmounts;
 import com.notenest.repository.LikeRepository;
 import com.notenest.repository.MusicRepository;
 import com.notenest.repository.UserRepository;
@@ -69,6 +70,8 @@ public class MusicServiceImpl implements MusicService {
         if (createMusicDTO.getStartingPrice() == null) {
             throw new IllegalArgumentException("시작 가격을 입력하세요.");
         }
+        // 시작가는 결제 가능한 원 단위 범위여야 한다(입찰·결제 허용 범위와 일치, NB2 금액 계약).
+        KrwAmounts.requireWonInRange(createMusicDTO.getStartingPrice(), "시작 가격");
         if (createMusicDTO.getImage() == null || createMusicDTO.getImage().length == 0) {
             throw new IllegalArgumentException("음악 이미지를 업로드하세요.");
         }

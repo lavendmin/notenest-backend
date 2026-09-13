@@ -61,11 +61,38 @@ ALTER TABLE bid     MODIFY COLUMN price               BIGINT NOT NULL;
 ALTER TABLE payment MODIFY COLUMN price               BIGINT NOT NULL;
 
 -- ----------------------------------------------------------------------------
--- STEP 4. 검증 — 행 수 및 행별 금액이 백업(정수부)과 일치하는지 확인 (0건이어야 정상)
+-- STEP 4. 검증 — 세 가지를 모두 확인한다. 아래 세 SELECT 는 전부 결과 0건이어야 정상.
+--   (A) 행 수가 백업과 같은가 (삭제·추가된 행 탐지)
+--   (B) 양방향 PK 대칭차 — 백업에만 있는 PK / 현재에만 있는 PK (내부 조인이 놓치는 누락·추가)
+--   (C) 공통 PK 의 행별 금액 일치 — 대상 네 컬럼 전부(current_highest_bid 포함)
 -- ----------------------------------------------------------------------------
-SELECT 'music.starting_price'      AS col, m.music_uuid AS pk, b.starting_price AS before_val, m.starting_price AS after_val
+
+-- (A) 행 수 불일치 (0건이어야 정상)
+SELECT 'music'   AS tbl, (SELECT COUNT(*) FROM music)   AS cur, (SELECT COUNT(*) FROM nb2_backup_music)   AS bak
+ WHERE (SELECT COUNT(*) FROM music)   <> (SELECT COUNT(*) FROM nb2_backup_music)
+UNION ALL
+SELECT 'bid',     (SELECT COUNT(*) FROM bid),     (SELECT COUNT(*) FROM nb2_backup_bid)
+ WHERE (SELECT COUNT(*) FROM bid)     <> (SELECT COUNT(*) FROM nb2_backup_bid)
+UNION ALL
+SELECT 'payment', (SELECT COUNT(*) FROM payment), (SELECT COUNT(*) FROM nb2_backup_payment)
+ WHERE (SELECT COUNT(*) FROM payment) <> (SELECT COUNT(*) FROM nb2_backup_payment);
+
+-- (B) PK 대칭차 — 백업에만 있음(삭제됨) 또는 현재에만 있음(추가됨) (0건이어야 정상)
+SELECT 'music:missing_in_current'  AS diff, b.music_uuid   AS pk FROM nb2_backup_music   b LEFT JOIN music   m ON m.music_uuid=b.music_uuid   WHERE m.music_uuid   IS NULL
+UNION ALL SELECT 'music:extra_in_current',  m.music_uuid   FROM music   m LEFT JOIN nb2_backup_music   b ON m.music_uuid=b.music_uuid   WHERE b.music_uuid   IS NULL
+UNION ALL SELECT 'bid:missing_in_current',   b.bid_uuid     FROM nb2_backup_bid     b LEFT JOIN bid     m ON m.bid_uuid=b.bid_uuid       WHERE m.bid_uuid     IS NULL
+UNION ALL SELECT 'bid:extra_in_current',     m.bid_uuid     FROM bid     m LEFT JOIN nb2_backup_bid     b ON m.bid_uuid=b.bid_uuid       WHERE b.bid_uuid     IS NULL
+UNION ALL SELECT 'payment:missing_in_current', b.payment_uuid FROM nb2_backup_payment b LEFT JOIN payment m ON m.payment_uuid=b.payment_uuid WHERE m.payment_uuid IS NULL
+UNION ALL SELECT 'payment:extra_in_current',   m.payment_uuid FROM payment m LEFT JOIN nb2_backup_payment b ON m.payment_uuid=b.payment_uuid WHERE b.payment_uuid IS NULL;
+
+-- (C) 공통 PK 행별 금액 불일치 — 네 컬럼 전부 (0건이어야 정상)
+SELECT 'music.starting_price'      AS col, m.music_uuid AS pk, b.starting_price      AS before_val, m.starting_price      AS after_val
   FROM music m JOIN nb2_backup_music b ON m.music_uuid = b.music_uuid
  WHERE NOT (m.starting_price <=> CAST(b.starting_price AS SIGNED))
+UNION ALL
+SELECT 'music.current_highest_bid', m.music_uuid, b.current_highest_bid, m.current_highest_bid
+  FROM music m JOIN nb2_backup_music b ON m.music_uuid = b.music_uuid
+ WHERE NOT (m.current_highest_bid <=> CAST(b.current_highest_bid AS SIGNED))
 UNION ALL
 SELECT 'bid.price', m.bid_uuid, b.price, m.price
   FROM bid m JOIN nb2_backup_bid b ON m.bid_uuid = b.bid_uuid

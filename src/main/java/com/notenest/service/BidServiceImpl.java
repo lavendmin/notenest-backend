@@ -2,6 +2,7 @@ package com.notenest.service;
 
 import com.notenest.domain.Bid;
 import com.notenest.domain.Payment;
+import com.notenest.payment.KrwAmounts;
 import com.notenest.dto.BidListDTO;
 import com.notenest.dto.CompletedBidDTO;
 import com.notenest.dto.CreateBidDTO;
@@ -71,6 +72,9 @@ public class BidServiceImpl implements BidService {
         if (music.getUser().getUserUUID().equals(user.getUserUUID())) {
             throw new IllegalArgumentException("자신의 곡에는 입찰할 수 없습니다.");
         }
+
+        // 입찰가는 결제 가능한 원 단위 범위여야 한다(결제 검증 상·하한과 일치, NB2 금액 계약).
+        KrwAmounts.requireWonInRange(createBidDTO.getPrice(), "입찰가");
 
         // 시작 가격과 비교
         if (music.getStartingPrice() != null && createBidDTO.getPrice() < music.getStartingPrice()) {

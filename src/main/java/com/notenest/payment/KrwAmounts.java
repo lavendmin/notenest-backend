@@ -62,4 +62,25 @@ public final class KrwAmounts {
         }
         return won;
     }
+
+    /**
+     * 입찰가·시작가 등 도메인 금액이 원 단위 정수로 유효한 범위인지 검증한다.
+     *
+     * <p>결제 허용 범위({@link #MIN_PAYMENT_WON}~{@link #MAX_WON})와 동일한 상·하한을 적용해,
+     * 나중에 결제 단계에서 거부될 금액(예: 상한 초과)이 입찰·곡 등록 단계에서 저장되는 것을 막는다.
+     *
+     * @param won   검증할 금액(원)
+     * @param field 오류 메시지에 쓸 필드 이름(예: "입찰가", "시작 가격")
+     * @return 검증을 통과한 금액
+     * @throws IllegalArgumentException 최소 단위 미만이거나 상한을 초과할 때
+     */
+    public static long requireWonInRange(long won, String field) {
+        if (won < MIN_PAYMENT_WON) {
+            throw new IllegalArgumentException(field + "은(는) " + MIN_PAYMENT_WON + "원 이상이어야 합니다: " + won);
+        }
+        if (won > MAX_WON) {
+            throw new IllegalArgumentException(field + "이(가) 허용 범위(" + MAX_WON + "원)를 초과했습니다: " + won);
+        }
+        return won;
+    }
 }

@@ -1,5 +1,6 @@
 package com.notenest.payment;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,11 +13,17 @@ public class FakePaymentGateway implements PaymentGateway {
     /** fetchPaidAmountWon 이 돌려줄 원 단위 금액. 테스트가 시나리오별로 설정한다. */
     public long paidAmountWon;
 
+    /** true 면 PG 조회 실패를 흉내내어 fetchPaidAmountWon 에서 예외를 던진다. */
+    public boolean failFetch;
+
     /** 취소 호출 기록("impUid:reason"). 불일치 보상 취소가 실제로 일어났는지 검증한다. */
     public final List<String> cancellations = new ArrayList<>();
 
     @Override
-    public long fetchPaidAmountWon(String impUid) {
+    public long fetchPaidAmountWon(String impUid) throws IOException {
+        if (failFetch) {
+            throw new IOException("PG 조회 실패(대역)");
+        }
         return paidAmountWon;
     }
 

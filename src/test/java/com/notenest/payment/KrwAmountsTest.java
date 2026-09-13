@@ -37,10 +37,11 @@ class KrwAmountsTest {
         }
 
         @Test
-        @DisplayName("만원 단위 소수 입력에 *100 을 곱해 int 로 캐스팅하면 부동소수점 절삭이 발생한다")
+        @DisplayName("소수 금액에 *100 을 곱해 int 로 캐스팅하면 부동소수점 절삭이 발생한다")
         void floatMultiplyThenCast_truncates() {
-            // 기존 경로: (int) (price * 100). 프론트가 허용하던 소수 첫째 자리(예: 0.29만원)를
-            // double 로 *100 하면 28.999... 가 되어 29 가 아니라 28 로 절삭된다.
+            // 기존 경로: (int) (price * 100). 소수 금액(여기 0.29 는 소수 둘째 자리 — API 직접 입력 등
+            // 임의 소수 입력의 예시이며 프론트의 소수 첫째 자리 허용과는 무관)을 double 로 *100 하면
+            // 28.999... 가 되어 29 가 아니라 28 로 절삭된다.
             assertThat((int) (0.29 * 100)).isEqualTo(28);
         }
     }
@@ -75,6 +76,21 @@ class KrwAmountsTest {
             assertThatThrownBy(() -> KrwAmounts.requirePaymentWon(new BigDecimal("-1")))
                     .isInstanceOf(IllegalArgumentException.class);
             assertThatThrownBy(() -> KrwAmounts.requirePaymentWon(new BigDecimal(KrwAmounts.MAX_WON + 1)))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("허용 범위");
+        }
+
+        @Test
+        @DisplayName("입찰가·시작가 범위 검증은 결제 허용 범위와 동일한 상·하한을 쓴다")
+        void requireWonInRange_matchesPaymentBounds() {
+            assertThat(KrwAmounts.requireWonInRange(11000L, "입찰가")).isEqualTo(11000L);
+            assertThat(KrwAmounts.requireWonInRange(KrwAmounts.MAX_WON, "입찰가")).isEqualTo(KrwAmounts.MAX_WON);
+            assertThatThrownBy(() -> KrwAmounts.requireWonInRange(0L, "입찰가"))
+                    .isInstanceOf(IllegalArgumentException.class);
+            assertThatThrownBy(() -> KrwAmounts.requireWonInRange(-1L, "입찰가"))
+                    .isInstanceOf(IllegalArgumentException.class);
+            // 결제(requirePaymentWon)에서 거부되는 상한 초과가 입찰·시작가에서도 동일하게 거부된다.
+            assertThatThrownBy(() -> KrwAmounts.requireWonInRange(KrwAmounts.MAX_WON + 1, "입찰가"))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("허용 범위");
         }

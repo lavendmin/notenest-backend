@@ -124,6 +124,43 @@ class PaymentServiceAmountTest {
     }
 
     @Test
+    @DisplayName("PG 조회 실패 시 예외가 전파되고 성공 결제 레코드를 저장하지 않는다")
+    void gatewayFetchFailure_doesNotSave() throws Exception {
+        Bid bid = bidOf(11000L, BIDDER);
+        PaymentReq req = new PaymentReq();
+        req.setImpUid("imp_fetchfail");
+        req.setBidUuid(bid.getBidUuid());
+
+        when(paymentGateway.fetchPaidAmountWon("imp_fetchfail")).thenThrow(new java.io.IOException("PG 조회 실패"));
+
+        assertThatThrownBy(() -> paymentService.createPayment(req))
+                .isInstanceOf(java.io.IOException.class);
+
+        verify(paymentRepository, never()).save(any());
+        assertThat(bid.getImpUid()).isNull();
+    }
+
+    @Test
+    @DisplayName("금액 불일치 후 취소 호출까지 실패해도 성공 결제 레코드는 저장되지 않는다")
+    void cancelFailure_stillDoesNotSave() throws Exception {
+        Bid bid = bidOf(11000L, BIDDER);
+        PaymentReq req = new PaymentReq();
+        req.setImpUid("imp_cancelfail");
+        req.setBidUuid(bid.getBidUuid());
+
+        when(paymentGateway.fetchPaidAmountWon("imp_cancelfail")).thenReturn(9999L); // 불일치
+        when(bidRepository.findById(bid.getBidUuid())).thenReturn(Optional.of(bid));
+        org.mockito.Mockito.doThrow(new java.io.IOException("취소 실패"))
+                .when(paymentGateway).cancelPayment(eq("imp_cancelfail"), any());
+
+        assertThatThrownBy(() -> paymentService.createPayment(req))
+                .isInstanceOf(java.io.IOException.class);
+
+        verify(paymentRepository, never()).save(any());
+        assertThat(bid.getImpUid()).isNull();
+    }
+
+    @Test
     @DisplayName("낙찰자가 아니면 결제를 진행할 수 없다 — PG 조회 전에 차단된다")
     void nonOwner_isRejectedBeforeGatewayCall() throws Exception {
         Bid bid = bidOf(11000L, "someoneelse@test.local");
