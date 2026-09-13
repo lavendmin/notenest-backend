@@ -94,6 +94,9 @@ public class MusicServiceImpl implements MusicService {
         // musicPeriod 값을 설정하여 auctionEndTime을 자동으로 계산
         music.setMusicPeriod(createMusicDTO.getMusicPeriod());
         BeanUtils.copyProperties(createMusicDTO, music);
+        // 최고 입찰가는 서버가 초기화한다(클라이언트 입력 무시) — 곡 생성으로 상한 초과 최고가를 심어
+        // 입찰 범위 검증을 우회하는 것을 막는다. 실제 최고가는 입찰(createBid)에서만 갱신된다.
+        music.setCurrentHighestBid(null);
 
         try {
             // 작곡가 정보 가져오기
