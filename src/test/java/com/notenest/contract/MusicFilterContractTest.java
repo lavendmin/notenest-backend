@@ -75,7 +75,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @SpringBootTest(properties = {
         "spring.jwt.secret=test-secret-key-for-notenest-builds",
-        "spring.task.scheduling.enabled=false",
+        "notenest.scheduling.enabled=false",
         // 성능 측정 DB(notenest)와 분리된 계약 테스트 전용 DB. 없으면 드라이버가 만든다.
         "spring.datasource.url=jdbc:mariadb://localhost:3311/notenest_contract?createDatabaseIfNotExist=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8",
         "spring.jpa.hibernate.ddl-auto=create-drop",

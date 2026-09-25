@@ -8,7 +8,7 @@ import com.notenest.service.BidServiceImpl;
 
 @SpringBootTest(properties = {
         "spring.jwt.secret=test-secret-key-for-notenest-builds",
-        "spring.task.scheduling.enabled=false"
+        "notenest.scheduling.enabled=false"
 })
 class NoteNestApplicationTests {
 

@@ -31,8 +31,9 @@ import java.time.LocalDateTime;
  * 하위 클래스가 @Test 로 기술한다. (Spring 테스트 애노테이션은 상위 클래스에서 상속된다.)
  *
  * 실행 격리 설계:
- *  - @DataJpaTest 라 메인 앱의 @EnableScheduling 이 로드되지 않는다 → 10초 스케줄러가
- *    픽스처를 가로채는 레이스가 원천 차단된다.
+ *  - 스케줄링은 SchedulingConfig(별도 @Configuration)에서 켜고, @DataJpaTest 슬라이스는 그 설정을
+ *    스캔하지 않는다 → 10초 스케줄러가 픽스처를 가로채는 레이스가 없다. (예전에는 @EnableScheduling 이
+ *    메인 클래스에 있어 슬라이스에도 적용됐고, 배치가 테스트와 겹쳐 메일 호출 수가 가끔 어긋났다.)
  *  - H2 를 MySQL 모드로 띄우고 NON_KEYWORDS=USER 로 예약어를 풀어, Music 의
  *    LONGBLOB/TEXT 컬럼과 @Table(name="user") DDL 을 그대로 수용한다.
  *  - processAuctionEnd 가 @Transactional(REQUIRES_NEW) 이므로, 하위 테스트 메서드는

@@ -2,14 +2,13 @@ package com.notenest;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.scheduling.annotation.EnableScheduling;
 
 import java.util.TimeZone;
 
 // @EnableJpaAuditing 은 JpaAuditingConfig 로 분리했다 — 웹/JSON 슬라이스 테스트가 JPA 없이도
 // 컨텍스트를 로드할 수 있게 하기 위함(실제 타임스탬프는 Hibernate @CreationTimestamp 로 채워진다).
+// @EnableScheduling 도 같은 이유로 SchedulingConfig 로 분리했다 — 슬라이스 테스트에서 배치가 돌지 않게.
 @SpringBootApplication
-@EnableScheduling
 public class NoteNestApplication {
 
     public static void main(String[] args) {

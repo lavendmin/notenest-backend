@@ -43,7 +43,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  *
  * <p>실행 격리·논리 시각 제어는 배치 특성화 하네스와 동일한 방식이다:
  * <ul>
- *   <li>@DataJpaTest 라 앱의 @EnableScheduling 이 로드되지 않아 스케줄러 레이스가 없다.</li>
+ *   <li>스케줄링은 SchedulingConfig 에서 켜고 @DataJpaTest 슬라이스는 그 설정을 스캔하지 않아 스케줄러 레이스가 없다.</li>
  *   <li>REQUIRES_NEW 서비스(processAuctionEnd/processPayment/processPaymentFollowUp)가
  *       픽스처를 볼 수 있도록 테스트 메서드는 비트랜잭션(NOT_SUPPORTED)으로 돌리고 수동 정리한다.</li>
  *   <li>고정 Clock 으로 마감/기한을 결정적으로 만든다.</li>
