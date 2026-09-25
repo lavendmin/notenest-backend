@@ -1,0 +1,32 @@
+# NB1 전환 게이트 원시 출력 (2026-09-26, 커밋 da3129b, 버킷 notenest-media, LOB 존재 상태)
+# presigned URL 은 출력하지 않았다(키 일치 여부·상태 코드만).
+## A. legacy 객체 (백필 결과)
+legacy song keys: cover=music/<uuid>/cover/legacy demo=music/<uuid>/full-demo/legacy lobLen=307200/3145728
+detail: coverUrl points to DB key=1 image(base64) present=False previewUrl present=False
+presigned cover GET: status=200 sha256==DB LOB sha2: true
+unsigned cover GET status=403
+seller download: fileName=seed song 1(부제 1).mp3 url points to DB key=1
+presigned full-demo GET: status=200 sha256==DB LOB sha2: true
+unsigned full-demo GET status=403
+HEAD(adapter) cover: size=307200 type=application/octet-stream sha256b64=UCf7h+o7K7X9TR3RVEaOUtQ/KQyCAltDYNztjb4YLnc= == DB SHA2(image) base64
+HEAD(adapter) full-demo: size=3145728 type=application/octet-stream sha256b64=b4ULyUrm994UKXwBYWw21xLSKGRJeyimO4HXdrA15lY= == DB SHA2(audio) base64
+## B. 권한·입찰·검증 규칙
+## 1. 검증 거부 (S3 호출 전)
+preview=WAV → 400 (400 기대)
+preview 6MB → {"message":"미리듣기 파일은 5MB 이하여야 합니다."} 400 (400 기대)
+full demo 100MB+ → 413 (413 기대)
+db rows 'NB1 GATE' after rejections: 0
+## 2. 등록 + 결제 완료 낙찰자
+create → 201
+before bid: winner download → 403 (403 기대 — 아직 낙찰·결제 없음)
+COMPLETED winner download → url issued, GET 200, bytesEqual=true, ttl=X-Amz-Expires=300
+unrelated user download → 403 (403 기대)
+## 3. 첫 입찰 후 규칙
+replace full demo → 409 (409 기대)
+delete song → 409 (409 기대)
+keys unchanged: true, full demo object still served: 200
+## 4. 정리 (테스트 입찰 제거 → 곡 삭제 → 객체 삭제 확인)
+delete song → 200
+after delete: full demo URL → 404 (404 기대), rows=0
+## 정리 후
+db: music=500 bids=1248 legacyKeyedSongs=500 / bucket: objects=1000 nonLegacy=0
