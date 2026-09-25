@@ -52,6 +52,17 @@ dependencies {
     runtimeOnly 'com.h2database:h2'
     implementation 'org.mariadb.jdbc:mariadb-java-client:2.7.4'
 
+    // NB1 — 곡 미디어 객체 저장소(S3). BOM 으로 SDK 모듈 버전을 맞추고 S3 모듈만 쓴다.
+    // SDK 기본 HTTP 클라이언트(apache5·netty)는 제외하고 JDK 기반 url-connection-client 를 쓴다 —
+    // apache5-client 가 요구하는 httpclient5 5.6.x 를 Spring Boot 3.2 의존성 관리가 5.2.3 으로 낮춰 런타임 불일치 위험이 있다.
+    implementation platform('software.amazon.awssdk:bom:2.55.5')
+    implementation('software.amazon.awssdk:s3') {
+        exclude group: 'software.amazon.awssdk', module: 'apache5-client'
+        exclude group: 'software.amazon.awssdk', module: 'apache-client'
+        exclude group: 'software.amazon.awssdk', module: 'netty-nio-client'
+    }
+    implementation 'software.amazon.awssdk:url-connection-client'
+
     implementation 'io.jsonwebtoken:jjwt-api:0.12.3'
     implementation 'io.jsonwebtoken:jjwt-impl:0.12.3'
     implementation 'io.jsonwebtoken:jjwt-jackson:0.12.3'
