@@ -1,0 +1,30 @@
+# NB1 실제 S3 E2E 원시 출력 (2026-09-25, 커밋 2e65430, 버킷 notenest-media, ap-northeast-2)
+# presigned URL 의 X-Amz-Credential·X-Amz-Signature 는 가렸다. UUID 는 <uuid> 로 치환.
+# 1번 db row 의 원본 파일명 깨짐은 Windows curl 이 한글 파일명을 CP949 로 보낸 탓 — UTF-8 로 보낸 재검증은 문서 참고.
+## 1. 등록 (image=PNG, preview=MP3, audio=WAV)
+create status=201
+db row: music/<uuid>/cover/<uuid>	image/png	audio/mpeg	audio/wav	8864	���� ����.wav	1	1
+## 2. 목록(비로그인) 커버 URL
+list has image field: False, has full-demo text: 0
+coverUrl: https://notenest-media.s3.ap-northeast-2.amazonaws.com/music/<uuid>/cover/<uuid>?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20260925T134537Z&X-Amz-SignedHeaders=host&X-Amz-Credential=<masked>&X-Amz-Expires=3600&X-Amz-Signature=<masked>
+GET coverUrl status=HTTP/1.1 200 OK content-type=image/png bytesEqual=true
+## 3. private 직접 접근 거부
+unsigned URL (query 제거) status=403
+tampered signature status=403
+## 4. 상세: 비로그인 401, 로그인 시 미리듣기 URL
+anonymous detail status=401
+detail has audio: False, has full-demo text: 0
+GET previewUrl bytesEqual=true ttlSeconds=X-Amz-Expires=600
+## 5. 전체 데모: 입찰·결제 없는 사용자 403, 판매자 5분 URL
+bidder download status=403
+download json: fileName=NB1 S3 E2E(봄밤).wav expiresInSeconds=300 urlTtl=X-Amz-Expires=300
+GET fullDemoUrl status=HTTP/1.1 200 OK bytesEqual=true
+content-disposition: attachment; filename="NB1_S3_E2E____.wav"; filename*=UTF-8''NB1%20S3%20E2E%28%EB%B4%84%EB%B0%A4%29.wav
+## 6. 커버 교체: 새 키, 옛 객체 삭제
+update status=200
+old coverUrl status=404 (옛 객체 삭제 → 404 NoSuchKey 기대)
+new coverUrl bytesEqual=true
+## 7. 삭제: DB 삭제 후 객체 정리
+delete status=200
+db rows with title: 0
+after delete: newCover=404 preview=404 fullDemo=404 (모두 404 기대)
