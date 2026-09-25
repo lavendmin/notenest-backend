@@ -1,5 +1,6 @@
 package com.notenest.contract;
 
+import com.notenest.domain.Bid;
 import com.notenest.domain.Music;
 import com.notenest.domain.User;
 import com.notenest.jwt.JWTUtil;
@@ -23,6 +24,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
@@ -30,18 +32,20 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder;
 
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * 곡 등록의 객체 저장소 전환과 부분 실패 보상 계약.
+ * 곡 등록·수정·삭제의 객체 저장소 전환과 부분 실패 보상 계약.
  *
  * 객체 저장소와 DB 는 한 트랜잭션으로 묶이지 않는다. 실제 S3 는 원하는 순간에 실패시킬 수 없으므로
  * 실패를 주입할 수 있는 {@link FakeObjectStorage} 로 저장소를 바꿔 다음을 검증한다.
@@ -50,6 +54,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  *  - 업로드 중 실패: 이미 올린 파일을 지우고 곡을 저장하지 않는다
  *  - DB 저장 실패: 올린 파일 세 개를 모두 지운다
  *  - 보상 삭제마저 실패: 원래 실패를 그대로 응답하고, 남은 객체는 고아로 기록된다
+ *  - 수정: 보낸 파일만 새 키로 올리고 DB 전환 성공 후 옛 객체를 지운다. 중간 실패 시 옛 객체·DB 를 보존한다.
+ *    전체 데모는 첫 입찰 전까지만 교체할 수 있다.
+ *  - 삭제: DB 삭제 성공 후 객체를 지운다. 정리 실패는 고아로 남되 삭제 자체는 성공한다.
  * AWS 연동(권한·private 접근·URL 만료)은 여기서 검증하지 않는다 — 실제 S3 E2E 의 몫이다.
  *
  * 인프라: H2(MySQL 모드) + MockMvc, 보안 필터 켬, {@link JWTUtil} 로 발급한 실제 토큰.
@@ -67,9 +74,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 })
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
-class MusicCreateStorageTest {
+class MusicStorageFlowTest {
 
     private static final byte[] PNG = bytes(0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A, 1, 2, 3);
+    private static final byte[] PNG2 = bytes(0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A, 4, 5, 6);
     private static final byte[] MP3 = bytes('I', 'D', '3', 4, 0, 0, 0, 0, 0, 0, 9, 9);
     private static final byte[] WAV = bytes('R', 'I', 'F', 'F', 0x24, 0, 0, 0, 'W', 'A', 'V', 'E', 7, 7, 7);
 
@@ -97,6 +105,7 @@ class MusicCreateStorageTest {
     @MockBean private EmailService emailService;
 
     private User composer;
+    private User bidder;
 
     @BeforeEach
     void reset() {
@@ -118,6 +127,16 @@ class MusicCreateStorageTest {
         composer.setEmailVerified(true);
         composer.setAgreement(true);
         composer = userRepository.save(composer);
+
+        bidder = new User();
+        bidder.setEmail("bidder@test.local");
+        bidder.setNickname("bidder");
+        bidder.setName("bidder");
+        bidder.setPassword("x");
+        bidder.setRole("ROLE_USER");
+        bidder.setEmailVerified(true);
+        bidder.setAgreement(true);
+        bidder = userRepository.save(bidder);
     }
 
     @Test
@@ -235,7 +254,245 @@ class MusicCreateStorageTest {
         assertThat(musicRepository.count()).isZero();
     }
 
+    // --- 수정: 보낸 파일만 새 키로 교체, DB 전환 성공 후 옛 객체 정리 ---
+
+    @Test
+    @DisplayName("커버 교체: 새 키로 올리고 DB 를 전환한 뒤 옛 커버 객체를 지운다 — 다른 자산은 그대로")
+    void replaceCoverSwapsKeyThenDeletesOldObject() throws Exception {
+        Music before = createSong();
+
+        mockMvc.perform(update(before, "{}", file("image", "new.png", "image/png", PNG2), null, null))
+                .andExpect(status().isOk());
+
+        Music after = reload(before);
+        assertThat(after.getCover().getObjectKey())
+                .startsWith("music/" + before.getMusicUuid() + "/cover/")
+                .isNotEqualTo(before.getCover().getObjectKey());
+        assertThat(storage.bytes(after.getCover().getObjectKey())).isEqualTo(PNG2);
+        assertThat(storage.keys()).doesNotContain(before.getCover().getObjectKey())
+                .contains(before.getPreview().getObjectKey(), before.getFullDemo().getObjectKey());
+        assertThat(after.getPreview().getObjectKey()).isEqualTo(before.getPreview().getObjectKey());
+        assertThat(after.getFullDemo().getObjectKey()).isEqualTo(before.getFullDemo().getObjectKey());
+    }
+
+    @Test
+    @DisplayName("기존 곡(LOB)에 미리듣기 추가·커버 교체: 키가 생기고 커버 LOB fallback 은 끊긴다, 전체 데모 LOB 는 그대로")
+    void legacySongGainsPreviewAndCoverKeys() throws Exception {
+        Music legacy = saveLegacySong();
+
+        mockMvc.perform(update(legacy, "{}", file("image", "c.png", "image/png", PNG),
+                        file("preview", "p.mp3", "audio/mpeg", MP3), null))
+                .andExpect(status().isOk());
+
+        Music after = reload(legacy);
+        assertThat(after.getPreview().getObjectKey()).contains("/preview/");
+        assertThat(after.getCover().getObjectKey()).contains("/cover/");
+        assertThat(after.getImage()).isNull();
+        assertThat(after.getFullDemo()).isNull();
+        assertThat(after.getAudio()).as("전체 데모는 보내지 않았으므로 LOB 그대로").isNotNull();
+    }
+
+    @Test
+    @DisplayName("첫 입찰 전에는 전체 데모를 교체할 수 있고 옛 전체 데모 객체는 지워진다")
+    void replaceFullDemoBeforeFirstBid() throws Exception {
+        Music before = createSong();
+
+        mockMvc.perform(update(before, "{}", null, null, file("audio", "v2.mp3", "audio/mpeg", MP3)))
+                .andExpect(status().isOk());
+
+        Music after = reload(before);
+        assertThat(after.getFullDemo().getObjectKey()).isNotEqualTo(before.getFullDemo().getObjectKey());
+        assertThat(after.getFullDemo().getContentType()).isEqualTo("audio/mpeg");
+        assertThat(storage.keys()).doesNotContain(before.getFullDemo().getObjectKey());
+    }
+
+    @Test
+    @DisplayName("첫 입찰 발생 후 전체 데모 교체는 409 이고 아무것도 올리지 않으며 DB 도 그대로다")
+    void replaceFullDemoAfterFirstBidIsRejected() throws Exception {
+        Music before = createSong();
+        saveBid(before, bidder);
+        var keysBefore = storage.keys();
+
+        mockMvc.perform(update(before, "{}", null, null, file("audio", "v2.mp3", "audio/mpeg", MP3)))
+                .andExpect(status().isConflict());
+
+        assertThat(storage.keys()).isEqualTo(keysBefore);
+        assertThat(reload(before).getFullDemo().getObjectKey()).isEqualTo(before.getFullDemo().getObjectKey());
+    }
+
+    @Test
+    @DisplayName("교체 파일 형식 위반은 400 이고 함께 보낸 정상 파일도 올리지 않는다")
+    void invalidReplacementUploadsNothing() throws Exception {
+        Music before = createSong();
+        var keysBefore = storage.keys();
+
+        mockMvc.perform(update(before, "{}", file("image", "c.png", "image/png", PNG2),
+                        file("preview", "p.wav", "audio/mpeg", WAV), null))
+                .andExpect(status().isBadRequest());
+
+        assertThat(storage.keys()).isEqualTo(keysBefore);
+        assertThat(reload(before).getCover().getObjectKey()).isEqualTo(before.getCover().getObjectKey());
+    }
+
+    @Test
+    @DisplayName("교체 업로드 중 실패: 503, 새로 올린 것만 지우고 옛 객체·DB 는 그대로 — 기존 곡을 잃지 않는다")
+    void replacementUploadFailureKeepsOldObjects() throws Exception {
+        Music before = createSong();          // put 1~3
+        var keysBefore = storage.keys();
+        storage.failPutAt(5);                 // 교체: 커버(put 4) 성공, 미리듣기(put 5) 실패
+
+        mockMvc.perform(update(before, "{}", file("image", "c.png", "image/png", PNG2),
+                        file("preview", "p.mp3", "audio/mpeg", MP3), null))
+                .andExpect(status().isServiceUnavailable());
+
+        assertThat(storage.keys()).isEqualTo(keysBefore);
+        Music after = reload(before);
+        assertThat(after.getCover().getObjectKey()).isEqualTo(before.getCover().getObjectKey());
+        assertThat(after.getPreview().getObjectKey()).isEqualTo(before.getPreview().getObjectKey());
+    }
+
+    @Test
+    @DisplayName("교체 후 DB 전환 실패(제목 길이 초과): 새로 올린 객체만 지우고 옛 객체·DB 는 그대로다")
+    void replacementDbFailureKeepsOldObjects() throws Exception {
+        Music before = createSong();
+        var keysBefore = storage.keys();
+
+        mockMvc.perform(update(before, "{\"title\":\"" + "t".repeat(300) + "\"}",
+                        file("image", "c.png", "image/png", PNG2), null, null))
+                .andExpect(status().isInternalServerError());
+
+        assertThat(storage.keys()).isEqualTo(keysBefore);
+        Music after = reload(before);
+        assertThat(after.getCover().getObjectKey()).isEqualTo(before.getCover().getObjectKey());
+        assertThat(after.getTitle()).isEqualTo("valid title");
+    }
+
+    @Test
+    @DisplayName("DB 전환 성공 후 옛 객체 정리 실패: 수정은 성공(200)하고 옛 커버만 고아로 남는다")
+    void oldObjectCleanupFailureLeavesOrphanOnly() throws Exception {
+        Music before = createSong();
+        storage.failDeleteOf(before.getCover().getObjectKey());
+
+        mockMvc.perform(update(before, "{}", file("image", "c.png", "image/png", PNG2), null, null))
+                .andExpect(status().isOk());
+
+        Music after = reload(before);
+        assertThat(after.getCover().getObjectKey()).isNotEqualTo(before.getCover().getObjectKey());
+        assertThat(storage.keys()).contains(before.getCover().getObjectKey(), after.getCover().getObjectKey());
+    }
+
+    @Test
+    @DisplayName("판매자가 아닌 사용자의 파일 교체는 400 이고 아무것도 올리지 않는다")
+    void nonOwnerCannotReplaceFiles() throws Exception {
+        Music before = createSong();
+        var keysBefore = storage.keys();
+
+        mockMvc.perform(updateAs(bidder, before, "{}", file("image", "c.png", "image/png", PNG2), null, null))
+                .andExpect(status().isBadRequest());
+
+        assertThat(storage.keys()).isEqualTo(keysBefore);
+    }
+
+    // --- 삭제: DB 삭제 성공 후 객체 정리 ---
+
+    @Test
+    @DisplayName("입찰 없는 곡 삭제: DB 에서 지운 뒤 세 객체를 모두 지운다")
+    void deleteRemovesAllObjectsAfterDb() throws Exception {
+        Music music = createSong();
+
+        mockMvc.perform(delete("/api/music/{id}", music.getMusicUuid()).header("Authorization", bearer(composer)))
+                .andExpect(status().isOk());
+
+        assertThat(musicRepository.findById(music.getMusicUuid())).isEmpty();
+        assertThat(storage.keys()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("입찰 있는 곡 삭제는 409 이고 객체도 그대로 남는다")
+    void deleteWithBidKeepsObjects() throws Exception {
+        Music music = createSong();
+        saveBid(music, bidder);
+
+        mockMvc.perform(delete("/api/music/{id}", music.getMusicUuid()).header("Authorization", bearer(composer)))
+                .andExpect(status().isConflict());
+
+        assertThat(storage.keys()).hasSize(3);
+    }
+
+    @Test
+    @DisplayName("DB 삭제 후 객체 정리 실패: 삭제는 성공(200)하고 지우지 못한 객체만 고아로 남는다")
+    void deleteCleanupFailureLeavesOrphanOnly() throws Exception {
+        Music music = createSong();
+        storage.failDeleteOf("/full-demo/");
+
+        mockMvc.perform(delete("/api/music/{id}", music.getMusicUuid()).header("Authorization", bearer(composer)))
+                .andExpect(status().isOk());
+
+        assertThat(musicRepository.findById(music.getMusicUuid())).isEmpty();
+        assertThat(storage.keys()).containsExactly(music.getFullDemo().getObjectKey());
+    }
+
     // --- 헬퍼 ---
+
+    /** 등록 API 로 만든 곡(세 자산 모두 객체 저장소). */
+    private Music createSong() throws Exception {
+        mockMvc.perform(validCreate("valid title")).andExpect(status().isCreated());
+        return musicRepository.findAll().get(0);
+    }
+
+    /** 객체 키 없이 LOB 만 있는 기존 곡(백필 전). */
+    private Music saveLegacySong() {
+        Music music = new Music();
+        music.setTitle("legacy");
+        music.setUser(composer);
+        music.setStartingPrice(10_000L);
+        music.setStatus(0);
+        music.setAuctionEndTime(LocalDateTime.now().plusDays(3));
+        music.setImage(PNG);
+        music.setAudio(MP3);
+        music.setAuctionFailureEmailSent(false);
+        music.setShowAllBids(false);
+        music.setPopularComposer(false);
+        music.setSteadyWorkComposer(false);
+        music.setHitSongComposer(false);
+        return musicRepository.save(music);
+    }
+
+    private void saveBid(Music music, User user) {
+        Bid bid = new Bid();
+        bid.setMusic(music);
+        bid.setUser(user);
+        bid.setPrice(11_000L);
+        bid.setBidderEmailSent(false);
+        bid.setComposerEmailSent(false);
+        bidRepository.save(bid);
+    }
+
+    private Music reload(Music music) {
+        return musicRepository.findById(music.getMusicUuid()).orElseThrow();
+    }
+
+    private String bearer(User user) {
+        return "Bearer " + jwtUtil.createJwt(user.getEmail(), user.getRole());
+    }
+
+    private MockMultipartHttpServletRequestBuilder update(Music music, String json, MockMultipartFile cover,
+                                                          MockMultipartFile preview, MockMultipartFile fullDemo) {
+        return updateAs(composer, music, json, cover, preview, fullDemo);
+    }
+
+    private MockMultipartHttpServletRequestBuilder updateAs(User user, Music music, String json, MockMultipartFile cover,
+                                                            MockMultipartFile preview, MockMultipartFile fullDemo) {
+        MockMultipartHttpServletRequestBuilder request = multipart(HttpMethod.PUT, "/api/music/{id}", music.getMusicUuid());
+        request.file(new MockMultipartFile("music", "", MediaType.APPLICATION_JSON_VALUE, json.getBytes(StandardCharsets.UTF_8)));
+        for (MockMultipartFile part : new MockMultipartFile[]{cover, preview, fullDemo}) {
+            if (part != null) {
+                request.file(part);
+            }
+        }
+        request.header("Authorization", bearer(user));
+        return request;
+    }
 
     private MockMultipartHttpServletRequestBuilder validCreate(String title) {
         return create(title, file("image", "c.png", "image/png", PNG),

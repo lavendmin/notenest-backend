@@ -11,6 +11,8 @@ import com.notenest.storage.InvalidMediaException;
 import com.notenest.storage.ObjectStorageException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
+import jakarta.persistence.EntityNotFoundException;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
@@ -18,7 +20,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -86,27 +87,34 @@ public class MusicController {
         }
     }
 
-    // 곡 수정하기
+    // 곡 수정하기 — 파트: image(커버)·preview(미리듣기)·audio(전체 데모)는 보낸 것만 교체, music(JSON)은 메타데이터
     @PutMapping("/{musicUuid}")
     public ResponseEntity<?> updateMusic(@RequestPart(value = "image", required = false) MultipartFile image,
+                                         @RequestPart(value = "preview", required = false) MultipartFile preview,
+                                         @RequestPart(value = "audio", required = false) MultipartFile audio,
                                          @PathVariable UUID musicUuid,
                                          @RequestPart("music") UpdateMusicDTO updateMusicDTO) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String loggedInUserEmail = authentication.getName();
 
         try {
-            if (image != null) {
-                updateMusicDTO.setImage(image.getBytes());
-            }
-
-            musicService.updateMusic(musicUuid, updateMusicDTO, loggedInUserEmail);
+            musicService.updateMusic(musicUuid, updateMusicDTO, image, preview, audio, loggedInUserEmail);
 
             // 엔티티를 그대로 직렬화하면 음원 바이트와 작성자 개인정보(User)까지 응답에 실린다 → 상세 DTO로 응답한다.
             return ResponseEntity.ok(musicService.getMusicDetail(musicUuid));
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalStateException e) {
+            // 첫 입찰 발생 후 전체 데모 교체 — 검토한 곡과 거래 대상이 달라지지 않게 거부한다
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        } catch (IllegalArgumentException | InvalidMediaException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (ObjectStorageException e) {
+            // 새로 올린 파일은 보상 삭제됐고 기존 파일·DB 는 그대로다
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body("파일 저장소 오류로 곡을 수정하지 못했습니다.");
+        } catch (DataAccessException e) {
+            // DB 전환 실패 — 새로 올린 파일은 보상 삭제됐고 기존 파일·DB 는 그대로다
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to update music.");
         }
     }
 

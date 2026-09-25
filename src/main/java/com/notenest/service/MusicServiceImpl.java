@@ -19,7 +19,6 @@ import com.notenest.storage.MediaAssetType;
 import com.notenest.storage.MediaUploadValidator;
 import com.notenest.storage.MediaUrlIssuer;
 import com.notenest.storage.MusicMediaStorage;
-import io.jsonwebtoken.io.IOException;
 import io.micrometer.common.util.StringUtils;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.criteria.Join;
@@ -36,6 +35,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -180,17 +180,32 @@ public class MusicServiceImpl implements MusicService {
             throw new IllegalStateException("입찰이 시작된 곡은 삭제할 수 없습니다.");
         }
 
+        List<String> keys = MusicMediaStorage.keysOf(Arrays.asList(music.getCover(), music.getPreview(), music.getFullDemo()));
         musicRepository.delete(music);
+        // 객체는 DB 삭제가 성공한 뒤에만 지운다. 이 정리가 실패해도 곡은 이미 삭제됐으므로 남은 객체는 고아로 기록된다.
+        musicMediaStorage.deleteQuietly(keys);
     }
 
     @Override
-    public Music updateMusic(UUID musicUuid, UpdateMusicDTO updateMusicDTO, String loggedInUserEmail) {
+    public Music updateMusic(UUID musicUuid, UpdateMusicDTO updateMusicDTO, MultipartFile cover, MultipartFile preview,
+                             MultipartFile fullDemo, String loggedInUserEmail) {
         Music music = musicRepository.findById(musicUuid)
                 .orElseThrow(() -> new EntityNotFoundException("음악이 존재하지 않습니다."));
 
         if (!music.getUser().getEmail().equals(loggedInUserEmail)) {
             throw new IllegalArgumentException("해당 곡의 작성자만 수정할 수 있습니다.");
         }
+
+        // 첫 입찰 발생 후 전체 데모 교체 금지 — 입찰자가 검토한 곡과 거래 대상이 달라지지 않게 한다.
+        if (fullDemo != null && bidRepository.existsByMusic(music)) {
+            throw new IllegalStateException("입찰이 시작된 곡은 전체 데모를 교체할 수 없습니다.");
+        }
+
+        // 보낸 파일만 교체 대상. 검증은 업로드보다 먼저 한다.
+        List<MusicMediaStorage.Upload> uploads = new ArrayList<>();
+        addUploadIfPresent(uploads, MediaAssetType.COVER, cover);
+        addUploadIfPresent(uploads, MediaAssetType.PREVIEW, preview);
+        addUploadIfPresent(uploads, MediaAssetType.FULL_DEMO, fullDemo);
 
         // 필드가 null이 아닌 경우에만 업데이트
         if (updateMusicDTO.getTitle() != null) {
@@ -208,17 +223,46 @@ public class MusicServiceImpl implements MusicService {
         if (updateMusicDTO.getHashtag() != null) {
             music.setHashtag(updateMusicDTO.getHashtag());
         }
-        if (updateMusicDTO.getImage() != null) {
-            try {
-                music.setImage(updateMusicDTO.getImage());
-            } catch (IOException e) {
-                throw new RuntimeException("이미지 업데이트 중 오류가 발생했습니다.", e);
-            }
-        }
         if (updateMusicDTO.getShowAllBids() != null) {
             music.setShowAllBids(updateMusicDTO.getShowAllBids());
         }
-        return musicRepository.save(music);
+
+        // 새 키로 올린다(옛 객체를 덮어쓰지 않음). 업로드 중 실패하면 MusicMediaStorage 가 새로 올린 것만 지운다.
+        Map<MediaAssetType, MediaObject> stored = uploads.isEmpty()
+                ? Map.of() : musicMediaStorage.uploadAll(musicUuid, uploads);
+        List<String> replacedKeys = new ArrayList<>();
+        if (stored.containsKey(MediaAssetType.COVER)) {
+            replacedKeys.addAll(MusicMediaStorage.keysOf(Arrays.asList(music.getCover())));
+            music.setCover(stored.get(MediaAssetType.COVER));
+            music.setImage(null); // 기존 곡이면 LOB fallback 을 끊는다 — 이제 객체 저장소가 원본이다
+        }
+        if (stored.containsKey(MediaAssetType.PREVIEW)) {
+            replacedKeys.addAll(MusicMediaStorage.keysOf(Arrays.asList(music.getPreview())));
+            music.setPreview(stored.get(MediaAssetType.PREVIEW));
+        }
+        if (stored.containsKey(MediaAssetType.FULL_DEMO)) {
+            replacedKeys.addAll(MusicMediaStorage.keysOf(Arrays.asList(music.getFullDemo())));
+            music.setFullDemo(stored.get(MediaAssetType.FULL_DEMO));
+            music.setAudio(null);
+        }
+
+        Music saved;
+        try {
+            saved = musicRepository.save(music);
+        } catch (RuntimeException e) {
+            // DB 전환 실패 — 새로 올린 객체만 지운다. 옛 객체와 DB 는 그대로라 기존 곡을 잃지 않는다.
+            musicMediaStorage.deleteQuietly(MusicMediaStorage.keysOf(stored.values()));
+            throw e;
+        }
+        // 옛 객체 정리는 DB 전환이 성공한 뒤에만 한다. 실패해도 새 파일이 이미 연결돼 있으므로 옛 객체는 고아로 기록된다.
+        musicMediaStorage.deleteQuietly(replacedKeys);
+        return saved;
+    }
+
+    private void addUploadIfPresent(List<MusicMediaStorage.Upload> uploads, MediaAssetType type, MultipartFile file) {
+        if (file != null) {
+            uploads.add(new MusicMediaStorage.Upload(type, file, mediaUploadValidator.validate(type, file)));
+        }
     }
 
     @Override

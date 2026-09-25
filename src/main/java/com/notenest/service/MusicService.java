@@ -21,7 +21,9 @@ public interface MusicService {
 
     void deleteMusic(UUID musicUuid, String loggedInUserEmail);
 
-    Music updateMusic(UUID musicUuid, UpdateMusicDTO updateMusicDTO, String loggedInUserEmail);
+    // 파일은 보낸 것만 교체한다. 새 키로 올리고 DB 전환 성공 후 옛 객체를 지운다. 전체 데모는 첫 입찰 전까지만 교체할 수 있다.
+    Music updateMusic(UUID musicUuid, UpdateMusicDTO updateMusicDTO, MultipartFile cover, MultipartFile preview,
+                      MultipartFile fullDemo, String loggedInUserEmail);
 
     MusicDetailDTO getMusicDetail(UUID musicUuid);
 
