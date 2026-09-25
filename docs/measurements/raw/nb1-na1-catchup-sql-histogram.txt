@@ -1,0 +1,16 @@
+# NA1 catch-up(마감 250곡) 구간의 SQL 종류별 개수 비교 — 앞 3줄로 분류
+## 기준선 Java 17 (LOB, 83353d2, 2026-09-25 14:17) — 앞선 결제 후속(대상 0) 사이클 SQL 1건 포함
+    500 update bid  set
+    250 select music_uuid, auction_end_time,
+    250 select bid_uuid, bidder_email_sent,
+    234 update music  set
+      6 select user_uuid, agreement,
+      1 select music_uuid  from
+      1 select distinct music_uuid  from
+## S3 이후 (3921cfd, 2026-09-26 00:43)
+    498 update bid  set
+    331 update music  set
+    250 select music_uuid, auction_end_time,
+    250 select bid_uuid, bidder_email_sent,
+      6 select user_uuid, agreement,
+      1 select music_uuid  from

@@ -1,0 +1,34 @@
+# NB1 S3 이후 NA1 — N=500(seed-music-s3.sql), 커밋 3921cfd, 2026-09-26 00:43 (재시드 후 앱 기동, catch-up + 웜 6회). sql=직전 [BATCH] 이후 'Hibernate:' 문장 수
+2026-09-26T00:43:10.179+09:00  INFO 62580 --- [notenest-backend] [           main] com.notenest.NoteNestApplication         : Starting NoteNestApplication using Java 17.0.12 with PID 62580
+[BATCH] job=auction-close targets=250 processed=250 failed=0 elapsedMs=25506 heapBeforeMb=198 heapAfterMb=47 sql=1336
+[BATCH] job=payment-followup targets=167 processed=167 failed=0 elapsedMs=1323 heapBeforeMb=49 heapAfterMb=91 sql=506
+[BATCH] job=auction-close targets=0 processed=0 failed=0 elapsedMs=5 heapBeforeMb=91 heapAfterMb=91 sql=1
+[BATCH] job=payment-followup targets=167 processed=167 failed=0 elapsedMs=1250 heapBeforeMb=91 heapAfterMb=131 sql=502
+[BATCH] job=auction-close targets=0 processed=0 failed=0 elapsedMs=2 heapBeforeMb=131 heapAfterMb=131 sql=1
+[BATCH] job=payment-followup targets=167 processed=167 failed=0 elapsedMs=1170 heapBeforeMb=131 heapAfterMb=171 sql=502
+[BATCH] job=auction-close targets=0 processed=0 failed=0 elapsedMs=4 heapBeforeMb=171 heapAfterMb=171 sql=1
+[BATCH] job=payment-followup targets=167 processed=167 failed=0 elapsedMs=1327 heapBeforeMb=171 heapAfterMb=211 sql=502
+[BATCH] job=auction-close targets=0 processed=0 failed=0 elapsedMs=3 heapBeforeMb=211 heapAfterMb=211 sql=1
+[BATCH] job=payment-followup targets=167 processed=167 failed=0 elapsedMs=1305 heapBeforeMb=211 heapAfterMb=82 sql=502
+[BATCH] job=auction-close targets=0 processed=0 failed=0 elapsedMs=3 heapBeforeMb=82 heapAfterMb=82 sql=1
+[BATCH] job=payment-followup targets=167 processed=167 failed=0 elapsedMs=1496 heapBeforeMb=82 heapAfterMb=122 sql=502
+[BATCH] job=auction-close targets=0 processed=0 failed=0 elapsedMs=4 heapBeforeMb=124 heapAfterMb=124 sql=1
+[BATCH] job=payment-followup targets=167 processed=167 failed=0 elapsedMs=2399 heapBeforeMb=124 heapAfterMb=164 sql=502
+[BATCH] job=auction-close targets=0 processed=0 failed=0 elapsedMs=3 heapBeforeMb=164 heapAfterMb=164 sql=1
+[BATCH] job=payment-followup targets=167 processed=167 failed=0 elapsedMs=1297 heapBeforeMb=164 heapAfterMb=204 sql=502
+[BATCH] job=auction-close targets=0 processed=0 failed=0 elapsedMs=4 heapBeforeMb=204 heapAfterMb=204 sql=1
+[BATCH] job=payment-followup targets=167 processed=167 failed=0 elapsedMs=1397 heapBeforeMb=204 heapAfterMb=72 sql=502
+[BATCH] job=auction-close targets=0 processed=0 failed=0 elapsedMs=5 heapBeforeMb=72 heapAfterMb=72 sql=1
+[BATCH] job=payment-followup targets=167 processed=167 failed=0 elapsedMs=1359 heapBeforeMb=72 heapAfterMb=112 sql=502
+[BATCH] job=auction-close targets=0 processed=0 failed=0 elapsedMs=5 heapBeforeMb=112 heapAfterMb=112 sql=1
+[BATCH] job=payment-followup targets=167 processed=167 failed=0 elapsedMs=1161 heapBeforeMb=112 heapAfterMb=152 sql=502
+[BATCH] job=auction-close targets=0 processed=0 failed=0 elapsedMs=7 heapBeforeMb=152 heapAfterMb=152 sql=1
+[BATCH] job=payment-followup targets=167 processed=167 failed=0 elapsedMs=2719 heapBeforeMb=152 heapAfterMb=192 sql=502
+[BATCH] job=auction-close targets=0 processed=0 failed=0 elapsedMs=4 heapBeforeMb=192 heapAfterMb=192 sql=1
+[BATCH] job=payment-followup targets=167 processed=167 failed=0 elapsedMs=2296 heapBeforeMb=192 heapAfterMb=60 sql=502
+[BATCH] job=auction-close targets=0 processed=0 failed=0 elapsedMs=5 heapBeforeMb=60 heapAfterMb=60 sql=1
+[BATCH] job=payment-followup targets=167 processed=167 failed=0 elapsedMs=1284 heapBeforeMb=60 heapAfterMb=102 sql=502
+[BATCH] job=auction-close targets=0 processed=0 failed=0 elapsedMs=4 heapBeforeMb=102 heapAfterMb=102 sql=1
+[BATCH] job=payment-followup targets=167 processed=167 failed=0 elapsedMs=1310 heapBeforeMb=102 heapAfterMb=142 sql=502
+[BATCH] job=auction-close targets=0 processed=0 failed=0 elapsedMs=3 heapBeforeMb=142 heapAfterMb=142 sql=1
+[BATCH] job=payment-followup targets=167 processed=167 failed=0 elapsedMs=1327 heapBeforeMb=142 heapAfterMb=182 sql=502

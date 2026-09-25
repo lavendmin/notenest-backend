@@ -1,0 +1,11 @@
+bid_status	count(*)
+NULL	748
+FAILED	333
+PENDING	167
+music_status	count(*)
+0	250
+1	250
+bidder_email_sent	composer_email_sent
+167	0
+auction_failure_email_sent
+83
