@@ -17,6 +17,7 @@ import com.notenest.repository.MusicRepository;
 import com.notenest.repository.UserRepository;
 import com.notenest.storage.MediaAssetType;
 import com.notenest.storage.MediaUploadValidator;
+import com.notenest.storage.MediaUrlIssuer;
 import com.notenest.storage.MusicMediaStorage;
 import io.jsonwebtoken.io.IOException;
 import io.micrometer.common.util.StringUtils;
@@ -65,6 +66,9 @@ public class MusicServiceImpl implements MusicService {
 
     @Autowired
     private MusicMediaStorage musicMediaStorage;
+
+    @Autowired
+    private MediaUrlIssuer mediaUrlIssuer;
 
     @Autowired
     private BidServiceImpl bidService;
@@ -223,7 +227,7 @@ public class MusicServiceImpl implements MusicService {
                 .orElseThrow(() -> new EntityNotFoundException("음악이 존재하지 않습니다."));
         Page<BidListDTO> bidListDTOPage = bidService.getAllBidsByMusic(musicUuid, PageRequest.of(0, 10)); // 예시로 페이지 크기 10으로 설정
 
-        return MusicDetailDTO.fromMusic(music, bidListDTOPage);
+        return MusicDetailDTO.fromMusic(music, bidListDTOPage, mediaUrlIssuer);
     }
 
 
@@ -236,6 +240,8 @@ public class MusicServiceImpl implements MusicService {
         // QueryDSL DTO 프로젝션 — 엔티티(LOB) 대신 목록에 필요한 컬럼만 SELECT (audio 제외, image 포함).
         Page<MusicSummaryDTO> page = musicRepository.searchSummaries(
                 majorGenre, hashtags, minPrice, maxPrice, searchTerm, sortBy, pageable);
+        // 커버 키가 있는 곡은 URL 로 준다(서명은 로컬 계산이라 곡마다 네트워크 호출은 없다).
+        page.forEach(dto -> dto.setCoverUrl(mediaUrlIssuer.coverUrl(dto.getCoverObjectKey())));
 
         // 비로그인 조회 — 좋아요 여부는 모두 false(기본값)로 둔다.
         if (loggedInUserEmail == null) {
@@ -314,7 +320,7 @@ public class MusicServiceImpl implements MusicService {
         // Music 엔티티를 MusicDTO로 변환하고 좋아요 여부 설정
         for (Music music : musicPage.getContent()) {
             boolean likedByUser = likeRepository.countByUserIdAndMusicId(user.getUserUUID(), music.getMusicUuid()) > 0;
-            musicDTOList.add(MusicDTO.fromMusic(music, likedByUser));
+            musicDTOList.add(MusicDTO.fromMusic(music, likedByUser, mediaUrlIssuer));
         }
 
         // MusicDTO 리스트와 페이지 정보를 사용하여 새로운 페이지 생성 및 반환

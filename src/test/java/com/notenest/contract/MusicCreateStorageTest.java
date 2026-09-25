@@ -22,6 +22,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
+import org.springframework.data.domain.Page;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
@@ -32,6 +33,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -96,6 +100,8 @@ class MusicCreateStorageTest {
 
     @BeforeEach
     void reset() {
+        // 상세가 쓰는 입찰 목록 조회만 빈 페이지로 스텁한다(BidServiceImpl 은 스케줄러 차단용 목).
+        when(bidService.getAllBidsByMusic(any(), any())).thenReturn(Page.empty());
         storage.reset();
         likeRepository.deleteAll();
         paymentRepository.deleteAll();
@@ -147,6 +153,28 @@ class MusicCreateStorageTest {
 
         assertThat(music.getImage()).as("신규 곡은 LOB 에 바이트를 쓰지 않는다").isNull();
         assertThat(music.getAudio()).isNull();
+    }
+
+    @Test
+    @DisplayName("등록→목록 커버 URL→상세 미리듣기 URL→판매자 전체 데모 URL 이 모두 실제로 올라간 객체를 가리킨다")
+    void uploadedObjectsAreServedThroughUrls() throws Exception {
+        mockMvc.perform(validCreate("e2e title")).andExpect(status().isCreated());
+        Music music = musicRepository.findAll().get(0);
+        String token = "Bearer " + jwtUtil.createJwt(composer.getEmail(), composer.getRole());
+
+        String listBody = mockMvc.perform(get("/api/music/filter"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+        String detailBody = mockMvc.perform(get("/api/music/{id}", music.getMusicUuid()).header("Authorization", token))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+        String downloadBody = mockMvc.perform(get("/api/mypage/download/{id}", music.getMusicUuid()).header("Authorization", token))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+
+        assertThat(listBody).contains(music.getCover().getObjectKey()).doesNotContain(music.getFullDemo().getObjectKey());
+        assertThat(detailBody).contains(music.getCover().getObjectKey(), music.getPreview().getObjectKey())
+                .doesNotContain(music.getFullDemo().getObjectKey());
+        assertThat(downloadBody).contains(music.getFullDemo().getObjectKey(), "\"fileName\":\"e2e title.wav\"");
+        assertThat(storage.keys()).contains(music.getCover().getObjectKey(), music.getPreview().getObjectKey(),
+                music.getFullDemo().getObjectKey());
     }
 
     @Test

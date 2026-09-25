@@ -1,6 +1,7 @@
 package com.notenest.dto;
 
 import com.notenest.domain.Music;
+import com.notenest.storage.MediaUrlIssuer;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -18,8 +19,9 @@ public class MusicDTO {
     private LocalDateTime auctionEndTime;
     private boolean likedByUser;
     private int likeCount;
+    // 목록류 응답은 커버만 싣고 음원(audio)은 싣지 않는다. 커버는 coverUrl, image 는 키 없는 기존 곡의 전이 기간 fallback.
     private byte[] image;
-    // 목록류 응답은 커버만 싣고 음원(audio)은 싣지 않는다.
+    private String coverUrl;
 
     // [Phase 1] 목록 조회용 프로젝션 생성자 — audio/image 제외한 컬럼만 DB에서 가져온다.
     // (jackson non_null 설정이라 null인 image 필드는 응답 JSON에서 빠진다)
@@ -35,13 +37,13 @@ public class MusicDTO {
     }
 
     // Music 엔티티를 MusicDTO로 변환하는 메서드
-    public static MusicDTO fromMusic(Music music, boolean likedByUser) {
+    public static MusicDTO fromMusic(Music music, boolean likedByUser, MediaUrlIssuer mediaUrls) {
         MusicDTO musicDTO = new MusicDTO();
         musicDTO.setMusicUuid(music.getMusicUuid());
         musicDTO.setTitle(music.getTitle());
         musicDTO.setStartingPrice(music.getStartingPrice());
-        // 이미지를 byte[] 그대로 설정
-        musicDTO.setImage(music.getImage());
+        musicDTO.setImage(MediaUrlIssuer.legacyCoverBytes(music));
+        musicDTO.setCoverUrl(mediaUrls.coverUrl(music.getCover()));
 
         // 사용자가 null인 경우에 대한 예외 처리 추가
         if (music.getUser() != null) {

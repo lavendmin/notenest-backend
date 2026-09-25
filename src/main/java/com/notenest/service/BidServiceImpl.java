@@ -14,6 +14,7 @@ import com.notenest.repository.MusicRepository;
 import com.notenest.domain.User;
 import com.notenest.repository.PaymentRepository;
 import com.notenest.repository.UserRepository;
+import com.notenest.storage.MediaUrlIssuer;
 import com.siot.IamportRestClient.exception.IamportResponseException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
@@ -51,6 +52,9 @@ public class BidServiceImpl implements BidService {
 
     @Autowired
     private EmailService emailService;
+
+    @Autowired
+    private MediaUrlIssuer mediaUrlIssuer;
 
     // 시간 소스 — 운영은 시스템 시계, 테스트는 고정 Clock 주입(반복 실행 멱등성 검증용)
     @Autowired
@@ -160,7 +164,8 @@ public class BidServiceImpl implements BidService {
             MyBidListDTO myBidListDTO = new MyBidListDTO();
             myBidListDTO.setBidUuid(bid.getBidUuid());
             myBidListDTO.setMusicUuid(bid.getMusic().getMusicUuid());
-            myBidListDTO.setMusicImage(bid.getMusic().getImage());
+            myBidListDTO.setMusicImage(MediaUrlIssuer.legacyCoverBytes(bid.getMusic()));
+            myBidListDTO.setMusicCoverUrl(mediaUrlIssuer.coverUrl(bid.getMusic().getCover()));
             myBidListDTO.setMusicTitle(bid.getMusic().getTitle());
             myBidListDTO.setComposer(bid.getMusic().getUser().getNickname());
             myBidListDTO.setBidPrice(bid.getPrice());
@@ -403,7 +408,8 @@ public class BidServiceImpl implements BidService {
             PendingBidDTO pendingBidDTO = new PendingBidDTO();
             pendingBidDTO.setBidUuid(bid.getBidUuid());
             pendingBidDTO.setMusicUuid(bid.getMusic().getMusicUuid());
-            pendingBidDTO.setMusicImage(bid.getMusic().getImage());
+            pendingBidDTO.setMusicImage(MediaUrlIssuer.legacyCoverBytes(bid.getMusic()));
+            pendingBidDTO.setMusicCoverUrl(mediaUrlIssuer.coverUrl(bid.getMusic().getCover()));
             pendingBidDTO.setMusicTitle(bid.getMusic().getTitle());
             pendingBidDTO.setComposer(bid.getMusic().getUser().getNickname());
             pendingBidDTO.setBidPrice(bid.getPrice());
@@ -436,7 +442,8 @@ public class BidServiceImpl implements BidService {
             CompletedBidDTO completedBidDTO = new CompletedBidDTO();
             completedBidDTO.setBidUuid(bid.getBidUuid());
             completedBidDTO.setMusicUuid(bid.getMusic().getMusicUuid());
-            completedBidDTO.setMusicImage(bid.getMusic().getImage());
+            completedBidDTO.setMusicImage(MediaUrlIssuer.legacyCoverBytes(bid.getMusic()));
+            completedBidDTO.setMusicCoverUrl(mediaUrlIssuer.coverUrl(bid.getMusic().getCover()));
             completedBidDTO.setMusicTitle(bid.getMusic().getTitle());
             completedBidDTO.setComposer(bid.getMusic().getUser().getNickname());
             completedBidDTO.setBidPrice(bid.getPrice());

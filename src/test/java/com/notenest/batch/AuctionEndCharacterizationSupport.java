@@ -11,6 +11,7 @@ import com.notenest.repository.PaymentRepository;
 import com.notenest.repository.UserRepository;
 import com.notenest.service.BidServiceImpl;
 import com.notenest.service.EmailService;
+import com.notenest.storage.MediaUrlIssuer;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
@@ -80,6 +81,10 @@ abstract class AuctionEndCharacterizationSupport {
     // 실제 메일 인프라(JavaMailSender 등)를 띄우지 않기 위해 목으로 대체하고 호출 횟수만 검증한다.
     @MockBean
     protected EmailService emailService;
+
+    // BidServiceImpl 이 입찰 내역 DTO 의 커버 URL 발급에 쓰지만, 경매 마감·결제 경로에서는 쓰이지 않는다.
+    @MockBean
+    protected MediaUrlIssuer mediaUrlIssuer;
 
     // 서비스와 동일한 고정 Clock. 픽스처 시각을 이 시계 기준으로 잡아야 서비스의 시각 판단과 일치한다.
     @Autowired

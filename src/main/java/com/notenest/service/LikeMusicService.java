@@ -4,6 +4,7 @@ import com.notenest.domain.Likes;
 import com.notenest.domain.Music;
 import com.notenest.domain.User;
 import com.notenest.dto.MusicListDTO;
+import com.notenest.storage.MediaUrlIssuer;
 import com.notenest.repository.LikeRepository;
 import com.notenest.repository.MusicRepository;
 import com.notenest.repository.UserRepository;
@@ -26,11 +27,14 @@ public class LikeMusicService {
     private final LikeRepository likeRepository;
     private final UserRepository userRepository;
     private  final MusicRepository musicRepository;
+    private final MediaUrlIssuer mediaUrlIssuer;
 
-    public LikeMusicService(LikeRepository likeRepository, UserRepository userRepository, MusicRepository musicRepository, MusicService musicService) {
+    public LikeMusicService(LikeRepository likeRepository, UserRepository userRepository, MusicRepository musicRepository,
+                            MusicService musicService, MediaUrlIssuer mediaUrlIssuer) {
         this.likeRepository = likeRepository;
         this.userRepository = userRepository;
         this.musicRepository = musicRepository;
+        this.mediaUrlIssuer = mediaUrlIssuer;
     }
 
     // 로그인한 유저 가져오기
@@ -94,7 +98,7 @@ public class LikeMusicService {
 
     private List<MusicListDTO> convertToDTO(List<Music> musicList) {
         return musicList.stream()
-                .map(MusicListDTO::fromMusic)
+                .map(music -> MusicListDTO.fromMusic(music, mediaUrlIssuer))
                 .collect(Collectors.toList());
     }
 

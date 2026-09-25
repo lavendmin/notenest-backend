@@ -2,6 +2,7 @@
 package com.notenest.dto;
 
 import com.notenest.domain.Music;
+import com.notenest.storage.MediaUrlIssuer;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -20,18 +21,19 @@ public class MusicListDTO {
     private Long currentHighestBid;
     private LocalDateTime auctionEndTime;
     private int likeCount;
+    // 목록류 응답은 커버만 싣고 음원(audio)은 싣지 않는다. 커버는 coverUrl, image 는 키 없는 기존 곡의 전이 기간 fallback.
     private byte[] image;
-    // 목록류 응답은 커버만 싣고 음원(audio)은 싣지 않는다.
+    private String coverUrl;
     private LocalDateTime createdAt;
 
 
     // Music 엔티티를 MusicDTO로 변환하는 메서드
-    public static MusicListDTO fromMusic(Music music) {
+    public static MusicListDTO fromMusic(Music music, MediaUrlIssuer mediaUrls) {
         MusicListDTO musicListDTO = new MusicListDTO();
         musicListDTO.setMusicUuid(music.getMusicUuid());
         musicListDTO.setTitle(music.getTitle());
-        // 이미지를 byte[] 그대로 설정
-        musicListDTO.setImage(music.getImage());
+        musicListDTO.setImage(MediaUrlIssuer.legacyCoverBytes(music));
+        musicListDTO.setCoverUrl(mediaUrls.coverUrl(music.getCover()));
 
         // 사용자가 null인 경우에 대한 예외 처리 추가
         if (music.getUser() != null) {

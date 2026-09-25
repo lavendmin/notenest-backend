@@ -14,6 +14,7 @@ import com.notenest.repository.PaymentRepository;
 import com.notenest.repository.UserRepository;
 import com.notenest.service.BidServiceImpl;
 import com.notenest.service.EmailService;
+import com.notenest.storage.MediaUrlIssuer;
 import com.notenest.service.PaymentService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -84,6 +85,8 @@ class PaymentAmountFlowIntegrationTest {
     @Autowired private Clock clock;
 
     @MockBean private EmailService emailService;
+    // BidServiceImpl 이 입찰 내역 DTO 의 커버 URL 발급에 쓰지만, 금액 흐름 경로에서는 쓰이지 않는다.
+    @MockBean private MediaUrlIssuer mediaUrlIssuer;
 
     private User composer;
     private User bidderA;

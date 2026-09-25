@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.notenest.domain.Bid;
 import com.notenest.domain.Likes;
+import com.notenest.domain.MediaObject;
 import com.notenest.domain.Music;
 import com.notenest.domain.User;
 import com.notenest.dto.UserDTO;
@@ -16,6 +17,7 @@ import com.notenest.repository.UserRepository;
 import com.notenest.service.BidServiceImpl;
 import com.notenest.service.EmailService;
 import com.notenest.service.UserService;
+import com.notenest.storage.FakeObjectStorage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -23,6 +25,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpMethod;
@@ -38,6 +43,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Base64;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -60,6 +66,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * 이 클래스는 처음에 결함을 현재 동작 그대로 고정한 뒤, 권한 수정 커밋에서 목표 계약으로 뒤집었다.
  *  - {@link AccessContracts}: 뒤집힌 계약. 각 DisplayName 의 D 번호는 결함 인벤토리 번호다.
  *  - {@link KeptContracts}: 전환 전부터 성립했고 이후에도 유지해야 하는 계약.
+ *  - {@link ObjectStorageContracts}: 객체 저장소로 옮긴 곡의 전달 계약(커버·미리듣기 URL, 전체 데모 5분 URL, 키 비노출).
  *
  * 인프라: 시드 의존 없이 항상 실행되도록 H2(MySQL 모드) + MockMvc 를 쓰고, <b>보안 필터를 켠다</b>(addFilters 기본값).
  * 인증은 LoginFilter 대신 {@link JWTUtil#createJwt} 로 발급한 실제 토큰을 Authorization 헤더에 싣는다.
@@ -81,6 +88,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
 class MediaAccessContractTest {
+
+    // 객체 키가 있는 곡의 URL 발급을 AWS 없이 검증하려고 저장소를 fake 로 바꾼다(서명 대신 ttl·파일명을 URL 에 담는다).
+    @TestConfiguration
+    static class FakeStorageConfig {
+        @Bean
+        @Primary
+        FakeObjectStorage fakeObjectStorage() {
+            return new FakeObjectStorage();
+        }
+    }
 
     // 구분 가능한 픽스처 바이트 — 응답·다운로드 본문이 "어느 파일"인지 바이트로 판별한다.
     private static final byte[] COVER = "cover-image-bytes".getBytes(StandardCharsets.UTF_8);
@@ -351,6 +368,92 @@ class MediaAccessContractTest {
         }
     }
 
+    @Nested
+    @DisplayName("객체 저장소 전달 계약 — 객체 키가 있는 곡은 URL 로만 준다")
+    class ObjectStorageContracts {
+
+        @Test
+        @DisplayName("목록(비로그인)은 커버 URL(1시간)을 주고 base64 커버·객체 키·전체 데모 경로는 싣지 않는다")
+        void listGivesCoverUrlOnly() throws Exception {
+            saveKeyedMusic();
+
+            JsonNode body = getJson(get("/api/music/filter"), null);
+            JsonNode first = body.get("content").get(0);
+
+            assertThat(first.get("coverUrl").asText()).contains("/cover/", "ttl=3600");
+            assertThat(first.has("image")).isFalse();
+            assertThat(first.has("coverObjectKey")).isFalse();
+            assertThat(body.toString()).doesNotContain("full-demo");
+        }
+
+        @Test
+        @DisplayName("상세는 커버 URL 과 미리듣기 URL(10분)을 주고 전체 데모의 키·URL 은 싣지 않는다")
+        void detailGivesCoverAndPreviewUrlsOnly() throws Exception {
+            Music music = saveKeyedMusic();
+
+            JsonNode body = getJson(get("/api/music/{id}", music.getMusicUuid()), stranger);
+
+            assertThat(body.get("coverUrl").asText()).contains("/cover/");
+            assertThat(body.get("previewUrl").asText()).contains("/preview/", "ttl=600");
+            assertThat(body.has("image")).isFalse();
+            assertThat(body.has("audio")).isFalse();
+            assertThat(body.toString()).doesNotContain("full-demo");
+        }
+
+        @Test
+        @DisplayName("미리듣기가 없는 기존 곡의 상세는 previewUrl 이 없다 — 전체 데모로 대체하지 않는다")
+        void legacyDetailHasNoPreview() throws Exception {
+            Music music = saveMusic();
+
+            JsonNode body = getJson(get("/api/music/{id}", music.getMusicUuid()), stranger);
+
+            assertThat(body.has("previewUrl")).isFalse();
+            assertThat(body.toString()).doesNotContain("full-demo");
+        }
+
+        @Test
+        @DisplayName("결제 완료 낙찰자의 다운로드는 5분 URL·원본 확장자 파일명을 JSON 으로 받는다")
+        void completedWinnerGetsShortLivedFullDemoUrl() throws Exception {
+            Music music = saveKeyedMusic();
+            saveBid(music, completedWinner, "COMPLETED");
+
+            JsonNode body = getJson(get("/api/mypage/download/{id}", music.getMusicUuid()), completedWinner);
+
+            assertThat(body.get("url").asText()).contains("/full-demo/", "ttl=300", "filename=");
+            assertThat(body.get("fileName").asText()).isEqualTo("contract-track.wav");
+            assertThat(body.get("expiresInSeconds").asLong()).isEqualTo(300);
+        }
+
+        @Test
+        @DisplayName("권한 없는 사용자는 전체 데모 URL 을 발급받지 못한다(403) — 정책 판단이 URL 발급보다 먼저다")
+        void strangerCannotObtainFullDemoUrl() throws Exception {
+            Music music = saveKeyedMusic();
+
+            MvcResult result = mockMvc.perform(get("/api/mypage/download/{id}", music.getMusicUuid())
+                            .header("Authorization", bearer(stranger)))
+                    .andExpect(status().isForbidden())
+                    .andReturn();
+
+            assertThat(result.getResponse().getContentAsString()).doesNotContain("full-demo");
+        }
+
+        @Test
+        @DisplayName("내 곡·찜 목록도 커버 URL 만 준다")
+        void myAndLikedListsGiveCoverUrl() throws Exception {
+            Music music = saveKeyedMusic();
+            saveLike(stranger, music);
+
+            JsonNode mine = getJson(get("/api/music/my-music"), seller).get("content").get(0);
+            JsonNode liked = getJson(get("/api/mypage/likes"), stranger).get("content").get(0);
+
+            for (JsonNode item : List.of(mine, liked)) {
+                assertThat(item.get("coverUrl").asText()).contains("/cover/");
+                assertThat(item.has("image")).isFalse();
+                assertThat(item.toString()).doesNotContain("full-demo");
+            }
+        }
+    }
+
     // --- 요청 헬퍼 ---
 
     private String bearer(User user) {
@@ -406,6 +509,18 @@ class MediaAccessContractTest {
         music.setPopularComposer(false);
         music.setSteadyWorkComposer(false);
         music.setHitSongComposer(false);
+        return musicRepository.save(music);
+    }
+
+    /** 객체 저장소로 올린 신규 곡 — LOB 없이 커버·미리듣기·전체 데모 키만 있다. */
+    private Music saveKeyedMusic() {
+        Music music = saveMusic();
+        String prefix = "music/" + music.getMusicUuid() + "/";
+        music.setImage(null);
+        music.setAudio(null);
+        music.setCover(new MediaObject(prefix + "cover/c1", "image/png", 10L, "cover.png"));
+        music.setPreview(new MediaObject(prefix + "preview/p1", "audio/mpeg", 10L, "preview.mp3"));
+        music.setFullDemo(new MediaObject(prefix + "full-demo/f1", "audio/wav", 10L, "demo.wav"));
         return musicRepository.save(music);
     }
 

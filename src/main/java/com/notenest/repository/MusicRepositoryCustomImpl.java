@@ -35,11 +35,11 @@ public class MusicRepositoryCustomImpl implements MusicRepositoryCustom {
 
         BooleanBuilder where = buildWhere(m, u, majorGenre, hashtags, minPrice, maxPrice, searchTerm);
 
-        // 페이지 본문 — audio 는 SELECT 절에 넣지 않는다(커버 image 만 포함).
+        // 페이지 본문 — audio 는 SELECT 절에 넣지 않는다. 커버는 객체 키(→ URL)와, 키가 없는 기존 곡용 image fallback.
         List<MusicSummaryDTO> rows = queryFactory
                 .select(Projections.constructor(MusicSummaryDTO.class,
                         m.musicUuid, m.title, m.startingPrice, u.nickname,
-                        m.currentHighestBid, m.auctionEndTime, m.likeCount, m.image))
+                        m.currentHighestBid, m.auctionEndTime, m.likeCount, m.image, m.cover.objectKey))
                 .from(m)
                 .leftJoin(m.user, u)
                 .where(where)

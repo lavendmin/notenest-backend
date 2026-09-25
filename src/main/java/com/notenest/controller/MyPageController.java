@@ -11,6 +11,7 @@ import com.notenest.service.BidService;
 import com.notenest.service.DownloadService;
 import com.notenest.service.LikeMusicService;
 import com.notenest.service.UserService;
+import com.notenest.storage.MediaUrlIssuer;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,7 +20,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
@@ -37,12 +37,15 @@ public class MyPageController {
     private final UserService userService;
     private final BidService bidService;
     private final DownloadService downloadService;
+    private final MediaUrlIssuer mediaUrlIssuer;
 
-    public MyPageController(LikeMusicService likeMusicService, UserService userService, BidService bidService, DownloadService downloadService) {
+    public MyPageController(LikeMusicService likeMusicService, UserService userService, BidService bidService, DownloadService downloadService,
+                            MediaUrlIssuer mediaUrlIssuer) {
         this.likeMusicService = likeMusicService;
         this.userService = userService;
         this.bidService = bidService;
         this.downloadService = downloadService;
+        this.mediaUrlIssuer = mediaUrlIssuer;
     }
 
     // 마이페이지 내 정보 조회
@@ -145,31 +148,32 @@ public class MyPageController {
         return ResponseEntity.ok(completedBidDTOS);
     }
 
-    // 음원 다운로드
+    // 전체 데모 다운로드
+    // - 객체 저장소에 올린 곡: 권한 확인 후 5분 만료 URL 을 JSON 으로 준다({url, fileName, expiresInSeconds}).
+    //   브라우저가 이 URL 로 S3 에서 직접 받는다(바이트가 백엔드를 거치지 않음). 만료 전에는 재사용·공유될 수 있어 1회용이 아니다.
+    // - 객체 키가 없는 기존 곡(백필 전): 전이 기간 fallback 으로 LOB 바이트를 그대로 내려준다. LOB 삭제 때 제거한다.
     @GetMapping("/download/{musicUuid}")
-    public ResponseEntity<byte[]> downloadMusic(@PathVariable UUID musicUuid) throws UnsupportedEncodingException {
+    public ResponseEntity<?> downloadMusic(@PathVariable UUID musicUuid) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String loggedInUserEmail = authentication.getName();
 
         // 곡 존재·로그인·전체 데모 접근 권한(판매자 또는 결제 완료 낙찰자)을 확인한다. 실패 시 404/401/403.
         Music music = downloadService.getDownloadableMusic(musicUuid, loggedInUserEmail);
-        byte[] audioData = music.getAudio();
 
-        String filename = music.getTitle();
-        if (music.getSubtitle() != null && !music.getSubtitle().isEmpty()) {
-            filename += "(" + music.getSubtitle() + ")";
+        if (MediaUrlIssuer.hasObjectKey(music.getFullDemo())) {
+            String fileName = DownloadService.downloadFileName(music);
+            Map<String, Object> body = new HashMap<>();
+            body.put("url", mediaUrlIssuer.fullDemoUrl(music.getFullDemo(), fileName));
+            body.put("fileName", fileName);
+            body.put("expiresInSeconds", MediaUrlIssuer.FULL_DEMO_TTL.toSeconds());
+            return ResponseEntity.ok(body);
         }
-        filename += ".mp3";
 
-        String encodedFilename = URLEncoder.encode(filename, StandardCharsets.UTF_8.toString());
-        String contentDisposition = "attachment; filename=\"" + encodedFilename + "\"";
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-
+        String encodedFilename = URLEncoder.encode(DownloadService.downloadFileName(music), StandardCharsets.UTF_8);
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition)
-                .body(audioData);
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + encodedFilename + "\"")
+                .body(music.getAudio());
     }
 
 }
