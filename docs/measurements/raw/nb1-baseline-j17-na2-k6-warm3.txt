@@ -1,0 +1,81 @@
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+
+     execution: local
+        script: scripts/k6/list-api-perf-maxprice.js
+        output: -
+
+     scenarios: (100.00%) 1 scenario, 10 max VUs, 1m0s max duration (incl. graceful stop):
+              * default: 10 looping VUs for 30s (gracefulStop: 30s)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  █ THRESHOLDS 
+
+    http_req_failed
+    ✓ 'rate==0' rate=0.00%
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 1342    44.273727/s
+    checks_succeeded...: 100.00% 1342 out of 1342
+    checks_failed......: 0.00%   0 out of 1342
+
+    ✓ status 200
+
+    HTTP
+    http_req_duration..............: avg=123.7ms  min=63.76ms  med=122.31ms max=264.49ms p(90)=159.19ms p(95)=171.28ms
+      { expected_response:true }...: avg=123.7ms  min=63.76ms  med=122.31ms max=264.49ms p(90)=159.19ms p(95)=171.28ms
+    http_req_failed................: 0.00%  0 out of 1343
+    http_reqs......................: 1343   44.306718/s
+
+    EXECUTION
+    iteration_duration.............: avg=224.22ms min=164.18ms med=222.92ms max=365.04ms p(90)=259.58ms p(95)=271.81ms
+    iterations.....................: 1342   44.273727/s
+    vus............................: 10     min=10        max=10
+    vus_max........................: 10     min=10        max=10
+
+    NETWORK
+    data_received..................: 5.5 GB 182 MB/s
+    data_sent......................: 463 kB 15 kB/s
+
+
+
+
+default ✓ [ 100% ] 10 VUs  30s

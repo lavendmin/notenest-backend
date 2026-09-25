@@ -1,4 +1,7 @@
-# NB1 기준선 — S3 전환 직전 (LOB 저장 상태)
+# NB1 기준선 — S3 전환 직전 (LOB 저장 상태) — ⚠ Java 21 이전 실험
+
+> **최종 비교에 쓰지 않는다.** 이 측정은 PATH에 우연히 잡힌 Java 21로 실행됐다. 프로젝트는 Java 17로 고정했다(`a6e7b0f`, Gradle toolchain).
+> S3 이후 비교 기준은 [Java 17 기준선](nb1-baseline-j17-before-s3.md)이다. 이 문서는 기록 보존용으로 남긴다.
 
 측정일: 2026-09-25 / 코드: `6104549` (브랜치 `feat/nb1-s3-media-storage`, NB2 금액 계약 반영 후)
 

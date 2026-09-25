@@ -1,0 +1,9 @@
+# NB1 기준선(Java 17) — multipart 업로드 크기 한도 재현 (2026-09-25, 커밋 83353d2, multipart 설정 없음 = Spring Boot 기본 1MB/10MB)
+# 요청: POST /api/music/create (composer@test.local JWT), image=100KB(image/jpeg), audio=랜덤 바이트(audio/mpeg), music=JSON
+# audio a500k.mp3
+{"message":"Music creation successful."}
+status=201
+# audio a2m.mp3
+
+status=413
+2026-09-25T14:25:24.046+09:00  WARN 56896 --- [notenest-backend] [nio-8086-exec-7] .w.s.m.s.DefaultHandlerExceptionResolver : Resolved [org.springframework.web.multipart.MaxUploadSizeExceededException: Maximum upload size exceeded]
