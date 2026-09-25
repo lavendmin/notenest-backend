@@ -1,0 +1,53 @@
+# NB1 LOB 삭제 후 최종 검증 원시 출력 (2026-09-26, 커밋 16d8782, 버킷 notenest-media)
+# presigned URL 의 서명·자격증명은 가렸다. 1번 db row 의 원본 파일명 깨짐은 Windows curl CP949 전송 탓(E2E 문서 4절).
+## 실제 S3 E2E 재실행
+## 1. 등록 (image=PNG, preview=MP3, audio=WAV)
+create status=201
+db row: music/<uuid>/cover/<uuid>	image/png	audio/mpeg	audio/wav	8864	���� ����.wav
+## 2. 목록(비로그인) 커버 URL
+list has image field: False, has full-demo text: 0
+coverUrl: https://notenest-media.s3.ap-northeast-2.amazonaws.com/music/<uuid>/cover/<uuid>?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20260925T153057Z&X-Amz-SignedHeaders=host&X-Amz-Credential=<masked>&X-Amz-Expires=3600&X-Amz-Signature=<masked>
+GET coverUrl status=HTTP/1.1 200 OK content-type=image/png bytesEqual=true
+## 3. private 직접 접근 거부
+unsigned URL (query 제거) status=403
+tampered signature status=403
+## 4. 상세: 비로그인 401, 로그인 시 미리듣기 URL
+anonymous detail status=401
+detail has audio: False, has full-demo text: 0
+GET previewUrl bytesEqual=true ttlSeconds=X-Amz-Expires=600
+## 5. 전체 데모: 입찰·결제 없는 사용자 403, 판매자 5분 URL
+bidder download status=403
+download json: fileName=NB1 S3 E2E(봄밤).wav expiresInSeconds=300 urlTtl=X-Amz-Expires=300
+GET fullDemoUrl status=HTTP/1.1 200 OK bytesEqual=true
+content-disposition: attachment; filename="NB1_S3_E2E____.wav"; filename*=UTF-8''NB1%20S3%20E2E%28%EB%B4%84%EB%B0%A4%29.wav
+## 6. 커버 교체: 새 키, 옛 객체 삭제
+update status=200
+old coverUrl status=404 (옛 객체 삭제 → 404 NoSuchKey 기대)
+new coverUrl bytesEqual=true
+## 7. 삭제: DB 삭제 후 객체 정리
+delete status=200
+db rows with title: 0
+after delete: newCover=404 preview=404 fullDemo=404 (모두 404 기대)
+## 권한·입찰·검증 규칙 재실행
+## 1. 검증 거부 (S3 호출 전)
+preview=WAV → 400 (400 기대)
+preview 6MB → {"message":"미리듣기 파일은 5MB 이하여야 합니다."} 400 (400 기대)
+full demo 100MB+ → 413 (413 기대)
+db rows 'NB1 GATE' after rejections: 0
+## 2. 등록 + 결제 완료 낙찰자
+create → 201
+before bid: winner download → 403 (403 기대 — 아직 낙찰·결제 없음)
+COMPLETED winner download → url issued, GET 200, bytesEqual=true, ttl=X-Amz-Expires=300
+unrelated user download → 403 (403 기대)
+## 3. 첫 입찰 후 규칙
+replace full demo → 409 (409 기대)
+delete song → 409 (409 기대)
+keys unchanged: true, full demo object still served: 200
+## 4. 정리 (테스트 입찰 제거 → 곡 삭제 → 객체 삭제 확인)
+delete song → 200
+after delete: full demo URL → 404 (404 기대), rows=0
+## 요청 SQL (요청 스레드 Hibernate SQL, 컬럼 참조 수)
+list: sqlStatements=4 musicSelects=2 image/audio columns=0
+detail: sqlStatements=3 musicSelects=1 image/audio columns=0
+my-music: sqlStatements=13 musicSelects=2 image/audio columns=0
+detail SELECT columns: m1_0.auction_end_time m1_0.auction_failure_email_sent m1_0.cover_content_type m1_0.cover_object_key m1_0.cover_original_name m1_0.cover_size m1_0.created_at m1_0.current_highest_bid m1_0.details m1_0.full_demo_content_type m1_0.full_demo_object_key m1_0.full_demo_original_name m1_0.full_demo_size m1_0.hashtag m1_0.hit_song_composer m1_0.like_count m1_0.major_genre m1_0.music_period m1_0.music_uuid m1_0.popular_composer m1_0.preview_content_type m1_0.preview_object_key m1_0.preview_original_name m1_0.preview_size m1_0.show_all_bids m1_0.starting_price m1_0.status m1_0.steady_work_composer m1_0.subtitle m1_0.title m1_0.user_uuid

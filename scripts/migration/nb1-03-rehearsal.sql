@@ -7,7 +7,7 @@
 --   가드의 SIGNAL 자체는 이 스크립트를 멈추므로 여기서 발동시키지 않고, 가드와 같은 조건식의 카운트로 탐지를 증명한다.
 -- 실행: docker exec -i notenest-db mariadb -uroot -plocal-only < scripts/migration/nb1-03-rehearsal.sql
 -- 기대: PREFLIGHT_CATCHES_LOB_WITHOUT_KEY = 1, LOB_COLUMNS_AFTER_DROP = 0, ROWS_AFTER = 2, KEYS_AFTER = 2,
---       SNAPSHOT_TABLES_AFTER = 0, 나머지 n = 0
+--       SNAPSHOT_TABLES_AFTER = 0, ROWS_AFTER_OPTIMIZE = 2, 나머지 n = 0
 -- ============================================================================
 DROP DATABASE IF EXISTS nb1_03_rehearsal;
 CREATE DATABASE nb1_03_rehearsal;
@@ -52,5 +52,9 @@ SELECT 'ROWS_AFTER' AS chk, COUNT(*) AS n FROM music;
 SELECT 'KEYS_AFTER' AS chk, SUM(cover_object_key IS NOT NULL AND full_demo_object_key IS NOT NULL) AS n FROM music;
 SELECT 'SNAPSHOT_TABLES_AFTER' AS chk, COUNT(*) AS n FROM INFORMATION_SCHEMA.TABLES
  WHERE TABLE_SCHEMA = 'nb1_03_rehearsal' AND TABLE_NAME = 'nb1_02_lob_snapshot';
+
+-- 공간 회수(재구성) 후에도 행·키 보존
+OPTIMIZE TABLE music;
+SELECT 'ROWS_AFTER_OPTIMIZE' AS chk, COUNT(*) AS n FROM music;
 
 DROP DATABASE nb1_03_rehearsal;

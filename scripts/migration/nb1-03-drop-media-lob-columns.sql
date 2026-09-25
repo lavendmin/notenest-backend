@@ -59,3 +59,14 @@ SELECT COLUMN_NAME
 -- (B) 행 수와 객체 키는 그대로다 (STEP 1 의 music_rows·cover_keys·full_demo_keys 와 같아야 정상)
 SELECT COUNT(*) AS music_rows, SUM(cover_object_key IS NOT NULL) AS cover_keys, SUM(full_demo_object_key IS NOT NULL) AS full_demo_keys
   FROM music;
+
+-- ----------------------------------------------------------------------------
+-- STEP 5. 공간 회수 — 테이블 재구성
+--   MariaDB 10.4+ 의 DROP COLUMN 은 기본이 INSTANT(메타데이터만 변경)라 LOB 가 쓰던 페이지가 테이블스페이스에
+--   그대로 남는다. 재구성해야 파일이 줄고 삭제한 바이트가 물리적으로도 사라진다.
+--   로컬 N=500 시드 실측: music.ibd 1,774,190,592B → 294,912B (재구성 약 1초, 행·키 불변).
+-- ----------------------------------------------------------------------------
+OPTIMIZE TABLE music;
+SELECT ROUND(data_length / 1048576, 2) AS data_mib, ROUND(index_length / 1048576, 2) AS index_mib
+  FROM INFORMATION_SCHEMA.TABLES
+ WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'music';
