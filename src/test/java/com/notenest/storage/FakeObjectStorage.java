@@ -43,6 +43,17 @@ public class FakeObjectStorage implements ObjectStorage {
         return this;
     }
 
+    /** 주입한 실패만 해제한다(저장된 객체는 유지) — "장애 복구 후 재실행" 시나리오용. */
+    public void clearFailures() {
+        failingDeletes.clear();
+        failingPutCall = -1;
+    }
+
+    /** 누적 put 호출 수 — 재실행 시 다시 올리지 않았는지 확인용. */
+    public int putCalls() {
+        return putCalls;
+    }
+
     /** 저장 내용과 주입한 실패를 모두 지운다 — 스프링 컨텍스트에서 테스트 간 공유될 때 사용. */
     public void reset() {
         objects.clear();
