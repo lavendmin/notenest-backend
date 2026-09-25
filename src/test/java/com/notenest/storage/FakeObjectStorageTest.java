@@ -45,14 +45,16 @@ class FakeObjectStorageTest {
     }
 
     @Test
-    @DisplayName("failDeleteOf(key): 그 키 삭제만 실패하고 객체는 남는다")
+    @DisplayName("failDeleteOf(keyPart): 키에 그 문자열이 들어간 객체의 삭제만 실패하고 객체는 남는다")
     void failDeleteOfKey() {
-        FakeObjectStorage storage = new FakeObjectStorage().failDeleteOf("old");
-        put(storage, "old", new byte[]{1});
+        FakeObjectStorage storage = new FakeObjectStorage().failDeleteOf("/cover/");
+        put(storage, "music/1/cover/a", new byte[]{1});
+        put(storage, "music/1/preview/b", new byte[]{2});
 
-        assertThatThrownBy(() -> storage.delete("old")).isInstanceOf(ObjectStorageException.class);
+        assertThatThrownBy(() -> storage.delete("music/1/cover/a")).isInstanceOf(ObjectStorageException.class);
+        storage.delete("music/1/preview/b");
 
-        assertThat(storage.keys()).containsExactly("old");
+        assertThat(storage.keys()).containsExactly("music/1/cover/a");
     }
 
     @Test

@@ -18,8 +18,9 @@ import java.util.UUID;
 @NoArgsConstructor
 public class Music {
 
+    // [NB1] 곡 UUID 는 저장 전에 정한다 — 객체 키(music/{musicUuid}/...)로 파일을 먼저 올린 뒤 DB 에 저장하기 때문이다.
+    // 등록 서비스가 미리 지정하고, 지정하지 않은 경로(시드·테스트 픽스처 등)는 저장 직전에 여기서 발급한다.
     @Id
-    @GeneratedValue(generator = "UUID")
     @Column(name = "music_uuid", updatable = false, nullable = false)
     private UUID musicUuid;
 
@@ -131,6 +132,13 @@ public class Music {
     @Column(name = "status", nullable = false)
     private int status = 0; // 0: 낙찰되지 않음, 1: 낙찰됨
 
+
+    @PrePersist
+    void assignUuidIfAbsent() {
+        if (musicUuid == null) {
+            musicUuid = UUID.randomUUID();
+        }
+    }
 
     //auctionEndTime 계산
     public void setMusicPeriod(Integer musicPeriod) {

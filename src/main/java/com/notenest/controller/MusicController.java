@@ -7,6 +7,8 @@ import com.notenest.dto.MusicSummaryDTO;
 import com.notenest.dto.UpdateMusicDTO;
 import com.notenest.service.LikeMusicService;
 import com.notenest.service.MusicService;
+import com.notenest.storage.InvalidMediaException;
+import com.notenest.storage.ObjectStorageException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
@@ -36,22 +38,28 @@ public class MusicController {
 
     // 곡 생성하기
     @PostMapping("/create")
-    public ResponseEntity<?> createMusic(@RequestPart("image") MultipartFile image,
-                                         @RequestPart("audio") MultipartFile audio,
+    // 파트: image(커버), preview(미리듣기, 필수), audio(전체 데모), music(JSON). 파일 누락도 서비스 검증이 400 으로 응답한다.
+    public ResponseEntity<?> createMusic(@RequestPart(value = "image", required = false) MultipartFile image,
+                                         @RequestPart(value = "preview", required = false) MultipartFile preview,
+                                         @RequestPart(value = "audio", required = false) MultipartFile audio,
                                          @RequestPart("music") CreateMusicDTO createMusicDTO) {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String loggedInUserEmail = authentication.getName();
 
         try {
-            createMusicDTO.setImage(image.getBytes());
-            createMusicDTO.setAudio(audio.getBytes());
-
-            musicService.createMusic(createMusicDTO, loggedInUserEmail);
+            musicService.createMusic(createMusicDTO, image, preview, audio, loggedInUserEmail);
             // JSON 형식으로 반환
             Map<String, String> response = new HashMap<>();
             response.put("message", "Music creation successful.");
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (IllegalArgumentException | InvalidMediaException e) {
+            // 입력 검증 실패(필수 값·파일 형식·크기) — 클라이언트가 고칠 수 있는 오류
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        } catch (ObjectStorageException e) {
+            // 파일 저장소 장애 — 이미 올린 파일은 보상 삭제됐고 곡은 저장되지 않았다
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                    .body(Map.of("message", "파일 저장소 오류로 곡을 등록하지 못했습니다. 잠시 후 다시 시도해 주세요."));
         } catch (Exception e) {
             // 에러 메시지를 클라이언트에게 JSON 형식으로 전달
             Map<String, String> response = new HashMap<>();

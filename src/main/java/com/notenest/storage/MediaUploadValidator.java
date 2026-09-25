@@ -22,16 +22,16 @@ public class MediaUploadValidator {
     /** 검사를 통과하면 저장에 쓸 실제 형식을 돌려준다. */
     public DetectedMedia validate(MediaAssetType type, MultipartFile file) {
         if (file == null || file.isEmpty()) {
-            throw new InvalidMediaException(type + " 파일이 비어 있습니다.");
+            throw new InvalidMediaException(type.label() + " 파일이 비어 있습니다.");
         }
         if (file.getSize() > type.maxBytes()) {
-            throw new InvalidMediaException(type + " 파일은 " + (type.maxBytes() / (1024 * 1024)) + "MB 이하여야 합니다.");
+            throw new InvalidMediaException(type.label() + " 파일은 " + (type.maxBytes() / (1024 * 1024)) + "MB 이하여야 합니다.");
         }
 
         DetectedMedia detected = detect(readHeader(file))
-                .orElseThrow(() -> new InvalidMediaException(type + " 파일 형식을 확인할 수 없습니다."));
+                .orElseThrow(() -> new InvalidMediaException(type.label() + " 파일 형식을 확인할 수 없습니다."));
         if (!type.allows(detected)) {
-            throw new InvalidMediaException(type + " 파일로 " + detected + " 형식은 허용되지 않습니다.");
+            throw new InvalidMediaException(type.label() + " 파일로 " + detected + " 형식은 허용되지 않습니다.");
         }
         return detected;
     }

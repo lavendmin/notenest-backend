@@ -1,6 +1,7 @@
 package com.notenest.service;
 
 import com.notenest.domain.Composer;
+import com.notenest.domain.MediaObject;
 import com.notenest.domain.Music;
 import com.notenest.domain.User;
 import com.notenest.dto.BidListDTO;
@@ -14,6 +15,9 @@ import com.notenest.repository.BidRepository;
 import com.notenest.repository.LikeRepository;
 import com.notenest.repository.MusicRepository;
 import com.notenest.repository.UserRepository;
+import com.notenest.storage.MediaAssetType;
+import com.notenest.storage.MediaUploadValidator;
+import com.notenest.storage.MusicMediaStorage;
 import io.jsonwebtoken.io.IOException;
 import io.micrometer.common.util.StringUtils;
 import jakarta.persistence.EntityNotFoundException;
@@ -25,6 +29,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -55,13 +61,20 @@ public class MusicServiceImpl implements MusicService {
     private BidRepository bidRepository;
 
     @Autowired
+    private MediaUploadValidator mediaUploadValidator;
+
+    @Autowired
+    private MusicMediaStorage musicMediaStorage;
+
+    @Autowired
     private BidServiceImpl bidService;
 
     @Autowired
     private ComposerService composerService;
 
     @Override
-    public Music createMusic(CreateMusicDTO createMusicDTO, String loggedInUserEmail) {
+    public Music createMusic(CreateMusicDTO createMusicDTO, MultipartFile cover, MultipartFile preview,
+                             MultipartFile fullDemo, String loggedInUserEmail) {
         User user = userRepository.findByEmail(loggedInUserEmail);
         if (user == null) {
             throw new IllegalArgumentException("로그인 후 이용 가능합니다.");
@@ -76,12 +89,6 @@ public class MusicServiceImpl implements MusicService {
         }
         // 시작가는 결제 가능한 원 단위 범위여야 한다(입찰·결제 허용 범위와 일치, NB2 금액 계약).
         KrwAmounts.requireWonInRange(createMusicDTO.getStartingPrice(), "시작 가격");
-        if (createMusicDTO.getImage() == null || createMusicDTO.getImage().length == 0) {
-            throw new IllegalArgumentException("음악 이미지를 업로드하세요.");
-        }
-        if (createMusicDTO.getAudio() == null || createMusicDTO.getAudio().length == 0) {
-            throw new IllegalArgumentException("음악 파일을 업로드하세요.");
-        }
         if (createMusicDTO.getMajorGenre() == null || createMusicDTO.getMajorGenre().isEmpty()) {
             throw new IllegalArgumentException("메인 장르를 선택하세요.");
         }
@@ -92,7 +99,15 @@ public class MusicServiceImpl implements MusicService {
             throw new IllegalArgumentException("입찰 공개 여부를 선택하세요.");
         }
 
+        // 파일 검증은 업로드보다 먼저 한다 — 하나라도 규칙을 어기면 아무것도 올리지 않는다. 미리듣기는 신규 곡 필수.
+        List<MusicMediaStorage.Upload> uploads = List.of(
+                new MusicMediaStorage.Upload(MediaAssetType.COVER, cover, mediaUploadValidator.validate(MediaAssetType.COVER, cover)),
+                new MusicMediaStorage.Upload(MediaAssetType.PREVIEW, preview, mediaUploadValidator.validate(MediaAssetType.PREVIEW, preview)),
+                new MusicMediaStorage.Upload(MediaAssetType.FULL_DEMO, fullDemo, mediaUploadValidator.validate(MediaAssetType.FULL_DEMO, fullDemo)));
+
         Music music = new Music();
+        // 객체 키(music/{musicUuid}/...)에 쓰도록 곡 UUID 를 저장 전에 정한다.
+        music.setMusicUuid(UUID.randomUUID());
         // createdAt 설정
         music.setCreatedAt(LocalDateTime.now());
         // musicPeriod 값을 설정하여 auctionEndTime을 자동으로 계산
@@ -131,7 +146,20 @@ public class MusicServiceImpl implements MusicService {
 
         music.setUser(user);
 
-        return musicRepository.save(music);
+        // 업로드 중 실패하면 MusicMediaStorage 가 이미 올린 파일을 지우고 ObjectStorageException 을 던진다(DB 저장 없음).
+        Map<MediaAssetType, MediaObject> stored = musicMediaStorage.uploadAll(music.getMusicUuid(), uploads);
+        music.setCover(stored.get(MediaAssetType.COVER));
+        music.setPreview(stored.get(MediaAssetType.PREVIEW));
+        music.setFullDemo(stored.get(MediaAssetType.FULL_DEMO));
+
+        // 업로드 뒤 DB 저장이 실패하면 올린 파일을 지운다(고아 객체 방지). 이 메서드는 트랜잭션 밖이라
+        // save 자체의 커밋까지 끝난 뒤 반환되므로, 커밋 실패도 여기서 잡힌다.
+        try {
+            return musicRepository.save(music);
+        } catch (RuntimeException e) {
+            musicMediaStorage.deleteQuietly(MusicMediaStorage.keysOf(stored.values()));
+            throw e;
+        }
     }
 
 

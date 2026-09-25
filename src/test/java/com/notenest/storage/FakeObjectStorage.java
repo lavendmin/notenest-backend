@@ -20,7 +20,7 @@ import java.util.Set;
  *
  * 목적은 S3 동작 흉내가 아니라 서비스의 부분 실패 보상 검증이다:
  *  - {@link #failPutAt(int)}: N번째 put 을 실패시킨다 (예: 커버는 올라가고 전체 데모 업로드에서 실패)
- *  - {@link #failDeleteOf(String)}: 특정 키 삭제를 실패시킨다 (예: 교체 후 옛 객체 정리 실패)
+ *  - {@link #failDeleteOf(String)}: 키에 주어진 문자열이 들어간 객체의 삭제를 실패시킨다 (예: "/cover/" — 보상 삭제 실패)
  * AWS 연동(IAM·private 접근·URL 만료)은 여기서 검증하지 않는다.
  */
 public class FakeObjectStorage implements ObjectStorage {
@@ -37,10 +37,19 @@ public class FakeObjectStorage implements ObjectStorage {
         return this;
     }
 
-    /** 이 키의 delete 를 실패시킨다. */
-    public FakeObjectStorage failDeleteOf(String key) {
-        failingDeletes.add(key);
+    /** 키에 keyPart 가 들어간 객체의 delete 를 실패시킨다. 키가 무작위 UUID 를 포함하므로 부분 일치로 지정한다. */
+    public FakeObjectStorage failDeleteOf(String keyPart) {
+        failingDeletes.add(keyPart);
         return this;
+    }
+
+    /** 저장 내용과 주입한 실패를 모두 지운다 — 스프링 컨텍스트에서 테스트 간 공유될 때 사용. */
+    public void reset() {
+        objects.clear();
+        contentTypes.clear();
+        failingDeletes.clear();
+        putCalls = 0;
+        failingPutCall = -1;
     }
 
     public Set<String> keys() {
@@ -73,7 +82,7 @@ public class FakeObjectStorage implements ObjectStorage {
 
     @Override
     public void delete(String key) {
-        if (failingDeletes.contains(key)) {
+        if (failingDeletes.stream().anyMatch(key::contains)) {
             throw new ObjectStorageException("주입된 delete 실패: " + key);
         }
         objects.remove(key);

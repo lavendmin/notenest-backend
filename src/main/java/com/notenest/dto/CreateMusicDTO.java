@@ -15,8 +15,6 @@ public class CreateMusicDTO {
     private Integer musicPeriod;
     private String details;
     private String hashtag;
-    private byte[] image;
-    private byte[] audio;
     private UUID userUuid; // 음악을 등록한 사용자의 UUID
     private String nickName; // 음악을 등록한 사용자의 닉네임
     private Long currentHighestBid;

@@ -2,6 +2,7 @@ package com.notenest.service;
 
 import com.notenest.domain.Music;
 import com.notenest.dto.CreateMusicDTO;
+import org.springframework.web.multipart.MultipartFile;
 import com.notenest.dto.MusicDTO;
 import com.notenest.dto.MusicDetailDTO;
 import com.notenest.dto.MusicSummaryDTO;
@@ -14,7 +15,9 @@ import java.util.UUID;
 
 public interface MusicService {
 
-    Music createMusic(CreateMusicDTO createMusicDTO, String loggedInUserEmail);
+    // 커버·미리듣기·전체 데모 파일은 객체 저장소에 올리고 DB 에는 객체 키만 저장한다(미리듣기 필수).
+    Music createMusic(CreateMusicDTO createMusicDTO, MultipartFile cover, MultipartFile preview,
+                      MultipartFile fullDemo, String loggedInUserEmail);
 
     void deleteMusic(UUID musicUuid, String loggedInUserEmail);
 

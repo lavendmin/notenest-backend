@@ -13,16 +13,30 @@ import java.util.Set;
  */
 public enum MediaAssetType {
 
-    COVER(10L * 1024 * 1024, Set.of(DetectedMedia.JPEG, DetectedMedia.PNG)),
-    PREVIEW(5L * 1024 * 1024, Set.of(DetectedMedia.MP3)),
-    FULL_DEMO(100L * 1024 * 1024, Set.of(DetectedMedia.MP3, DetectedMedia.WAV));
+    COVER("커버 이미지", "cover", 10L * 1024 * 1024, Set.of(DetectedMedia.JPEG, DetectedMedia.PNG)),
+    PREVIEW("미리듣기", "preview", 5L * 1024 * 1024, Set.of(DetectedMedia.MP3)),
+    FULL_DEMO("전체 데모", "full-demo", 100L * 1024 * 1024, Set.of(DetectedMedia.MP3, DetectedMedia.WAV));
 
+    private final String label;
+    private final String keySegment;
     private final long maxBytes;
     private final Set<DetectedMedia> allowed;
 
-    MediaAssetType(long maxBytes, Set<DetectedMedia> allowed) {
+    MediaAssetType(String label, String keySegment, long maxBytes, Set<DetectedMedia> allowed) {
+        this.label = label;
+        this.keySegment = keySegment;
         this.maxBytes = maxBytes;
         this.allowed = allowed;
+    }
+
+    /** 사용자 메시지용 이름. */
+    public String label() {
+        return label;
+    }
+
+    /** 객체 키 경로 조각 — music/{musicUuid}/{keySegment}/{assetUuid}. */
+    public String keySegment() {
+        return keySegment;
     }
 
     public long maxBytes() {
