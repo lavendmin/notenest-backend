@@ -51,7 +51,7 @@ public class UserService {
         userDTO.encryptPassword(bCryptPasswordEncoder.encode(userDTO.getPassword()));
 
         User user = userDTO.toEntity();
-        user.setRole("ROLE_ADMIN");
+        user.setRole("ROLE_USER");
         user.setEmailVerified(true);
         userRepository.save(user);
 

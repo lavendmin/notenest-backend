@@ -7,7 +7,6 @@ import com.notenest.dto.MyBidListDTO;
 import com.notenest.dto.PendingBidDTO;
 import com.notenest.dto.UserMyPageDTO;
 import com.notenest.dto.UserUpdatePasswordDTO;
-import com.notenest.repository.MusicRepository;
 import com.notenest.service.BidService;
 import com.notenest.service.DownloadService;
 import com.notenest.service.LikeMusicService;
@@ -38,14 +37,12 @@ public class MyPageController {
     private final UserService userService;
     private final BidService bidService;
     private final DownloadService downloadService;
-    private final MusicRepository musicRepository;
 
-    public MyPageController(LikeMusicService likeMusicService, UserService userService, BidService bidService, DownloadService downloadService, MusicRepository musicRepository) {
+    public MyPageController(LikeMusicService likeMusicService, UserService userService, BidService bidService, DownloadService downloadService) {
         this.likeMusicService = likeMusicService;
         this.userService = userService;
         this.bidService = bidService;
         this.downloadService = downloadService;
-        this.musicRepository = musicRepository;
     }
 
     // 마이페이지 내 정보 조회
@@ -154,10 +151,9 @@ public class MyPageController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String loggedInUserEmail = authentication.getName();
 
-        byte[] audioData = downloadService.downloadMusic(musicUuid,loggedInUserEmail);
-
-        Music music = musicRepository.findById(musicUuid)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid music UUID: " + musicUuid));
+        // 곡 존재·로그인·전체 데모 접근 권한(판매자 또는 결제 완료 낙찰자)을 확인한다. 실패 시 404/401/403.
+        Music music = downloadService.getDownloadableMusic(musicUuid, loggedInUserEmail);
+        byte[] audioData = music.getAudio();
 
         String filename = music.getTitle();
         if (music.getSubtitle() != null && !music.getSubtitle().isEmpty()) {

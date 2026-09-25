@@ -13,7 +13,6 @@ import com.notenest.repository.MusicRepository;
 import com.notenest.repository.PaymentRepository;
 import com.notenest.repository.UserRepository;
 import com.notenest.service.BidServiceImpl;
-import com.notenest.service.DownloadService;
 import com.notenest.service.EmailService;
 import com.notenest.service.PaymentService;
 import org.junit.jupiter.api.BeforeEach;
@@ -85,7 +84,6 @@ class PaymentAmountFlowIntegrationTest {
     @Autowired private Clock clock;
 
     @MockBean private EmailService emailService;
-    @MockBean private DownloadService downloadService;
 
     private User composer;
     private User bidderA;

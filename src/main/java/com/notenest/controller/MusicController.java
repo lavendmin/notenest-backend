@@ -1,6 +1,5 @@
 package com.notenest.controller;
 
-import com.notenest.domain.Music;
 import com.notenest.dto.CreateMusicDTO;
 import com.notenest.dto.MusicDTO;
 import com.notenest.dto.MusicDetailDTO;
@@ -12,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -70,6 +70,9 @@ public class MusicController {
         try {
             musicService.deleteMusic(musicUuid, loggedInUserEmail);
             return ResponseEntity.ok("곡이 삭제되었습니다.");
+        } catch (IllegalStateException e) {
+            // 첫 입찰 발생 후에는 삭제할 수 없다 — 입찰·낙찰 기록이 곡과 함께 사라지지 않게 한다.
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to delete music.");
         }
@@ -88,9 +91,10 @@ public class MusicController {
                 updateMusicDTO.setImage(image.getBytes());
             }
 
-            Music updatedMusic = musicService.updateMusic(musicUuid, updateMusicDTO, loggedInUserEmail);
+            musicService.updateMusic(musicUuid, updateMusicDTO, loggedInUserEmail);
 
-            return ResponseEntity.ok(updatedMusic);
+            // 엔티티를 그대로 직렬화하면 음원 바이트와 작성자 개인정보(User)까지 응답에 실린다 → 상세 DTO로 응답한다.
+            return ResponseEntity.ok(musicService.getMusicDetail(musicUuid));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (IOException e) {
@@ -116,8 +120,10 @@ public class MusicController {
             @RequestParam(defaultValue = "latest") String sortBy,
             @RequestParam(required = false) String searchTerm) {
         try {
+            // 목록은 비로그인에게도 공개한다. 익명 인증 토큰도 isAuthenticated()=true 라서 타입으로 구분한다.
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String loggedInUserEmail = (authentication != null && authentication.isAuthenticated()) ? authentication.getName() : null;
+            boolean loggedIn = authentication != null && !(authentication instanceof AnonymousAuthenticationToken);
+            String loggedInUserEmail = loggedIn ? authentication.getName() : null;
 
             Pageable pageable = PageRequest.of(page, size);
 

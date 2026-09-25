@@ -10,7 +10,6 @@ import com.notenest.repository.MusicRepository;
 import com.notenest.repository.PaymentRepository;
 import com.notenest.repository.UserRepository;
 import com.notenest.service.BidServiceImpl;
-import com.notenest.service.DownloadService;
 import com.notenest.service.EmailService;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -81,10 +80,6 @@ abstract class AuctionEndCharacterizationSupport {
     // 실제 메일 인프라(JavaMailSender 등)를 띄우지 않기 위해 목으로 대체하고 호출 횟수만 검증한다.
     @MockBean
     protected EmailService emailService;
-
-    // BidServiceImpl 이 주입받지만 경매 마감 경로에서는 쓰이지 않는다. 컨텍스트 구성을 위해 목으로 채운다.
-    @MockBean
-    protected DownloadService downloadService;
 
     // 서비스와 동일한 고정 Clock. 픽스처 시각을 이 시계 기준으로 잡아야 서비스의 시각 판단과 일치한다.
     @Autowired

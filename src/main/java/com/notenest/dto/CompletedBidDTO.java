@@ -16,5 +16,4 @@ public class CompletedBidDTO {
     private long bidPrice;
     private boolean paid;
     private String downloadUrl;
-    private int downloadCount;
 }

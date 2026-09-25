@@ -52,9 +52,6 @@ public class BidServiceImpl implements BidService {
     @Autowired
     private EmailService emailService;
 
-    @Autowired
-    private DownloadService downloadService;
-
     // 시간 소스 — 운영은 시스템 시계, 테스트는 고정 Clock 주입(반복 실행 멱등성 검증용)
     @Autowired
     private Clock clock;
@@ -445,9 +442,6 @@ public class BidServiceImpl implements BidService {
             completedBidDTO.setBidPrice(bid.getPrice());
             completedBidDTO.setPaid(true);
             completedBidDTO.setDownloadUrl("/api/mypage/download/" + bid.getMusic().getMusicUuid()); // 음원 파일 다운로드 Url
-
-            int downloadCount = downloadService.getDownloadCount(completedBidDTO.getMusicUuid(), loggedInUserEmail);
-            completedBidDTO.setDownloadCount(downloadCount);
 
             return completedBidDTO;
         });

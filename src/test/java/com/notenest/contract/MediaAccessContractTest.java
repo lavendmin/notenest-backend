@@ -14,7 +14,6 @@ import com.notenest.repository.MusicRepository;
 import com.notenest.repository.PaymentRepository;
 import com.notenest.repository.UserRepository;
 import com.notenest.service.BidServiceImpl;
-import com.notenest.service.DownloadService;
 import com.notenest.service.EmailService;
 import com.notenest.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,7 +41,6 @@ import java.util.Base64;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -51,18 +49,23 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * NB1 미디어 접근 계약 테스트 — S3 전환 전 현재 동작을 고정한다.
+ * NB1 미디어 접근 계약 테스트.
  *
- * 목적: 이미지·음원 저장을 S3로 옮기고 권한을 고치는 동안 "무엇이 바뀌었는가"를 테스트 diff 로 남긴다.
- *  - {@link CurrentDefects}: 현재 결함을 **현재 동작 그대로** 고정한다. 각 테스트의 DisplayName 에 목표 계약을 적고,
- *    해당 결함을 고치는 커밋에서 단언을 목표 계약으로 뒤집는다. (결함이 고쳐지면 이 테스트가 먼저 깨진다)
- *  - {@link KeptContracts}: 전환 후에도 유지해야 하는 계약. 지금도 통과해야 하고 이후에도 계속 통과해야 한다.
+ * 접근 정책(2026-09-25 확정):
+ *  - 곡 목록은 비로그인에게도 공개한다(좋아요 여부는 false).
+ *  - 곡 상세부터는 로그인이 필요하고, 상세·목록류 응답에는 전체 음원을 싣지 않는다.
+ *  - 전체 데모는 판매자 본인 또는 결제 완료(COMPLETED) 낙찰자만 받는다. 다운로드 횟수는 제한하지 않는다.
+ *  - 첫 입찰 발생 후에는 곡을 삭제할 수 없다.
+ *
+ * 이 클래스는 처음에 결함을 현재 동작 그대로 고정한 뒤, 권한 수정 커밋에서 목표 계약으로 뒤집었다.
+ *  - {@link AccessContracts}: 뒤집힌 계약. 각 DisplayName 의 D 번호는 결함 인벤토리 번호다.
+ *  - {@link KeptContracts}: 전환 전부터 성립했고 이후에도 유지해야 하는 계약.
  *
  * 인프라: 시드 의존 없이 항상 실행되도록 H2(MySQL 모드) + MockMvc 를 쓰고, <b>보안 필터를 켠다</b>(addFilters 기본값).
  * 인증은 LoginFilter 대신 {@link JWTUtil#createJwt} 로 발급한 실제 토큰을 Authorization 헤더에 싣는다.
  *
  * 스케줄러: {@link BidServiceImpl} 을 목으로 대체해 @Scheduled 경매 배치가 픽스처를 변형하지 못하게 한다.
- * 공개 상세가 쓰는 입찰 목록 조회만 빈 페이지로 스텁한다.
+ * 상세가 쓰는 입찰 목록 조회만 빈 페이지로 스텁한다.
  */
 @SpringBootTest(properties = {
         "spring.jwt.secret=test-secret-key-for-notenest-builds",
@@ -108,9 +111,6 @@ class MediaAccessContractTest {
     private LikeRepository likeRepository;
 
     @Autowired
-    private DownloadService downloadService;
-
-    @Autowired
     private UserService userService;
 
     @MockBean
@@ -142,79 +142,106 @@ class MediaAccessContractTest {
     }
 
     @Nested
-    @DisplayName("현재 결함 — NB1에서 목표 계약으로 뒤집는다")
-    class CurrentDefects {
+    @DisplayName("접근 계약 — NB1 권한 수정으로 뒤집은 결함")
+    class AccessContracts {
 
         @Test
-        @DisplayName("D3 [목표: 공개 상세는 전체 음원을 주지 않는다] 현재: 토큰 없는 상세 요청에 전체 음원 바이트가 실린다")
-        void anonymousDetailContainsFullAudio() throws Exception {
-            Music music = saveMusic();
+        @DisplayName("D1 곡 목록은 비로그인에게 공개하고 좋아요 여부는 false 다")
+        void anonymousCanBrowseList() throws Exception {
+            saveMusic();
 
-            JsonNode body = getJson(get("/api/music/{id}", music.getMusicUuid()), null);
+            JsonNode body = getJson(get("/api/music/filter"), null);
 
-            assertThat(body.get("audio").asText()).isEqualTo(base64(FULL_AUDIO));
+            JsonNode first = body.get("content").get(0);
+            assertThat(first.get("title").asText()).isEqualTo("contract-track");
+            assertThat(first.get("likedByUser").asBoolean()).isFalse();
+            assertThat(first.has("audio")).isFalse();
         }
 
         @Test
-        @DisplayName("D4 [목표: 입찰·결제 이력 없는 사용자는 403] 현재: 로그인만 하면 전체 음원을 다운로드한다")
-        void strangerCanDownloadFullAudio() throws Exception {
+        @DisplayName("D1·D3 비로그인 상세 요청은 401 이다")
+        void anonymousDetailIsUnauthorized() throws Exception {
             Music music = saveMusic();
 
-            byte[] downloaded = download(music, stranger);
-
-            assertThat(downloaded).isEqualTo(FULL_AUDIO);
+            mockMvc.perform(get("/api/music/{id}", music.getMusicUuid()))
+                    .andExpect(status().isUnauthorized());
         }
 
         @Test
-        @DisplayName("D4 [목표: 결제 대기(PENDING) 낙찰자는 403] 현재: 결제 전 낙찰자도 전체 음원을 다운로드한다")
-        void pendingWinnerCanDownloadFullAudio() throws Exception {
+        @DisplayName("D1 비로그인 곡 등록·다운로드는 401 이다")
+        void anonymousWritesAndDownloadsAreUnauthorized() throws Exception {
+            Music music = saveMusic();
+
+            mockMvc.perform(multipart("/api/music/create")).andExpect(status().isUnauthorized());
+            mockMvc.perform(get("/api/mypage/download/{id}", music.getMusicUuid())).andExpect(status().isUnauthorized());
+        }
+
+        @Test
+        @DisplayName("D3 로그인 상세 응답에 전체 음원이 없다")
+        void detailHasNoFullAudio() throws Exception {
+            Music music = saveMusic();
+
+            JsonNode body = getJson(get("/api/music/{id}", music.getMusicUuid()), stranger);
+
+            assertThat(body.has("audio")).isFalse();
+        }
+
+        @Test
+        @DisplayName("D4 입찰·결제 이력 없는 사용자의 다운로드는 403 이다")
+        void strangerCannotDownload() throws Exception {
+            Music music = saveMusic();
+
+            mockMvc.perform(get("/api/mypage/download/{id}", music.getMusicUuid()).header("Authorization", bearer(stranger)))
+                    .andExpect(status().isForbidden());
+        }
+
+        @Test
+        @DisplayName("D4 결제 대기(PENDING) 낙찰자의 다운로드는 403 이다")
+        void pendingWinnerCannotDownload() throws Exception {
             Music music = saveMusic();
             saveBid(music, pendingWinner, "PENDING");
 
-            byte[] downloaded = download(music, pendingWinner);
-
-            assertThat(downloaded).isEqualTo(FULL_AUDIO);
+            mockMvc.perform(get("/api/mypage/download/{id}", music.getMusicUuid()).header("Authorization", bearer(pendingWinner)))
+                    .andExpect(status().isForbidden());
         }
 
         @Test
-        @DisplayName("D5 [목표: 다운로드 횟수 제한 없음] 현재: 메모리 카운터가 6회까지 허용하고 7회째 거부한다")
-        void inMemoryCounterRejectsSeventhDownload() {
+        @DisplayName("D5 결제 완료 낙찰자는 횟수 제한 없이 다시 받는다 (7회)")
+        void completedWinnerDownloadsWithoutCountLimit() throws Exception {
             Music music = saveMusic();
             saveBid(music, completedWinner, "COMPLETED");
 
-            for (int i = 0; i < 6; i++) {
-                downloadService.downloadMusic(music.getMusicUuid(), completedWinner.getEmail());
+            for (int i = 0; i < 7; i++) {
+                assertThat(download(music, completedWinner)).isEqualTo(FULL_AUDIO);
             }
-
-            assertThatThrownBy(() -> downloadService.downloadMusic(music.getMusicUuid(), completedWinner.getEmail()))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("다운로드 횟수 초과");
         }
 
         @Test
-        @DisplayName("D6 [목표: 목록류는 커버만, 음원 제외] 현재: 내 곡 목록에 전체 음원이 실린다")
-        void myMusicListContainsFullAudio() throws Exception {
+        @DisplayName("D6 내 곡 목록은 커버만 싣고 음원은 싣지 않는다")
+        void myMusicListHasCoverOnly() throws Exception {
             saveMusic();
 
-            JsonNode body = getJson(get("/api/music/my-music"), seller);
+            JsonNode first = getJson(get("/api/music/my-music"), seller).get("content").get(0);
 
-            assertThat(body.get("content").get(0).get("audio").asText()).isEqualTo(base64(FULL_AUDIO));
+            assertThat(first.get("image").asText()).isEqualTo(base64(COVER));
+            assertThat(first.has("audio")).isFalse();
         }
 
         @Test
-        @DisplayName("D6 [목표: 목록류는 커버만, 음원 제외] 현재: 찜 목록에 전체 음원이 실린다")
-        void likedListContainsFullAudio() throws Exception {
+        @DisplayName("D6 찜 목록은 커버만 싣고 음원은 싣지 않는다")
+        void likedListHasCoverOnly() throws Exception {
             Music music = saveMusic();
             saveLike(stranger, music);
 
-            JsonNode body = getJson(get("/api/mypage/likes"), stranger);
+            JsonNode first = getJson(get("/api/mypage/likes"), stranger).get("content").get(0);
 
-            assertThat(body.get("content").get(0).get("audio").asText()).isEqualTo(base64(FULL_AUDIO));
+            assertThat(first.get("image").asText()).isEqualTo(base64(COVER));
+            assertThat(first.has("audio")).isFalse();
         }
 
         @Test
-        @DisplayName("D7 [목표: 수정 응답은 전용 DTO, 음원·작성자 개인정보 없음] 현재: 엔티티를 그대로 직렬화한다")
-        void updateResponseSerializesEntity() throws Exception {
+        @DisplayName("D7 수정 응답은 상세 DTO 이며 음원·작성자 개인정보가 없다")
+        void updateResponseIsDetailDto() throws Exception {
             Music music = saveMusic();
             MockMultipartFile musicPart = new MockMultipartFile(
                     "music", "", MediaType.APPLICATION_JSON_VALUE,
@@ -223,28 +250,39 @@ class MediaAccessContractTest {
             JsonNode body = getJson(multipart(HttpMethod.PUT, "/api/music/{id}", music.getMusicUuid()).file(musicPart), seller);
 
             assertThat(body.get("title").asText()).isEqualTo("renamed");
-            assertThat(body.get("audio").asText()).isEqualTo(base64(FULL_AUDIO));
-            assertThat(body.get("user").get("email").asText()).isEqualTo(seller.getEmail());
-            assertThat(body.get("user").has("password")).isTrue();
-            assertThat(body.get("user").has("phoneNo")).isTrue();
+            assertThat(body.get("nickName").asText()).isEqualTo("seller");
+            assertThat(body.has("audio")).isFalse();
+            assertThat(body.has("user")).isFalse();
+            assertThat(body.toString()).doesNotContain(seller.getEmail(), seller.getPhoneNo());
         }
 
         @Test
-        @DisplayName("D8 [목표: 첫 입찰 발생 후 곡 삭제 거부] 현재: 입찰이 있어도 삭제되고 입찰까지 cascade 삭제된다")
-        void deleteWithBidsCascadesBids() throws Exception {
+        @DisplayName("D8 첫 입찰 발생 후 삭제는 409 이고 곡·입찰이 남는다")
+        void deleteWithBidsIsRejected() throws Exception {
             Music music = saveMusic();
             saveBid(music, stranger, null);
+
+            mockMvc.perform(delete("/api/music/{id}", music.getMusicUuid()).header("Authorization", bearer(seller)))
+                    .andExpect(status().isConflict());
+
+            assertThat(musicRepository.findById(music.getMusicUuid())).isPresent();
+            assertThat(bidRepository.count()).isEqualTo(1);
+        }
+
+        @Test
+        @DisplayName("D8 입찰이 없는 곡은 판매자가 삭제할 수 있다")
+        void deleteWithoutBidsSucceeds() throws Exception {
+            Music music = saveMusic();
 
             mockMvc.perform(delete("/api/music/{id}", music.getMusicUuid()).header("Authorization", bearer(seller)))
                     .andExpect(status().isOk());
 
             assertThat(musicRepository.findById(music.getMusicUuid())).isEmpty();
-            assertThat(bidRepository.count()).isZero();
         }
 
         @Test
-        @DisplayName("D2 [목표: 가입 기본 역할은 ROLE_USER] 현재: 가입한 모든 사용자에게 ROLE_ADMIN 을 준다")
-        void signUpGrantsAdmin() {
+        @DisplayName("D2 가입 기본 역할은 ROLE_USER 다")
+        void signUpGrantsUserRole() {
             UserDTO dto = new UserDTO();
             dto.setEmail("newbie@test.local");
             dto.setPassword("password123");
@@ -261,12 +299,12 @@ class MediaAccessContractTest {
 
             userService.signUp(dto);
 
-            assertThat(userRepository.findByEmail("newbie@test.local").getRole()).isEqualTo("ROLE_ADMIN");
+            assertThat(userRepository.findByEmail("newbie@test.local").getRole()).isEqualTo("ROLE_USER");
         }
     }
 
     @Nested
-    @DisplayName("유지 계약 — 전환 후에도 통과해야 한다")
+    @DisplayName("유지 계약 — 전환 전부터 성립했고 이후에도 통과해야 한다")
     class KeptContracts {
 
         @Test
@@ -287,11 +325,11 @@ class MediaAccessContractTest {
         }
 
         @Test
-        @DisplayName("공개 상세는 커버 이미지를 준다")
+        @DisplayName("상세는 커버 이미지를 준다")
         void detailContainsCover() throws Exception {
             Music music = saveMusic();
 
-            JsonNode body = getJson(get("/api/music/{id}", music.getMusicUuid()), null);
+            JsonNode body = getJson(get("/api/music/{id}", music.getMusicUuid()), stranger);
 
             assertThat(body.get("image").asText()).isEqualTo(base64(COVER));
         }

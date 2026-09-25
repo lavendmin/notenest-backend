@@ -26,6 +26,12 @@ public interface BidRepository extends JpaRepository<Bid, UUID> {
 
     Page<Bid> findByUser(User user, Pageable pageable);
 
+    // 첫 입찰 발생 여부 — 입찰이 하나라도 있으면 곡 삭제·전체 데모 교체를 거부한다.
+    boolean existsByMusic(Music music);
+
+    // 전체 데모 접근 판단 — 이 곡에 대한 해당 사용자의 입찰 중 주어진 상태(COMPLETED)가 있는지.
+    boolean existsByMusicAndUserAndStatus(Music music, User user, String status);
+
     // 마이페이지 입찰내역 - 인기순 정렬 & 검색 (진행 중인 것만)
     @Query("SELECT b FROM Bid b WHERE b.user = :user " +
             "AND b.status IS NULL " +  // 경매 진행 중인 입찰만 조회

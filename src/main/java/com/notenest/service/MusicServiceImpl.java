@@ -10,6 +10,7 @@ import com.notenest.dto.MusicDetailDTO;
 import com.notenest.dto.MusicSummaryDTO;
 import com.notenest.dto.UpdateMusicDTO;
 import com.notenest.payment.KrwAmounts;
+import com.notenest.repository.BidRepository;
 import com.notenest.repository.LikeRepository;
 import com.notenest.repository.MusicRepository;
 import com.notenest.repository.UserRepository;
@@ -49,6 +50,9 @@ public class MusicServiceImpl implements MusicService {
 
     @Autowired
     private LikeRepository likeRepository;
+
+    @Autowired
+    private BidRepository bidRepository;
 
     @Autowired
     private BidServiceImpl bidService;
@@ -140,6 +144,10 @@ public class MusicServiceImpl implements MusicService {
             throw new IllegalArgumentException("해당 게시글의 작성자만 삭제할 수 있습니다.");
         }
 
+        if (bidRepository.existsByMusic(music)) {
+            throw new IllegalStateException("입찰이 시작된 곡은 삭제할 수 없습니다.");
+        }
+
         musicRepository.delete(music);
     }
 
@@ -197,15 +205,18 @@ public class MusicServiceImpl implements MusicService {
             String majorGenre, String hashtags, Long minPrice, Long maxPrice,
             Pageable pageable, String sortBy, String loggedInUserEmail, String searchTerm) {
 
-        // 사용자 정보 가져오기
+        // QueryDSL DTO 프로젝션 — 엔티티(LOB) 대신 목록에 필요한 컬럼만 SELECT (audio 제외, image 포함).
+        Page<MusicSummaryDTO> page = musicRepository.searchSummaries(
+                majorGenre, hashtags, minPrice, maxPrice, searchTerm, sortBy, pageable);
+
+        // 비로그인 조회 — 좋아요 여부는 모두 false(기본값)로 둔다.
+        if (loggedInUserEmail == null) {
+            return page;
+        }
         User user = userRepository.findByEmail(loggedInUserEmail);
         if (user == null) {
             throw new IllegalArgumentException("로그인 후 이용 가능합니다.");
         }
-
-        // QueryDSL DTO 프로젝션 — 엔티티(LOB) 대신 목록에 필요한 컬럼만 SELECT (audio 제외, image 포함).
-        Page<MusicSummaryDTO> page = musicRepository.searchSummaries(
-                majorGenre, hashtags, minPrice, maxPrice, searchTerm, sortBy, pageable);
 
         // 좋아요 여부 — 페이지의 곡 UUID를 모아 IN 조회 1회로 처리(N+1 제거).
         List<UUID> pageMusicIds = page.getContent().stream()

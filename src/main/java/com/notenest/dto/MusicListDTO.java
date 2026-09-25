@@ -21,7 +21,7 @@ public class MusicListDTO {
     private LocalDateTime auctionEndTime;
     private int likeCount;
     private byte[] image;
-    private byte[] audio;
+    // 목록류 응답은 커버만 싣고 음원(audio)은 싣지 않는다.
     private LocalDateTime createdAt;
 
 
@@ -32,8 +32,6 @@ public class MusicListDTO {
         musicListDTO.setTitle(music.getTitle());
         // 이미지를 byte[] 그대로 설정
         musicListDTO.setImage(music.getImage());
-        // 오디오를 byte[] 그대로 설정
-        musicListDTO.setAudio(music.getAudio());
 
         // 사용자가 null인 경우에 대한 예외 처리 추가
         if (music.getUser() != null) {

@@ -21,7 +21,7 @@ public class MusicDetailDTO {
     private String details;
     private String hashtag;
     private byte[] image;
-    private byte[] audio;
+    // 전체 음원(audio)은 상세에 싣지 않는다 — 전체 데모는 /api/mypage/download 에서 접근 권한 확인 후 제공한다.
     private Long currentHighestBid;
     private LocalDateTime auctionEndTime;
     private Boolean popularComposer;
@@ -43,9 +43,6 @@ public class MusicDetailDTO {
         musicDetailDTO.setHashtag(music.getHashtag());
         // 이미지를 byte[] 그대로 설정
         musicDetailDTO.setImage(music.getImage());
-
-        // 오디오를 byte[] 그대로 설정
-        musicDetailDTO.setAudio(music.getAudio());
 
         musicDetailDTO.setPopularComposer(music.getPopularComposer());
         musicDetailDTO.setSteadyWorkComposer(music.getSteadyWorkComposer());
