@@ -1,0 +1,6 @@
+music	cover_legacy_keys	demo_legacy_keys	preview_keys	cover_size_eq_lob	demo_size_eq_lob
+500	500	500	0	500	500
+cover_content_type	full_demo_content_type	COUNT(*)
+application/octet-stream	application/octet-stream	500
+lob_changed_vs_snapshot
+0

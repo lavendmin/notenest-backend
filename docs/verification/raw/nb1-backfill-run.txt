@@ -1,0 +1,12 @@
+# NB1 백필 실행 원시 로그 요약 (2026-09-25, 커밋 e58d5f3, 버킷 notenest-media ap-northeast-2, 로컬 DB N=500 시드)
+## 1차 실행 (소요 1086초)
+Starting NoteNestApplication using Java 17.0.12 with PID 36548
+[BACKFILL] candidates=500 uploaded=1000 reused=0 migratedSongs=500 failedSongs=0
+[BACKFILL-VERIFY] songs=500 checkedObjects=1000 missingKeys=0 missingObjects=0 sizeMismatches=0 hashMismatches=0
+exit=0
+## 2차 실행(재실행, 소요 122초)
+[BACKFILL] candidates=0 uploaded=0 reused=0 migratedSongs=0 failedSongs=0
+[BACKFILL-VERIFY] songs=500 checkedObjects=1000 missingKeys=0 missingObjects=0 sizeMismatches=0 hashMismatches=0
+exit=0
+## 버킷 목록(ListObjectsV2)
+objects=1000 covers=500 demos=500 other=0 coverMiB=146.5 demoMiB=1500.0
