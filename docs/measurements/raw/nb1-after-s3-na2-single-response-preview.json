@@ -1,0 +1,25 @@
+// NB1 S3 이후 maxPrice=100000 단독 응답 — size=6,055 bytes, image 필드 0, coverUrl 10(서명·자격증명 가림), 커밋 141c75d. 첫 두 항목:
+[
+ {
+  "musicUuid": "96a93623-b8f9-11f1-a19b-b2c82339c035",
+  "title": "seed song 1",
+  "startingPrice": 10000,
+  "userNickName": "composer",
+  "currentHighestBid": 11000,
+  "auctionEndTime": "2026-10-02T15:55:54",
+  "likeCount": 0,
+  "coverUrl": "https://notenest-media.s3.ap-northeast-2.amazonaws.com/seed/cover?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20260925T155641Z&X-Amz-SignedHeaders=host&X-Amz-Credential=<masked>&X-Amz-Expires=3600&X-Amz-Signature=<masked>",
+  "likedByUser": false
+ },
+ {
+  "musicUuid": "96a957bd-b8f9-11f1-a19b-b2c82339c035",
+  "title": "seed song 3",
+  "startingPrice": 10000,
+  "userNickName": "composer",
+  "currentHighestBid": 13000,
+  "auctionEndTime": "2026-10-02T15:55:54",
+  "likeCount": 0,
+  "coverUrl": "https://notenest-media.s3.ap-northeast-2.amazonaws.com/seed/cover?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20260925T155642Z&X-Amz-SignedHeaders=host&X-Amz-Credential=<masked>&X-Amz-Expires=3600&X-Amz-Signature=<masked>",
+  "likedByUser": false
+ }
+]
