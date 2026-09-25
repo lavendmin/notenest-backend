@@ -22,16 +22,6 @@ public interface MusicRepository extends JpaRepository<Music, UUID>, JpaSpecific
     @Query("SELECT m.musicUuid FROM Music m WHERE m.status = 0 AND m.auctionEndTime IS NOT NULL AND m.auctionEndTime < :now")
     List<UUID> findUuidsToClose(@Param("now") LocalDateTime now);
 
-    // [NB1 백필] 객체 키가 없는데 LOB 가 남아 있는 곡 — 커버(image) 또는 전체 데모(audio) 중 하나라도 이전이 필요한 곡.
-    // 이미 키가 채워진 자산은 대상에서 빠지므로 재실행하면 남은 곡만 다시 처리한다.
-    @Query("SELECT m.musicUuid FROM Music m WHERE (m.cover.objectKey IS NULL AND m.image IS NOT NULL)"
-            + " OR (m.fullDemo.objectKey IS NULL AND m.audio IS NOT NULL) ORDER BY m.musicUuid")
-    List<UUID> findUuidsNeedingMediaBackfill();
-
-    // [NB1 백필 검증] 전체 곡 UUID — 곡마다 하나씩 불러 대조한다(LOB 를 한꺼번에 올리지 않기 위해).
-    @Query("SELECT m.musicUuid FROM Music m ORDER BY m.musicUuid")
-    List<UUID> findAllUuids();
-
     // 최신 순으로 곡 리스트 가져오기 (진행 중인 곡만)
     @Query("SELECT m FROM Music m WHERE m.status = 0 ORDER BY m.createdAt DESC")
     Page<Music> findAllOngoingMusicByOrderByCreatedAtDesc(Pageable pageable);

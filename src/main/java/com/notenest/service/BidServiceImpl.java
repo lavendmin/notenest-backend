@@ -164,7 +164,6 @@ public class BidServiceImpl implements BidService {
             MyBidListDTO myBidListDTO = new MyBidListDTO();
             myBidListDTO.setBidUuid(bid.getBidUuid());
             myBidListDTO.setMusicUuid(bid.getMusic().getMusicUuid());
-            myBidListDTO.setMusicImage(MediaUrlIssuer.legacyCoverBytes(bid.getMusic()));
             myBidListDTO.setMusicCoverUrl(mediaUrlIssuer.coverUrl(bid.getMusic().getCover()));
             myBidListDTO.setMusicTitle(bid.getMusic().getTitle());
             myBidListDTO.setComposer(bid.getMusic().getUser().getNickname());
@@ -408,7 +407,6 @@ public class BidServiceImpl implements BidService {
             PendingBidDTO pendingBidDTO = new PendingBidDTO();
             pendingBidDTO.setBidUuid(bid.getBidUuid());
             pendingBidDTO.setMusicUuid(bid.getMusic().getMusicUuid());
-            pendingBidDTO.setMusicImage(MediaUrlIssuer.legacyCoverBytes(bid.getMusic()));
             pendingBidDTO.setMusicCoverUrl(mediaUrlIssuer.coverUrl(bid.getMusic().getCover()));
             pendingBidDTO.setMusicTitle(bid.getMusic().getTitle());
             pendingBidDTO.setComposer(bid.getMusic().getUser().getNickname());
@@ -442,7 +440,6 @@ public class BidServiceImpl implements BidService {
             CompletedBidDTO completedBidDTO = new CompletedBidDTO();
             completedBidDTO.setBidUuid(bid.getBidUuid());
             completedBidDTO.setMusicUuid(bid.getMusic().getMusicUuid());
-            completedBidDTO.setMusicImage(MediaUrlIssuer.legacyCoverBytes(bid.getMusic()));
             completedBidDTO.setMusicCoverUrl(mediaUrlIssuer.coverUrl(bid.getMusic().getCover()));
             completedBidDTO.setMusicTitle(bid.getMusic().getTitle());
             completedBidDTO.setComposer(bid.getMusic().getUser().getNickname());

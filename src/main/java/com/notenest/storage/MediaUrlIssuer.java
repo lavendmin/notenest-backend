@@ -1,7 +1,6 @@
 package com.notenest.storage;
 
 import com.notenest.domain.MediaObject;
-import com.notenest.domain.Music;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
@@ -13,9 +12,6 @@ import java.time.Duration;
  *  - 커버(목록·상세, 비로그인 목록 포함): 1시간 — 목록을 오래 띄워 둬도 이미지가 깨지지 않게
  *  - 미리듣기(로그인 상세): 10분
  *  - 전체 데모(판매자·결제 완료 낙찰자, 권한 확인 후): 5분 — 만료 전에는 재사용·공유될 수 있어 1회용이 아니다
- *
- * 전이 기간: 객체 키가 없는 기존 곡(백필 전)은 URL 대신 LOB 를 그대로 쓴다({@link #legacyCoverBytes}).
- * 백필·대조 후 LOB 컬럼을 삭제할 때 이 fallback 도 함께 제거한다.
  */
 @Component
 public class MediaUrlIssuer {
@@ -48,11 +44,6 @@ public class MediaUrlIssuer {
     /** 전체 데모 다운로드 URL. 권한 판단(FullDemoAccessPolicy)을 통과한 뒤에만 호출한다. */
     public String fullDemoUrl(MediaObject fullDemo, String downloadFileName) {
         return storage.presignedGetUrl(fullDemo.getObjectKey(), FULL_DEMO_TTL, downloadFileName).toString();
-    }
-
-    /** 전이 기간 fallback — 커버 키가 없는 기존 곡만 LOB 바이트를 돌려준다. 키가 있으면 null. */
-    public static byte[] legacyCoverBytes(Music music) {
-        return keyOf(music.getCover()) == null ? music.getImage() : null;
     }
 
     public static boolean hasObjectKey(MediaObject media) {

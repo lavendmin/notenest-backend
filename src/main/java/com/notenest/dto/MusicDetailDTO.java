@@ -21,9 +21,7 @@ public class MusicDetailDTO {
     private Integer musicPeriod;
     private String details;
     private String hashtag;
-    // 커버·미리듣기는 만료 시간 있는 URL. image(base64)는 커버 키가 없는 기존 곡만 채우는 전이 기간 fallback.
-    // 미리듣기가 없는 기존 곡은 previewUrl 이 null 이다(전체 데모로 대체하지 않는다).
-    private byte[] image;
+    // 커버·미리듣기는 만료 시간 있는 URL. 미리듣기가 없는 기존 곡은 previewUrl 이 null 이다(전체 데모로 대체하지 않는다).
     private String coverUrl;
     private String previewUrl;
     // 전체 음원(audio)·전체 데모 키는 상세에 싣지 않는다 — 전체 데모는 /api/mypage/download 에서 접근 권한 확인 후 제공한다.
@@ -46,7 +44,6 @@ public class MusicDetailDTO {
         musicDetailDTO.setMusicPeriod(music.getMusicPeriod());
         musicDetailDTO.setDetails(music.getDetails());
         musicDetailDTO.setHashtag(music.getHashtag());
-        musicDetailDTO.setImage(MediaUrlIssuer.legacyCoverBytes(music));
         musicDetailDTO.setCoverUrl(mediaUrls.coverUrl(music.getCover()));
         musicDetailDTO.setPreviewUrl(mediaUrls.previewUrl(music.getPreview()));
 

@@ -42,7 +42,7 @@ public class DownloadService {
     }
 
     /**
-     * 다운로드 파일명 — "제목(부제).확장자". 확장자는 전체 데모의 실제 형식을 따른다(기존 곡은 LOB 라 mp3).
+     * 다운로드 파일명 — "제목(부제).확장자". 확장자는 전체 데모의 실제 형식을 따른다(판별 불가하면 mp3).
      * 원본 파일명의 확장자를 우선하고, 없으면 판별한 Content-Type 으로 정한다.
      */
     public static String downloadFileName(Music music) {

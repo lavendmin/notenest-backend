@@ -234,7 +234,6 @@ public class MusicServiceImpl implements MusicService {
         if (stored.containsKey(MediaAssetType.COVER)) {
             replacedKeys.addAll(MusicMediaStorage.keysOf(Arrays.asList(music.getCover())));
             music.setCover(stored.get(MediaAssetType.COVER));
-            music.setImage(null); // 기존 곡이면 LOB fallback 을 끊는다 — 이제 객체 저장소가 원본이다
         }
         if (stored.containsKey(MediaAssetType.PREVIEW)) {
             replacedKeys.addAll(MusicMediaStorage.keysOf(Arrays.asList(music.getPreview())));
@@ -243,7 +242,6 @@ public class MusicServiceImpl implements MusicService {
         if (stored.containsKey(MediaAssetType.FULL_DEMO)) {
             replacedKeys.addAll(MusicMediaStorage.keysOf(Arrays.asList(music.getFullDemo())));
             music.setFullDemo(stored.get(MediaAssetType.FULL_DEMO));
-            music.setAudio(null);
         }
 
         Music saved;

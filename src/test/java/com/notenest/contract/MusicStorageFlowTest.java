@@ -1,6 +1,7 @@
 package com.notenest.contract;
 
 import com.notenest.domain.Bid;
+import com.notenest.domain.MediaObject;
 import com.notenest.domain.Music;
 import com.notenest.domain.User;
 import com.notenest.jwt.JWTUtil;
@@ -34,6 +35,7 @@ import org.springframework.test.web.servlet.request.MockMultipartHttpServletRequ
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -170,8 +172,6 @@ class MusicStorageFlowTest {
                 music.getCover().getObjectKey(), music.getPreview().getObjectKey(), music.getFullDemo().getObjectKey());
         assertThat(storage.bytes(music.getFullDemo().getObjectKey())).isEqualTo(WAV);
 
-        assertThat(music.getImage()).as("신규 곡은 LOB 에 바이트를 쓰지 않는다").isNull();
-        assertThat(music.getAudio()).isNull();
     }
 
     @Test
@@ -276,20 +276,17 @@ class MusicStorageFlowTest {
     }
 
     @Test
-    @DisplayName("기존 곡(LOB)에 미리듣기 추가·커버 교체: 키가 생기고 커버 LOB fallback 은 끊긴다, 전체 데모 LOB 는 그대로")
-    void legacySongGainsPreviewAndCoverKeys() throws Exception {
+    @DisplayName("미리듣기가 없는 기존 곡(백필분)에 미리듣기 추가: 새 키가 생기고 커버·전체 데모 키는 그대로")
+    void legacySongGainsPreview() throws Exception {
         Music legacy = saveLegacySong();
 
-        mockMvc.perform(update(legacy, "{}", file("image", "c.png", "image/png", PNG),
-                        file("preview", "p.mp3", "audio/mpeg", MP3), null))
+        mockMvc.perform(update(legacy, "{}", null, file("preview", "p.mp3", "audio/mpeg", MP3), null))
                 .andExpect(status().isOk());
 
         Music after = reload(legacy);
         assertThat(after.getPreview().getObjectKey()).contains("/preview/");
-        assertThat(after.getCover().getObjectKey()).contains("/cover/");
-        assertThat(after.getImage()).isNull();
-        assertThat(after.getFullDemo()).isNull();
-        assertThat(after.getAudio()).as("전체 데모는 보내지 않았으므로 LOB 그대로").isNotNull();
+        assertThat(after.getCover().getObjectKey()).isEqualTo(legacy.getCover().getObjectKey());
+        assertThat(after.getFullDemo().getObjectKey()).isEqualTo(legacy.getFullDemo().getObjectKey());
     }
 
     @Test
@@ -440,7 +437,7 @@ class MusicStorageFlowTest {
         return musicRepository.findAll().get(0);
     }
 
-    /** 객체 키 없이 LOB 만 있는 기존 곡(백필 전). */
+    /** 백필을 마친 기존 곡 — 커버·전체 데모는 legacy 키, 미리듣기는 없다. */
     private Music saveLegacySong() {
         Music music = new Music();
         music.setTitle("legacy");
@@ -448,8 +445,10 @@ class MusicStorageFlowTest {
         music.setStartingPrice(10_000L);
         music.setStatus(0);
         music.setAuctionEndTime(LocalDateTime.now().plusDays(3));
-        music.setImage(PNG);
-        music.setAudio(MP3);
+        UUID musicUuid = UUID.randomUUID();
+        music.setMusicUuid(musicUuid);
+        music.setCover(new MediaObject("music/" + musicUuid + "/cover/legacy", "application/octet-stream", 1L, null));
+        music.setFullDemo(new MediaObject("music/" + musicUuid + "/full-demo/legacy", "application/octet-stream", 1L, null));
         music.setAuctionFailureEmailSent(false);
         music.setShowAllBids(false);
         music.setPopularComposer(false);

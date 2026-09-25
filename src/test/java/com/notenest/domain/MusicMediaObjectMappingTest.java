@@ -68,11 +68,9 @@ class MusicMediaObjectMappingTest {
     }
 
     @Test
-    @DisplayName("객체 키가 없는 기존 곡(백필 전)은 세 자산 모두 null 이고 LOB 는 그대로 읽힌다")
-    void legacyMusicHasNoObjectKeys() {
+    @DisplayName("미디어가 없는 곡은 세 자산 모두 null 로 읽힌다")
+    void musicWithoutMediaReadsAllNull() {
         Music music = newMusic();
-        music.setImage(new byte[]{1, 2});
-        music.setAudio(new byte[]{3, 4, 5});
         Music saved = musicRepository.save(music);
         entityManager.flush();
         entityManager.clear();
@@ -82,7 +80,6 @@ class MusicMediaObjectMappingTest {
         assertThat(loaded.getCover()).isNull();
         assertThat(loaded.getPreview()).isNull();
         assertThat(loaded.getFullDemo()).isNull();
-        assertThat(loaded.getAudio()).containsExactly(3, 4, 5);
     }
 
     private Music newMusic() {

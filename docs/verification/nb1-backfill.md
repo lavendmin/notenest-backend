@@ -5,9 +5,12 @@
 
 > **운영 이관이 아니다.** 실제 사용자·실제 음원은 0건이다. 이 실행은 LOB→객체 저장소 전환 절차를 실제 S3에서 리허설한 것이다.
 > 리허설로 확인한 것은 결정적 키, 재실행 안전성, 존재·크기·해시 대조, 누락 0건이다. 별도 복구 시스템은 두지 않았다.
-> LOB는 지우지 않았으므로 원본은 DB에 그대로 남아 있다.
+> 백필 시점에는 LOB 를 지우지 않았다. 전환 게이트 통과 후 nb1-03 으로 LOB 컬럼을 삭제했다.
 
 ## 실행
+
+> 백필 코드(`MediaBackfillRunner`·`MediaBackfillService`, backfill 프로파일)는 LOB 컬럼 삭제 커밋에서 제거했다.
+> `image`/`audio` 필드를 읽는 일회성 코드라 LOB 삭제 이후에는 둘 수 없기 때문이다. 아래 실행은 커밋 `e58d5f3` 기준이다.
 
 ```
 ./gradlew bootRun --args='--spring.profiles.active=local,backfill'

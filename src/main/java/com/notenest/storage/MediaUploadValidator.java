@@ -44,8 +44,8 @@ public class MediaUploadValidator {
         }
     }
 
-    /** 앞부분 바이트(최소 12바이트 권장)로 형식을 판별한다. 백필도 기존 LOB 의 Content-Type 을 정할 때 쓴다. */
-    public static Optional<DetectedMedia> detect(byte[] h) {
+    /** 앞부분 바이트(최소 12바이트 권장)로 형식을 판별한다. */
+    static Optional<DetectedMedia> detect(byte[] h) {
         if (startsWith(h, 0xFF, 0xD8, 0xFF)) {
             return Optional.of(DetectedMedia.JPEG);
         }

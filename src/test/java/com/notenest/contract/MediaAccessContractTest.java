@@ -42,9 +42,9 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
-import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -99,9 +99,6 @@ class MediaAccessContractTest {
         }
     }
 
-    // 구분 가능한 픽스처 바이트 — 응답·다운로드 본문이 "어느 파일"인지 바이트로 판별한다.
-    private static final byte[] COVER = "cover-image-bytes".getBytes(StandardCharsets.UTF_8);
-    private static final byte[] FULL_AUDIO = "full-demo-audio-bytes".getBytes(StandardCharsets.UTF_8);
 
     @Autowired
     private MockMvc mockMvc;
@@ -229,7 +226,7 @@ class MediaAccessContractTest {
             saveBid(music, completedWinner, "COMPLETED");
 
             for (int i = 0; i < 7; i++) {
-                assertThat(download(music, completedWinner)).isEqualTo(FULL_AUDIO);
+                assertThat(downloadUrl(music, completedWinner)).contains(music.getFullDemo().getObjectKey());
             }
         }
 
@@ -240,7 +237,7 @@ class MediaAccessContractTest {
 
             JsonNode first = getJson(get("/api/music/my-music"), seller).get("content").get(0);
 
-            assertThat(first.get("image").asText()).isEqualTo(base64(COVER));
+            assertThat(first.get("coverUrl").asText()).contains("/cover/");
             assertThat(first.has("audio")).isFalse();
         }
 
@@ -252,7 +249,7 @@ class MediaAccessContractTest {
 
             JsonNode first = getJson(get("/api/mypage/likes"), stranger).get("content").get(0);
 
-            assertThat(first.get("image").asText()).isEqualTo(base64(COVER));
+            assertThat(first.get("coverUrl").asText()).contains("/cover/");
             assertThat(first.has("audio")).isFalse();
         }
 
@@ -329,7 +326,7 @@ class MediaAccessContractTest {
         void sellerDownloadsFullAudio() throws Exception {
             Music music = saveMusic();
 
-            assertThat(download(music, seller)).isEqualTo(FULL_AUDIO);
+            assertThat(downloadUrl(music, seller)).contains(music.getFullDemo().getObjectKey());
         }
 
         @Test
@@ -338,7 +335,7 @@ class MediaAccessContractTest {
             Music music = saveMusic();
             saveBid(music, completedWinner, "COMPLETED");
 
-            assertThat(download(music, completedWinner)).isEqualTo(FULL_AUDIO);
+            assertThat(downloadUrl(music, completedWinner)).contains(music.getFullDemo().getObjectKey());
         }
 
         @Test
@@ -348,7 +345,7 @@ class MediaAccessContractTest {
 
             JsonNode body = getJson(get("/api/music/{id}", music.getMusicUuid()), stranger);
 
-            assertThat(body.get("image").asText()).isEqualTo(base64(COVER));
+            assertThat(body.get("coverUrl").asText()).contains(music.getCover().getObjectKey());
         }
 
         @Test
@@ -468,14 +465,9 @@ class MediaAccessContractTest {
         return objectMapper.readTree(result.getResponse().getContentAsString(StandardCharsets.UTF_8));
     }
 
-    private byte[] download(Music music, User user) throws Exception {
-        return mockMvc.perform(get("/api/mypage/download/{id}", music.getMusicUuid()).header("Authorization", bearer(user)))
-                .andExpect(status().isOk())
-                .andReturn().getResponse().getContentAsByteArray();
-    }
-
-    private static String base64(byte[] bytes) {
-        return Base64.getEncoder().encodeToString(bytes);
+    /** 전체 데모 다운로드 API 가 발급한 URL(fake 저장소라 서명 대신 키·ttl·파일명이 담긴다). */
+    private String downloadUrl(Music music, User user) throws Exception {
+        return getJson(get("/api/mypage/download/{id}", music.getMusicUuid()), user).get("url").asText();
     }
 
     // --- 픽스처 헬퍼 ---
@@ -494,6 +486,7 @@ class MediaAccessContractTest {
     }
 
     /** 진행 중(status=0, 마감 미래) 곡. nullable=false Boolean 은 저장을 위해 채운다. */
+    /** 백필을 마친 기존 곡과 같은 모양 — 커버·전체 데모 키는 있고 미리듣기는 없다. */
     private Music saveMusic() {
         Music music = new Music();
         music.setTitle("contract-track");
@@ -502,8 +495,10 @@ class MediaAccessContractTest {
         music.setStatus(0);
         music.setCreatedAt(LocalDateTime.now());
         music.setAuctionEndTime(LocalDateTime.now().plusDays(3));
-        music.setImage(COVER);
-        music.setAudio(FULL_AUDIO);
+        UUID musicUuid = UUID.randomUUID();
+        music.setMusicUuid(musicUuid);
+        music.setCover(new MediaObject("music/" + musicUuid + "/cover/legacy", "image/png", 10L, null));
+        music.setFullDemo(new MediaObject("music/" + musicUuid + "/full-demo/legacy", "audio/mpeg", 10L, null));
         music.setAuctionFailureEmailSent(false);
         music.setShowAllBids(false);
         music.setPopularComposer(false);
@@ -512,12 +507,10 @@ class MediaAccessContractTest {
         return musicRepository.save(music);
     }
 
-    /** 객체 저장소로 올린 신규 곡 — LOB 없이 커버·미리듣기·전체 데모 키만 있다. */
+    /** 등록 API 로 올린 신규 곡과 같은 모양 — 커버·미리듣기·전체 데모 키가 모두 있다. */
     private Music saveKeyedMusic() {
         Music music = saveMusic();
         String prefix = "music/" + music.getMusicUuid() + "/";
-        music.setImage(null);
-        music.setAudio(null);
         music.setCover(new MediaObject(prefix + "cover/c1", "image/png", 10L, "cover.png"));
         music.setPreview(new MediaObject(prefix + "preview/p1", "audio/mpeg", 10L, "preview.mp3"));
         music.setFullDemo(new MediaObject(prefix + "full-demo/f1", "audio/wav", 10L, "demo.wav"));

@@ -20,8 +20,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -148,10 +146,8 @@ public class MyPageController {
         return ResponseEntity.ok(completedBidDTOS);
     }
 
-    // 전체 데모 다운로드
-    // - 객체 저장소에 올린 곡: 권한 확인 후 5분 만료 URL 을 JSON 으로 준다({url, fileName, expiresInSeconds}).
-    //   브라우저가 이 URL 로 S3 에서 직접 받는다(바이트가 백엔드를 거치지 않음). 만료 전에는 재사용·공유될 수 있어 1회용이 아니다.
-    // - 객체 키가 없는 기존 곡(백필 전): 전이 기간 fallback 으로 LOB 바이트를 그대로 내려준다. LOB 삭제 때 제거한다.
+    // 전체 데모 다운로드 — 권한 확인 후 5분 만료 URL 을 JSON 으로 준다({url, fileName, expiresInSeconds}).
+    // 브라우저가 이 URL 로 S3 에서 직접 받는다(바이트가 백엔드를 거치지 않음). 만료 전에는 재사용·공유될 수 있어 1회용이 아니다.
     @GetMapping("/download/{musicUuid}")
     public ResponseEntity<?> downloadMusic(@PathVariable UUID musicUuid) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -160,20 +156,15 @@ public class MyPageController {
         // 곡 존재·로그인·전체 데모 접근 권한(판매자 또는 결제 완료 낙찰자)을 확인한다. 실패 시 404/401/403.
         Music music = downloadService.getDownloadableMusic(musicUuid, loggedInUserEmail);
 
-        if (MediaUrlIssuer.hasObjectKey(music.getFullDemo())) {
-            String fileName = DownloadService.downloadFileName(music);
-            Map<String, Object> body = new HashMap<>();
-            body.put("url", mediaUrlIssuer.fullDemoUrl(music.getFullDemo(), fileName));
-            body.put("fileName", fileName);
-            body.put("expiresInSeconds", MediaUrlIssuer.FULL_DEMO_TTL.toSeconds());
-            return ResponseEntity.ok(body);
+        if (!MediaUrlIssuer.hasObjectKey(music.getFullDemo())) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "전체 데모 파일이 없습니다."));
         }
-
-        String encodedFilename = URLEncoder.encode(DownloadService.downloadFileName(music), StandardCharsets.UTF_8);
-        return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + encodedFilename + "\"")
-                .body(music.getAudio());
+        String fileName = DownloadService.downloadFileName(music);
+        Map<String, Object> body = new HashMap<>();
+        body.put("url", mediaUrlIssuer.fullDemoUrl(music.getFullDemo(), fileName));
+        body.put("fileName", fileName);
+        body.put("expiresInSeconds", MediaUrlIssuer.FULL_DEMO_TTL.toSeconds());
+        return ResponseEntity.ok(body);
     }
 
 }

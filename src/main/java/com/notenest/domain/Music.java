@@ -50,17 +50,8 @@ public class Music {
     @Column(name = "hashtag")
     private String hashtag;
 
-    // 이미지와 오디오는 데이터베이스에 큰 크기의 데이터로 저장될 수 있도록 @Lob 어노테이션 사용
-    @Lob
-    @Column(name = "image", columnDefinition = "LONGBLOB")
-    private byte[] image;
-
-    @Lob
-    @Column(name = "audio", columnDefinition = "LONGBLOB")
-    private byte[] audio;
-
-    // [NB1] 객체 저장소(S3)로 옮긴 미디어의 키·메타데이터. 위 image/audio LOB 는 백필·대조가 끝날 때까지
-    // 읽기 fallback 으로 남기고 마지막 마이그레이션에서 삭제한다. 기존 audio 는 전체 데모로 이전한다.
+    // [NB1] 곡 미디어는 객체 저장소(S3, private 버킷)에 두고 DB 에는 키·메타데이터만 남긴다.
+    // 예전 image/audio LOB 컬럼은 백필·대조 후 nb1-03 마이그레이션으로 삭제했다.
     @Embedded
     @AttributeOverrides({
             @AttributeOverride(name = "objectKey", column = @Column(name = "cover_object_key", length = 512)),

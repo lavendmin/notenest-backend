@@ -19,12 +19,10 @@ public class MusicDTO {
     private LocalDateTime auctionEndTime;
     private boolean likedByUser;
     private int likeCount;
-    // 목록류 응답은 커버만 싣고 음원(audio)은 싣지 않는다. 커버는 coverUrl, image 는 키 없는 기존 곡의 전이 기간 fallback.
-    private byte[] image;
+    // 목록류 응답은 커버 URL 만 싣고 음원은 싣지 않는다.
     private String coverUrl;
 
-    // [Phase 1] 목록 조회용 프로젝션 생성자 — audio/image 제외한 컬럼만 DB에서 가져온다.
-    // (jackson non_null 설정이라 null인 image 필드는 응답 JSON에서 빠진다)
+    // [Phase 1] 목록 조회용 프로젝션 생성자 — 미디어 없이 목록에 필요한 컬럼만 DB에서 가져온다.
     public MusicDTO(UUID musicUuid, String title, Long startingPrice, String userNickName,
                     Long currentHighestBid, LocalDateTime auctionEndTime, int likeCount) {
         this.musicUuid = musicUuid;
@@ -42,7 +40,6 @@ public class MusicDTO {
         musicDTO.setMusicUuid(music.getMusicUuid());
         musicDTO.setTitle(music.getTitle());
         musicDTO.setStartingPrice(music.getStartingPrice());
-        musicDTO.setImage(MediaUrlIssuer.legacyCoverBytes(music));
         musicDTO.setCoverUrl(mediaUrls.coverUrl(music.getCover()));
 
         // 사용자가 null인 경우에 대한 예외 처리 추가

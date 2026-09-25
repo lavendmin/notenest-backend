@@ -21,8 +21,7 @@ public class MusicListDTO {
     private Long currentHighestBid;
     private LocalDateTime auctionEndTime;
     private int likeCount;
-    // 목록류 응답은 커버만 싣고 음원(audio)은 싣지 않는다. 커버는 coverUrl, image 는 키 없는 기존 곡의 전이 기간 fallback.
-    private byte[] image;
+    // 목록류 응답은 커버 URL 만 싣고 음원은 싣지 않는다.
     private String coverUrl;
     private LocalDateTime createdAt;
 
@@ -32,7 +31,6 @@ public class MusicListDTO {
         MusicListDTO musicListDTO = new MusicListDTO();
         musicListDTO.setMusicUuid(music.getMusicUuid());
         musicListDTO.setTitle(music.getTitle());
-        musicListDTO.setImage(MediaUrlIssuer.legacyCoverBytes(music));
         musicListDTO.setCoverUrl(mediaUrls.coverUrl(music.getCover()));
 
         // 사용자가 null인 경우에 대한 예외 처리 추가

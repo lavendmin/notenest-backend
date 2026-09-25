@@ -7,6 +7,7 @@ import ch.qos.logback.core.read.ListAppender;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.notenest.domain.Likes;
+import com.notenest.domain.MediaObject;
 import com.notenest.domain.Music;
 import com.notenest.domain.User;
 import com.notenest.repository.BidRepository;
@@ -15,6 +16,7 @@ import com.notenest.repository.MusicRepository;
 import com.notenest.repository.PaymentRepository;
 import com.notenest.repository.UserRepository;
 import com.notenest.service.BidServiceImpl;
+import com.notenest.storage.FakeObjectStorage;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -23,7 +25,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -31,7 +36,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -84,6 +88,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc(addFilters = false)
 @WithMockUser(username = "bidder@test.local")
 class MusicFilterContractTest {
+
+    // 커버 URL 발급을 AWS 설정 없이 하려고 저장소를 fake 로 바꾼다(서명 대신 키·ttl 이 URL 에 담긴다).
+    // 이 테스트의 관심사는 목록 SQL·정렬·필터 계약이지 S3 연동이 아니다.
+    @TestConfiguration
+    static class FakeStorageConfig {
+        @Bean
+        @Primary
+        FakeObjectStorage fakeObjectStorage() {
+            return new FakeObjectStorage();
+        }
+    }
 
     private static final String BIDDER = "bidder@test.local";
     private static final String FILTER = "/api/music/filter";
@@ -181,8 +196,10 @@ class MusicFilterContractTest {
         music.setLikeCount(likeCount);
         music.setStatus(status);
         music.setAuctionEndTime(status == 0 ? LocalDateTime.now().plusDays(3) : LocalDateTime.now().minusDays(1));
-        music.setImage(cover(title));
-        music.setAudio(("audio-" + title).getBytes(StandardCharsets.UTF_8));
+        UUID musicUuid = UUID.randomUUID();
+        music.setMusicUuid(musicUuid);
+        music.setCover(new MediaObject(coverKey(musicUuid, title), "image/png", 10L, null));
+        music.setFullDemo(new MediaObject("music/" + musicUuid + "/full-demo/f", "audio/mpeg", 10L, null));
         music.setAuctionFailureEmailSent(false);
         music.setShowAllBids(false);
         music.setPopularComposer(false);
@@ -205,8 +222,8 @@ class MusicFilterContractTest {
         likeRepository.save(like);
     }
 
-    private static byte[] cover(String title) {
-        return ("cover-" + title).getBytes(StandardCharsets.UTF_8);
+    private static String coverKey(UUID musicUuid, String title) {
+        return "music/" + musicUuid + "/cover/" + title.replace(' ', '-');
     }
 
     // --- 요청 헬퍼 ---
@@ -270,7 +287,7 @@ class MusicFilterContractTest {
     // --- 필드·건수 ---
 
     @Test
-    @DisplayName("maxPrice 필터 응답에 목록 계약 필드가 모두 존재한다 (커버 이미지 포함)")
+    @DisplayName("maxPrice 필터 응답에 목록 계약 필드가 모두 존재한다 (커버 URL 포함)")
     void maxPriceFilter_hasAllContractFields() throws Exception {
         JsonNode content = getFilter("latest").path("content");
         assertThat(content.isArray()).isTrue();
@@ -284,7 +301,8 @@ class MusicFilterContractTest {
         assertThat(first.hasNonNull("auctionEndTime")).as("auctionEndTime(마감시각)").isTrue();
         assertThat(first.has("likeCount")).as("likeCount").isTrue();
         assertThat(first.has("likedByUser")).as("likedByUser(좋아요 여부)").isTrue();
-        assertThat(first.hasNonNull("image")).as("image(커버 이미지)는 목록 계약에 반드시 포함").isTrue();
+        assertThat(first.hasNonNull("coverUrl")).as("coverUrl(커버)은 목록 계약에 반드시 포함").isTrue();
+        assertThat(first.has("image")).as("base64 커버는 더 이상 싣지 않는다").isFalse();
     }
 
     @Test
@@ -404,15 +422,15 @@ class MusicFilterContractTest {
     // --- 커버·음원 ---
 
     @Test
-    @DisplayName("커버 이미지 바이트가 픽스처 원본과 정확히 일치한다 (필드 존재만이 아니라 바이트)")
-    void coverImageBytes_matchFixture() throws Exception {
+    @DisplayName("커버 URL 이 그 곡의 커버 객체 키를 가리킨다 (필드 존재만이 아니라 키)")
+    void coverUrl_pointsToOwnCoverKey() throws Exception {
         JsonNode first = getFilter("latest").path("content").get(0); // 최신순 첫 곡 = F
         assertThat(UUID.fromString(first.path("musicUuid").asText())).isEqualTo(f);
-        assertThat(Base64.getDecoder().decode(first.path("image").asText())).isEqualTo(cover("zeta track"));
+        assertThat(first.path("coverUrl").asText()).contains(coverKey(f, "zeta track"));
     }
 
     @Test
-    @DisplayName("무필터 요청(maxPrice 없음)도 커버 포함·audio 제외 계약을 유지한다")
+    @DisplayName("무필터 요청(maxPrice 없음)도 커버 URL 포함·audio 제외 계약을 유지한다")
     void noFilterRequest_keepsContract() throws Exception {
         MvcResult res = mockMvc.perform(get(FILTER)
                         .param("page", "0")
@@ -422,13 +440,13 @@ class MusicFilterContractTest {
 
         assertThat(root.path("totalElements").asLong()).isEqualTo(ONGOING_COUNT);
         for (JsonNode el : root.path("content")) {
-            assertThat(el.hasNonNull("image")).as("무필터 커버 이미지 포함").isTrue();
+            assertThat(el.hasNonNull("coverUrl")).as("무필터 커버 URL 포함").isTrue();
             assertThat(el.has("audio")).as("무필터 audio 부재").isFalse();
         }
     }
 
     @Test
-    @DisplayName("검색어(searchTerm) 요청도 커버 포함·audio 제외 계약을 유지한다")
+    @DisplayName("검색어(searchTerm) 요청도 커버 URL 포함·audio 제외 계약을 유지한다")
     void searchRequest_keepsContract() throws Exception {
         MvcResult res = mockMvc.perform(get(FILTER)
                         .param("page", "0")
@@ -440,7 +458,7 @@ class MusicFilterContractTest {
 
         assertThat(content.size()).as("검색 결과 존재").isEqualTo(4);
         for (JsonNode el : content) {
-            assertThat(el.hasNonNull("image")).as("검색 커버 이미지 포함").isTrue();
+            assertThat(el.hasNonNull("coverUrl")).as("검색 커버 URL 포함").isTrue();
             assertThat(el.has("audio")).as("검색 audio 부재").isFalse();
         }
     }
@@ -458,7 +476,7 @@ class MusicFilterContractTest {
     }
 
     @Test
-    @DisplayName("maxPrice 필터 요청의 Hibernate SELECT 절에 audio 컬럼이 없다")
+    @DisplayName("maxPrice 필터 요청의 Hibernate SELECT 절에 미디어 바이트 컬럼(image·audio)이 없다")
     void audioAbsentInSqlSelect() throws Exception {
         Logger sqlLogger = (Logger) LoggerFactory.getLogger("org.hibernate.SQL");
         Level previous = sqlLogger.getLevel();
@@ -479,7 +497,7 @@ class MusicFilterContractTest {
                 .collect(Collectors.toList());
         assertThat(selects).as("music 관련 SQL 이 최소 1건 캡처되어야 한다").isNotEmpty();
         // JSON 필드 제거가 아니라 실제 SELECT 절에서 LOB 컬럼이 빠졌는지 검증
-        assertThat(selects).noneMatch(sql -> sql.contains(".audio"));
+        assertThat(selects).noneMatch(sql -> sql.contains(".audio") || sql.contains(".image"));
     }
 
     @Test
