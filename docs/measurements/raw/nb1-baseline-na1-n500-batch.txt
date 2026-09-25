@@ -1,0 +1,18 @@
+# NB1 기준선 NA1 — N=500, 커밋 6104549, Java 21.0.12, 2026-09-25 (앱 기동 직후 catch-up + 웜 6회). sql=직전 [BATCH] 이후 'Hibernate:' 문장 수
+2026-09-25T11:13:33.290+09:00  INFO 3560 --- [notenest-backend] [           main] com.notenest.NoteNestApplication         : Starting NoteNestApplication using Java 21.0.12 with PID 3560
+[BATCH] job=payment-followup targets=0 processed=0 failed=0 elapsedMs=156 heapBeforeMb=81 heapAfterMb=84 sql=1
+[BATCH] job=auction-close targets=250 processed=250 failed=0 elapsedMs=146802 heapBeforeMb=84 heapAfterMb=2959 sql=1241
+[BATCH] job=payment-followup targets=167 processed=167 failed=0 elapsedMs=50000 heapBeforeMb=3445 heapAfterMb=3367 sql=522
+[BATCH] job=auction-close targets=0 processed=0 failed=0 elapsedMs=7 heapBeforeMb=3367 heapAfterMb=3368 sql=1
+[BATCH] job=payment-followup targets=167 processed=167 failed=0 elapsedMs=50105 heapBeforeMb=3368 heapAfterMb=1652 sql=502
+[BATCH] job=auction-close targets=0 processed=0 failed=0 elapsedMs=6 heapBeforeMb=1654 heapAfterMb=1654 sql=1
+[BATCH] job=payment-followup targets=167 processed=167 failed=0 elapsedMs=51728 heapBeforeMb=1654 heapAfterMb=2046 sql=502
+[BATCH] job=auction-close targets=0 processed=0 failed=0 elapsedMs=5 heapBeforeMb=2046 heapAfterMb=2046 sql=1
+[BATCH] job=payment-followup targets=167 processed=167 failed=0 elapsedMs=52403 heapBeforeMb=2046 heapAfterMb=1616 sql=502
+[BATCH] job=auction-close targets=0 processed=0 failed=0 elapsedMs=7 heapBeforeMb=1616 heapAfterMb=1616 sql=1
+[BATCH] job=payment-followup targets=167 processed=167 failed=0 elapsedMs=52185 heapBeforeMb=1616 heapAfterMb=2544 sql=502
+[BATCH] job=auction-close targets=0 processed=0 failed=0 elapsedMs=5 heapBeforeMb=2544 heapAfterMb=2544 sql=1
+[BATCH] job=payment-followup targets=167 processed=167 failed=0 elapsedMs=48214 heapBeforeMb=2544 heapAfterMb=3406 sql=502
+[BATCH] job=auction-close targets=0 processed=0 failed=0 elapsedMs=7 heapBeforeMb=3406 heapAfterMb=3406 sql=1
+[BATCH] job=payment-followup targets=167 processed=167 failed=0 elapsedMs=50132 heapBeforeMb=3406 heapAfterMb=3071 sql=502
+[BATCH] job=auction-close targets=0 processed=0 failed=0 elapsedMs=7 heapBeforeMb=3071 heapAfterMb=3073 sql=1

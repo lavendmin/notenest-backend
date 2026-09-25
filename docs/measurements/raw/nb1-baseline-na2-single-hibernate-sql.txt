@@ -1,0 +1,53 @@
+2026-09-25T11:09:16.524+09:00 DEBUG 13708 --- [notenest-backend] [nio-8086-exec-3] org.hibernate.SQL                        : 
+    select
+        u1_0.user_uuid,
+        u1_0.agreement,
+        u1_0.email,
+        u1_0.email_verified,
+        u1_0.name,
+        u1_0.nickname,
+        u1_0.password,
+        u1_0.phone_no,
+        u1_0.role 
+    from
+        user u1_0 
+    where
+        u1_0.email=?
+2026-09-25T11:09:16.709+09:00 DEBUG 13708 --- [notenest-backend] [nio-8086-exec-3] org.hibernate.SQL                        : 
+    select
+        m1_0.music_uuid,
+        m1_0.title,
+        m1_0.starting_price,
+        u1_0.nickname,
+        m1_0.current_highest_bid,
+        m1_0.auction_end_time,
+        m1_0.like_count,
+        m1_0.image 
+    from
+        music m1_0 
+    left join
+        user u1_0 
+            on u1_0.user_uuid=m1_0.user_uuid 
+    where
+        m1_0.status=? 
+        and coalesce(m1_0.current_highest_bid, m1_0.starting_price) between ? and ? 
+    order by
+        m1_0.created_at desc 
+    limit
+        ?, ?
+2026-09-25T11:09:16.800+09:00 DEBUG 13708 --- [notenest-backend] [nio-8086-exec-3] org.hibernate.SQL                        : 
+    select
+        count(m1_0.music_uuid) 
+    from
+        music m1_0 
+    where
+        m1_0.status=? 
+        and coalesce(m1_0.current_highest_bid, m1_0.starting_price) between ? and ?
+2026-09-25T11:09:16.810+09:00 DEBUG 13708 --- [notenest-backend] [nio-8086-exec-3] org.hibernate.SQL                        : 
+    select
+        l1_0.music_uuid 
+    from
+        likes l1_0 
+    where
+        l1_0.user_uuid=? 
+        and l1_0.music_uuid in (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
