@@ -7,8 +7,12 @@ plugins {
 group = 'com.notenest'
 version = '0.0.1-SNAPSHOT'
 
+// 빌드·테스트·bootRun 을 JDK 17 로 고정한다 — PATH 의 java 버전(예: 21)과 무관하게 배포 대상 버전으로 재현한다.
+// 로컬에 설치된 JDK 17 을 Gradle 이 자동 탐지한다(자동 다운로드 없음).
 java {
-    sourceCompatibility = '17'
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
 }
 
 configurations {
