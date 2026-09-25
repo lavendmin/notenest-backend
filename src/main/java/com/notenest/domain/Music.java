@@ -58,6 +58,36 @@ public class Music {
     @Column(name = "audio", columnDefinition = "LONGBLOB")
     private byte[] audio;
 
+    // [NB1] 객체 저장소(S3)로 옮긴 미디어의 키·메타데이터. 위 image/audio LOB 는 백필·대조가 끝날 때까지
+    // 읽기 fallback 으로 남기고 마지막 마이그레이션에서 삭제한다. 기존 audio 는 전체 데모로 이전한다.
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "objectKey", column = @Column(name = "cover_object_key", length = 512)),
+            @AttributeOverride(name = "contentType", column = @Column(name = "cover_content_type", length = 100)),
+            @AttributeOverride(name = "size", column = @Column(name = "cover_size")),
+            @AttributeOverride(name = "originalName", column = @Column(name = "cover_original_name", length = 255))
+    })
+    private MediaObject cover;
+
+    // 기존 곡은 미리듣기가 없을 수 있다(null). 신규 곡의 미리듣기 필수는 등록 API 검증으로 집행한다.
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "objectKey", column = @Column(name = "preview_object_key", length = 512)),
+            @AttributeOverride(name = "contentType", column = @Column(name = "preview_content_type", length = 100)),
+            @AttributeOverride(name = "size", column = @Column(name = "preview_size")),
+            @AttributeOverride(name = "originalName", column = @Column(name = "preview_original_name", length = 255))
+    })
+    private MediaObject preview;
+
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "objectKey", column = @Column(name = "full_demo_object_key", length = 512)),
+            @AttributeOverride(name = "contentType", column = @Column(name = "full_demo_content_type", length = 100)),
+            @AttributeOverride(name = "size", column = @Column(name = "full_demo_size")),
+            @AttributeOverride(name = "originalName", column = @Column(name = "full_demo_original_name", length = 255))
+    })
+    private MediaObject fullDemo;
+
     // 다대일(Many-to-One) 관계 설정
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_uuid", nullable = false)
