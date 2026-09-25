@@ -9,28 +9,30 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.notenest.domain.Likes;
 import com.notenest.domain.Music;
 import com.notenest.domain.User;
+import com.notenest.repository.BidRepository;
 import com.notenest.repository.LikeRepository;
 import com.notenest.repository.MusicRepository;
+import com.notenest.repository.PaymentRepository;
 import com.notenest.repository.UserRepository;
+import com.notenest.service.BidServiceImpl;
 import jakarta.persistence.EntityManager;
-import org.springframework.transaction.annotation.Transactional;
-import org.slf4j.LoggerFactory;
-import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import com.notenest.service.BidServiceImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Page;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.transaction.support.TransactionTemplate;
 
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -44,21 +46,40 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * 공개 경매 곡 목록 API(/api/music/filter)의 기능 계약을 고정하는 특성화 테스트.
  *
- * 목적: maxPrice 필터 경로를 DTO 프로젝션으로 리팩터할 때, "무엇을 돌려주는가"(계약)가
- *       바뀌지 않았음을 자동 증명한다. 성능(k6)이 아니라 응답 내용을 검사한다.
+ * 목적: 목록 경로를 DTO 프로젝션으로 리팩터할 때(N1), 그리고 커버를 S3 URL로 바꿀 때(NB1)
+ *       "무엇을 돌려주는가"(계약)가 바뀌지 않았음을 자동 증명한다. 성능(k6)이 아니라 응답 내용을 검사한다.
  *
- * 전제: 로컬 프로파일(application.properties: spring.profiles.active=local) → MariaDB 3311,
- *       seed-music.sql N=100 시드(status0 곡 존재), bidder@test.local 계정 존재.
- *       시드가 없으면 Assumption 으로 스킵한다(실패가 아니라 건너뜀).
+ * DB: 실제 MariaDB(로컬 docker, 3311)에서 실행한다 — QueryDSL 이 생성하는 SQL, MariaDB 의 정렬(nulls last)·
+ *     LIKE 동작, SELECT 절의 열 구성을 그대로 검증하기 위해서다. 단 성능 측정용 DB(notenest)와 분리된
+ *     <b>계약 테스트 전용 DB(notenest_contract)</b>를 쓰고 스키마를 테스트가 만들고 지운다(create-drop).
+ *     측정용 시드 규모(N=100·500)와 무관하게 항상 같은 결과가 나온다.
+ *
+ * 픽스처: 매 테스트 전에 진행중 6곡 + 마감 1곡을 직접 만든다(아래 표). 최신순·가격순·좋아요순의 기대 순서가
+ *        모두 결정적이 되도록 생성 시각·가격·좋아요 수를 서로 다르게 설계했고, 기대값은 DB 조회가 아니라
+ *        이 표에서 나온다. 마감 곡(G)은 좋아요 최다·가장 최신이라 목록에 섞이면 곧바로 드러난다.
+ *
+ * <pre>
+ * 곡 | 제목          | 작곡가      | 장르 | 해시태그       | 시작가 | 최고가 | 좋아요 | 생성(분 전) | bidder 좋아요
+ * A  | alpha song    | composer-a | POP  | #seed          | 10000 | 90000 | 5     | 60         | O
+ * B  | beta song     | composer-a | POP  | #seed          | 20000 | 90000 | 3     | 50         |
+ * C  | gamma song    | composer-b | POP  | #seed          | 31000 | null  | 1     | 40         | O
+ * D  | delta song    | composer-b | POP  | #seed          | 29000 | null  | 0     | 30         |
+ * E  | epsilon track | composer-a | JAZZ | #jazzy,#only   | 11000 | null  | 2     | 20         |   (부제 qq-unique-subtitle-qq)
+ * F  | zeta track    | composer-b | POP  | #seed          | 10000 | 12000 | 4     | 10         |
+ * G  | ended song    | composer-a | POP  | #seed          | 10000 | 11000 | 9     | 5          |   (status=1 마감 → 제외)
+ * </pre>
  *
  * 인증: JWT 필터를 끄고(@AutoConfigureMockMvc(addFilters=false)) @WithMockUser 로
- *       SecurityContext 의 name 을 bidder 이메일로 채운다 → 컨트롤러가 findByEmail 로 조회.
- *
- * 측정 요청과 동일 형태: searchTerm=&sortBy=latest&page=0&maxPrice=100000&minPrice=0
+ *       SecurityContext 의 name 을 bidder 이메일로 채운다 → 서비스가 findByEmail 로 조회해 좋아요 여부를 채운다.
+ *       비로그인 목록 공개 계약은 MediaAccessContractTest 가 보안 필터를 켠 채 검증한다.
  */
 @SpringBootTest(properties = {
         "spring.jwt.secret=test-secret-key-for-notenest-builds",
-        "spring.task.scheduling.enabled=false"
+        "spring.task.scheduling.enabled=false",
+        // 성능 측정 DB(notenest)와 분리된 계약 테스트 전용 DB. 없으면 드라이버가 만든다.
+        "spring.datasource.url=jdbc:mariadb://localhost:3311/notenest_contract?createDatabaseIfNotExist=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8",
+        "spring.jpa.hibernate.ddl-auto=create-drop",
+        "spring.jpa.show-sql=false"
 })
 @AutoConfigureMockMvc(addFilters = false)
 @WithMockUser(username = "bidder@test.local")
@@ -66,13 +87,15 @@ class MusicFilterContractTest {
 
     private static final String BIDDER = "bidder@test.local";
     private static final String FILTER = "/api/music/filter";
-    private static final int MAX_PRICE = 100000; // 시드 곡 가격(11,000~15,000)을 모두 포함 → status0 전체가 대상
+    private static final int MAX_PRICE = 100000; // 픽스처 가격(10,000~90,000)을 모두 포함 → 진행중 전체가 대상
+    private static final int ONGOING_COUNT = 6;
+    // 한 페이지에 진행중 전체가 들어가는 크기. 픽스처 규모에 맞춘 값이며 큰 시드를 전제로 하지 않는다.
+    private static final String ONE_PAGE = "10";
 
     @Autowired
     private MockMvc mockMvc;
 
-    // 스케줄러(@Scheduled checkAuctionEnd)가 테스트 중 LOB 를 통짜 로딩하고 시드 데이터를
-    // 변형(낙찰 처리·이메일)하는 것을 차단. 계약 테스트는 읽기만 해야 한다.
+    // 스케줄러(@Scheduled 경매 배치)가 테스트 중 픽스처를 변형(낙찰 처리·이메일)하는 것을 차단한다.
     @MockBean
     private BidServiceImpl bidService;
 
@@ -86,23 +109,107 @@ class MusicFilterContractTest {
     private UserRepository userRepository;
 
     @Autowired
+    private BidRepository bidRepository;
+
+    @Autowired
+    private PaymentRepository paymentRepository;
+
+    @Autowired
     private EntityManager entityManager;
+
+    @Autowired
+    private TransactionTemplate transactionTemplate;
 
     @Autowired
     private ObjectMapper objectMapper;
 
-    // 프로젝션 리팩터가 건드리면 안 되는 참조값: status=0 곡의 최신순 순서/총건수
-    private List<UUID> referenceLatestUuids;
-    private long referenceOngoingCount;
+    private UUID a, b, c, d, e, f, g;
 
     @BeforeEach
-    void loadReference() {
-        Page<Music> ref = musicRepository.findAllOngoingMusicByOrderByCreatedAtDesc(PageRequest.of(0, 10));
-        referenceOngoingCount = ref.getTotalElements();
-        referenceLatestUuids = ref.getContent().stream().map(Music::getMusicUuid).collect(Collectors.toList());
-        Assumptions.assumeTrue(referenceOngoingCount > 0,
-                "시드된 진행중(status=0) 곡이 없어 계약 테스트를 건너뜁니다. seed-music.sql 실행 필요.");
+    void createFixtures() {
+        // 정리와 생성은 트랜잭션을 나눈다 — 한 영속성 컨텍스트에서는 flush 시 INSERT 가 DELETE 보다 먼저 실행되어
+        // 같은 이메일(unique) 재생성이 중복 키로 실패한다.
+        transactionTemplate.executeWithoutResult(tx -> {
+            likeRepository.deleteAll();
+            paymentRepository.deleteAll();
+            bidRepository.deleteAll();
+            musicRepository.deleteAll();
+            userRepository.deleteAll();
+        });
+        transactionTemplate.executeWithoutResult(tx -> {
+            User bidder = saveUser(BIDDER, "bidder");
+            User composerA = saveUser("composer-a@test.local", "composer-a");
+            User composerB = saveUser("composer-b@test.local", "composer-b");
+
+            a = saveMusic("alpha song", composerA, "POP", "#seed", null, 10000L, 90000L, 5, 60, 0);
+            b = saveMusic("beta song", composerA, "POP", "#seed", null, 20000L, 90000L, 3, 50, 0);
+            c = saveMusic("gamma song", composerB, "POP", "#seed", null, 31000L, null, 1, 40, 0);
+            d = saveMusic("delta song", composerB, "POP", "#seed", null, 29000L, null, 0, 30, 0);
+            e = saveMusic("epsilon track", composerA, "JAZZ", "#jazzy,#only", "qq-unique-subtitle-qq", 11000L, null, 2, 20, 0);
+            f = saveMusic("zeta track", composerB, "POP", "#seed", null, 10000L, 12000L, 4, 10, 0);
+            g = saveMusic("ended song", composerA, "POP", "#seed", null, 10000L, 11000L, 9, 5, 1);
+
+            like(bidder, a);
+            like(bidder, c);
+        });
     }
+
+    // --- 픽스처 헬퍼 ---
+
+    private User saveUser(String email, String nickname) {
+        User user = new User();
+        user.setEmail(email);
+        user.setNickname(nickname);
+        user.setName(nickname);
+        user.setPassword("x");
+        user.setRole("ROLE_USER");
+        user.setEmailVerified(true);
+        user.setAgreement(true);
+        return userRepository.save(user);
+    }
+
+    private UUID saveMusic(String title, User owner, String genre, String hashtag, String subtitle,
+                           Long startingPrice, Long highestBid, int likeCount, int createdMinutesAgo, int status) {
+        Music music = new Music();
+        music.setTitle(title);
+        music.setSubtitle(subtitle);
+        music.setUser(owner);
+        music.setMajorGenre(genre);
+        music.setHashtag(hashtag);
+        music.setStartingPrice(startingPrice);
+        music.setCurrentHighestBid(highestBid);
+        music.setLikeCount(likeCount);
+        music.setStatus(status);
+        music.setAuctionEndTime(status == 0 ? LocalDateTime.now().plusDays(3) : LocalDateTime.now().minusDays(1));
+        music.setImage(cover(title));
+        music.setAudio(("audio-" + title).getBytes(StandardCharsets.UTF_8));
+        music.setAuctionFailureEmailSent(false);
+        music.setShowAllBids(false);
+        music.setPopularComposer(false);
+        music.setSteadyWorkComposer(false);
+        music.setHitSongComposer(false);
+        UUID id = musicRepository.saveAndFlush(music).getMusicUuid();
+        // created_at 은 @CreationTimestamp·updatable=false 라 저장 시 현재 시각으로 덮인다.
+        // 최신순 기대 순서가 결정적이도록 벌크 UPDATE 로 서로 다른 시각을 심는다.
+        entityManager.createQuery("update Music m set m.createdAt = :t where m.musicUuid = :id")
+                .setParameter("t", LocalDateTime.now().minusMinutes(createdMinutesAgo))
+                .setParameter("id", id)
+                .executeUpdate();
+        return id;
+    }
+
+    private void like(User user, UUID musicId) {
+        Likes like = new Likes();
+        like.setUser(user);
+        like.setMusic(musicRepository.getReferenceById(musicId));
+        likeRepository.save(like);
+    }
+
+    private static byte[] cover(String title) {
+        return ("cover-" + title).getBytes(StandardCharsets.UTF_8);
+    }
+
+    // --- 요청 헬퍼 ---
 
     private JsonNode getFilter(String sortBy) throws Exception {
         MvcResult res = performFilter(sortBy, 0, MAX_PRICE);
@@ -121,17 +228,13 @@ class MusicFilterContractTest {
         return mockMvc.perform(req).andExpect(status().isOk()).andReturn();
     }
 
-    // 임의 파라미터 조합으로 /filter 를 호출해 JSON 루트를 돌려준다 (회귀 테스트용 범용 헬퍼).
+    // 임의 파라미터 조합으로 /filter 를 호출해 JSON 루트를 돌려준다 (page 미지정 시 0).
     private JsonNode getFilterWith(Map<String, String> params) throws Exception {
-        var req = get(FILTER).param("page", "0").with(r -> { r.setRemoteUser(BIDDER); return r; });
-        for (var e : params.entrySet()) req = req.param(e.getKey(), e.getValue());
+        var req = get(FILTER).with(r -> { r.setRemoteUser(BIDDER); return r; });
+        if (!params.containsKey("page")) req = req.param("page", "0");
+        for (var entry : params.entrySet()) req = req.param(entry.getKey(), entry.getValue());
         MvcResult res = mockMvc.perform(req).andExpect(status().isOk()).andReturn();
         return objectMapper.readTree(res.getResponse().getContentAsByteArray());
-    }
-
-    // 진행중(status=0) 곡 전체 엔티티 — 필터 결과 집합·정렬 불변식의 기준값. LOB 를 읽으므로 필요한 테스트에서만 호출.
-    private List<Music> loadOngoingEntities() {
-        return musicRepository.findAllOngoingMusicByOrderByCreatedAtDesc(PageRequest.of(0, 10_000)).getContent();
     }
 
     // 응답 content 의 musicUuid 를 순서 있는 리스트 / 집합으로 — 결과 집합·순서 비교용.
@@ -142,47 +245,6 @@ class MusicFilterContractTest {
 
     private static Set<UUID> uuidSet(JsonNode root) {
         return Set.copyOf(uuidList(root));
-    }
-
-    private static Set<UUID> uuidSet(List<Music> entities) {
-        return entities.stream().map(Music::getMusicUuid).collect(Collectors.toSet());
-    }
-
-    // 전체 결과를 한 페이지에 받기 위한 size (시드 100곡 대비 충분)
-    private static final String ALL = "1000";
-
-    private static double effectivePrice(Music m) {
-        return m.getCurrentHighestBid() != null ? m.getCurrentHighestBid() : m.getStartingPrice();
-    }
-
-    private static double effectivePrice(JsonNode el) {
-        JsonNode bid = el.path("currentHighestBid");
-        return bid.isNumber() ? bid.asDouble() : el.path("startingPrice").asDouble();
-    }
-
-    // 가격 정렬 계약(실제 코드와 동일): currentHighestBid DESC(null 마지막) → startingPrice DESC.
-    // coalesce 기준이 아니라 "최고입찰가 우선, null 은 무조건 뒤" 임에 주의.
-    private static void assertPriceOrderInvariant(JsonNode content) {
-        boolean seenNull = false;
-        Double prevBid = null, prevStart = null;
-        for (JsonNode el : content) {
-            JsonNode bidNode = el.path("currentHighestBid");
-            double start = el.path("startingPrice").asDouble();
-            if (!bidNode.isNumber()) { // null 최고입찰가 구간(맨 뒤). 그 안에서 startingPrice DESC.
-                if (seenNull && prevStart != null) {
-                    assertThat(start).as("null 최고가 구간 startingPrice 내림차순").isLessThanOrEqualTo(prevStart);
-                }
-                seenNull = true; prevBid = null; prevStart = start;
-                continue;
-            }
-            assertThat(seenNull).as("null 최고입찰가 뒤에 non-null 이 오면 안 됨(nulls last)").isFalse();
-            double bid = bidNode.asDouble();
-            if (prevBid != null) {
-                assertThat(bid).as("currentHighestBid 내림차순").isLessThanOrEqualTo(prevBid);
-                if (bid == prevBid) assertThat(start).as("최고가 동가면 startingPrice 내림차순").isLessThanOrEqualTo(prevStart);
-            }
-            prevBid = bid; prevStart = start;
-        }
     }
 
     // org.hibernate.SQL 로그를 캡처해 likes 테이블을 조회하는 SQL 문 수를 센다.
@@ -205,13 +267,14 @@ class MusicFilterContractTest {
                 .count();
     }
 
+    // --- 필드·건수 ---
+
     @Test
     @DisplayName("maxPrice 필터 응답에 목록 계약 필드가 모두 존재한다 (커버 이미지 포함)")
     void maxPriceFilter_hasAllContractFields() throws Exception {
-        JsonNode root = getFilter("latest");
-        JsonNode content = root.path("content");
+        JsonNode content = getFilter("latest").path("content");
         assertThat(content.isArray()).isTrue();
-        assertThat(content.size()).isGreaterThan(0);
+        assertThat(content.size()).isEqualTo(ONGOING_COUNT);
 
         JsonNode first = content.get(0);
         assertThat(first.hasNonNull("musicUuid")).as("musicUuid").isTrue();
@@ -225,110 +288,45 @@ class MusicFilterContractTest {
     }
 
     @Test
-    @DisplayName("총 건수가 참조(진행중 곡 수)와 같다 — 필터가 대상 집합을 바꾸지 않는다")
-    void maxPriceFilter_totalElementsMatchesReference() throws Exception {
+    @DisplayName("총 건수는 진행중 곡 수와 같고 마감 곡은 제외된다")
+    void maxPriceFilter_totalElementsExcludesEndedMusic() throws Exception {
         JsonNode root = getFilter("latest");
-        // maxPrice=100000 은 시드 가격대를 모두 포함하므로 status=0 전체와 같아야 한다.
-        assertThat(root.path("totalElements").asLong()).isEqualTo(referenceOngoingCount);
+        assertThat(root.path("totalElements").asLong()).isEqualTo(ONGOING_COUNT);
+        assertThat(uuidSet(root)).doesNotContain(g);
+    }
+
+    // --- 정렬 ---
+
+    @Test
+    @DisplayName("최신순 정렬: 생성 시각 내림차순의 예상 UUID 순서")
+    void latestSort_expectedOrder() throws Exception {
+        assertThat(uuidList(getFilter("latest"))).containsExactly(f, e, d, c, b, a);
     }
 
     @Test
-    @DisplayName("최신순 정렬 순서가 참조 리포지토리 순서와 동일하다")
-    void latestSort_orderMatchesReference() throws Exception {
-        JsonNode content = getFilter("latest").path("content");
-        List<UUID> apiUuids = content.findValues("musicUuid").stream()
-                .map(n -> UUID.fromString(n.asText())).collect(Collectors.toList());
-        assertThat(apiUuids).isEqualTo(referenceLatestUuids);
+    @DisplayName("가격순 정렬: 최고가 DESC(null 마지막) → 동가·null 구간은 시작가 DESC — 예상 UUID 순서")
+    void priceSort_expectedOrderWithTieBreakAndNullsLast() throws Exception {
+        // B·A 는 최고가 90000 동가 → 시작가 20000 > 10000. F 는 최고가 12000.
+        // C·D·E 는 최고가 null → 맨 뒤, 시작가 31000 > 29000 > 11000.
+        assertThat(uuidList(getFilter("price"))).containsExactly(b, a, f, c, d, e);
     }
 
     @Test
-    @DisplayName("커버 이미지 바이트가 원본 엔티티와 정확히 일치한다 (필드 존재만이 아니라 바이트)")
-    void coverImageBytes_matchEntity() throws Exception {
-        JsonNode first = getFilter("latest").path("content").get(0);
-        UUID id = UUID.fromString(first.path("musicUuid").asText());
-        byte[] apiImage = Base64.getDecoder().decode(first.path("image").asText());
-
-        Music entity = musicRepository.findById(id).orElseThrow();
-        assertThat(apiImage).isEqualTo(entity.getImage());
+    @DisplayName("좋아요순 정렬: likeCount 내림차순의 예상 UUID 순서")
+    void likeSort_expectedOrder() throws Exception {
+        assertThat(uuidList(getFilter("like"))).containsExactly(a, f, b, e, c, d);
     }
 
     @Test
-    @DisplayName("가격순 정렬: 최고입찰가 내림차순(null 마지막) → 시작가 내림차순 불변식을 만족한다")
-    void priceSort_isDescendingWithNullsLast() throws Exception {
-        JsonNode content = getFilterWith(Map.of("sortBy", "price", "size", "100",
-                "maxPrice", String.valueOf(MAX_PRICE), "minPrice", "0")).path("content");
-        assertThat(content.size()).isEqualTo((int) referenceOngoingCount);
-        content.forEach(el -> assertThat(el.hasNonNull("image")).as("가격순 커버 포함").isTrue());
-        assertPriceOrderInvariant(content);
-    }
-
-    @Test
-    @Transactional // 시드는 시작가가 전부 10,000원이라 tie-break(시작가 DESC)를 검증할 수 없다 → 전용 픽스처를 만들고 롤백한다.
-    @DisplayName("가격순 정렬: 최고가 동가 시 시작가 DESC, null 최고가는 시작가 DESC로 맨 뒤 — 예상 UUID 순서")
-    void priceSort_tieBreakAndNullsLast_withFixture() throws Exception {
-        List<Music> ongoing = loadOngoingEntities();
-        Assumptions.assumeTrue(ongoing.size() >= 4, "픽스처에 진행중 곡 4개 이상 필요");
-        // b,a: 최고가 90000 동가 → 시작가로 b(20000) > a(10000).  c,d: 최고가 null → 시작가로 c(31000) > d(29000).
-        Music b = ongoing.get(0), a = ongoing.get(1), c = ongoing.get(2), d = ongoing.get(3);
-        b.setCurrentHighestBid(90000L); b.setStartingPrice(20000L);
-        a.setCurrentHighestBid(90000L); a.setStartingPrice(10000L);
-        c.setCurrentHighestBid(null);   c.setStartingPrice(31000L);
-        d.setCurrentHighestBid(null);   d.setStartingPrice(29000L);
-        musicRepository.saveAll(List.of(b, a, c, d));
-        entityManager.flush();
-
-        JsonNode content = getFilterWith(Map.of("sortBy", "price", "size", ALL, "maxPrice", "100000", "minPrice", "0")).path("content");
-        assertPriceOrderInvariant(content); // 전체 불변식
-        List<UUID> order = content.findValues("musicUuid").stream().map(n -> UUID.fromString(n.asText())).collect(Collectors.toList());
-
-        // 최고가 90000 은 다른 곡(≤15,000)보다 커서 b,a 가 맨 앞 — 동가 tie-break 로 시작가 큰 b 먼저
-        assertThat(order.subList(0, 2)).as("최고가 동가 → 시작가 DESC").containsExactly(b.getMusicUuid(), a.getMusicUuid());
-        // null 최고가 c,d 는 non-null(a) 뒤(nulls last), 그중 시작가 DESC 로 c 먼저 d 나중
-        assertThat(order.indexOf(a.getMusicUuid())).as("non-null(a) 는 null(c) 앞").isLessThan(order.indexOf(c.getMusicUuid()));
-        assertThat(order.indexOf(c.getMusicUuid())).as("c(null,31000) < d(null,29000)").isLessThan(order.indexOf(d.getMusicUuid()));
-    }
-
-    @Test
-    @Transactional // 시드는 likes 0건·like_count 0 이라 정렬·매핑이 무시돼도 통과할 수 있다 → 픽스처를 만들고 롤백한다.
-    @DisplayName("좋아요순 정렬과 likedByUser 매핑: 서로 다른 likeCount 의 예상 UUID 순서, 실제 좋아요한 곡만 true")
-    void likeSort_orderAndLikedByUserMapping_withFixture() throws Exception {
-        List<Music> ongoing = loadOngoingEntities();
-        Assumptions.assumeTrue(ongoing.size() >= 4, "픽스처에 진행중 곡 4개 이상 필요");
-        User bidder = userRepository.findByEmail(BIDDER);
-        assertThat(bidder).isNotNull();
-
-        // likeCount 5 / 3 / 1, 나머지 0 → 상위 3개의 순서가 결정적
-        Music top1 = ongoing.get(0), top2 = ongoing.get(1), top3 = ongoing.get(2), notLiked = ongoing.get(3);
-        top1.setLikeCount(5); top2.setLikeCount(3); top3.setLikeCount(1);
-        musicRepository.save(top1); musicRepository.save(top2); musicRepository.save(top3);
-        // bidder 가 실제로 좋아요한 곡: top1, top3
-        for (Music liked : List.of(top1, top3)) {
-            Likes l = new Likes(); l.setUser(bidder); l.setMusic(liked); likeRepository.save(l);
-        }
-        entityManager.flush();
-
-        JsonNode root = getFilterWith(Map.of("sortBy", "like", "size", ALL,
-                "maxPrice", String.valueOf(MAX_PRICE), "minPrice", "0"));
-        List<UUID> order = uuidList(root);
-        assertThat(order.subList(0, 3)).as("likeCount 5,3,1 순서")
-                .containsExactly(top1.getMusicUuid(), top2.getMusicUuid(), top3.getMusicUuid());
-        int prev = Integer.MAX_VALUE;
-        for (JsonNode el : root.path("content")) {
-            int lc = el.path("likeCount").asInt();
-            assertThat(lc).as("likeCount 내림차순").isLessThanOrEqualTo(prev);
-            prev = lc;
-        }
-
-        // likedByUser 매핑: 좋아요한 곡만 true, 나머지(notLiked 포함)는 false
-        Map<UUID, Boolean> likedByUuid = new java.util.HashMap<>();
-        for (JsonNode el : root.path("content")) {
+    @DisplayName("likedByUser 매핑: bidder 가 실제로 좋아요한 곡(A·C)만 true")
+    void likedByUser_mapsOnlyLikedMusic() throws Exception {
+        Map<UUID, Boolean> likedByUuid = new HashMap<>();
+        for (JsonNode el : getFilter("latest").path("content")) {
             likedByUuid.put(UUID.fromString(el.path("musicUuid").asText()), el.path("likedByUser").asBoolean());
         }
-        assertThat(likedByUuid.get(top1.getMusicUuid())).isTrue();
-        assertThat(likedByUuid.get(top3.getMusicUuid())).isTrue();
-        assertThat(likedByUuid.get(top2.getMusicUuid())).isFalse();
-        assertThat(likedByUuid.get(notLiked.getMusicUuid())).isFalse();
-        assertThat(likedByUuid.values().stream().filter(Boolean::booleanValue).count()).isEqualTo(2);
+        assertThat(likedByUuid).containsOnly(
+                Map.entry(a, true), Map.entry(b, false), Map.entry(c, true),
+                Map.entry(d, false), Map.entry(e, false), Map.entry(f, false));
     }
 
     @Test
@@ -345,109 +343,85 @@ class MusicFilterContractTest {
     @Test
     @DisplayName("sortBy 단독 요청(필터 없음)도 정렬이 적용된다 — price/like 가 최신순으로 무시되지 않는다")
     void sortByOnly_isHonoredWithoutFilters() throws Exception {
-        // price: 필터 파라미터 없이 sortBy 만 → 가격 정렬 계약(최고입찰가 DESC nulls last → 시작가 DESC) 유지
-        JsonNode priceOnly = getFilterWith(Map.of("sortBy", "price", "size", "100")).path("content");
-        assertThat(priceOnly.size()).isEqualTo((int) referenceOngoingCount);
-        assertPriceOrderInvariant(priceOnly);
-        // 가격순 단독 결과가 최신순 결과와 같은 순서라면(정렬이 무시됐다면) 실패해야 한다.
-        List<UUID> priceOrder = priceOnly.findValues("musicUuid").stream().map(n -> UUID.fromString(n.asText())).toList();
-        List<UUID> latestOrder = getFilterWith(Map.of("sortBy", "latest", "size", "100")).path("content")
-                .findValues("musicUuid").stream().map(n -> UUID.fromString(n.asText())).toList();
-        assertThat(priceOrder).as("가격순 단독 결과가 최신순과 동일하면 sortBy 가 무시된 것").isNotEqualTo(latestOrder);
-
-        // like: 필터 없이 sortBy=like → likeCount 내림차순
-        JsonNode likeOnly = getFilterWith(Map.of("sortBy", "like", "size", "100")).path("content");
-        int prev = Integer.MAX_VALUE;
-        for (JsonNode el : likeOnly) {
-            int lc = el.path("likeCount").asInt();
-            assertThat(lc).as("sortBy=like 단독: likeCount 내림차순").isLessThanOrEqualTo(prev);
-            prev = lc;
-        }
+        assertThat(uuidList(getFilterWith(Map.of("sortBy", "price")))).containsExactly(b, a, f, c, d, e);
+        assertThat(uuidList(getFilterWith(Map.of("sortBy", "like")))).containsExactly(a, f, b, e, c, d);
+        assertThat(uuidList(getFilterWith(Map.of("sortBy", "latest")))).containsExactly(f, e, d, c, b, a);
     }
 
     @Test
-    @Transactional // 기준값 계산에서 m.getUser().getNickname() (LAZY) 을 읽으므로 세션 유지 — 데이터는 바꾸지 않는다.
-    @DisplayName("검색 결과 집합(UUID)이 엔티티 기준과 같다 — 제목·작곡가 닉네임 매칭, 무매칭 0건")
-    void search_resultSetMatchesReference() throws Exception {
-        List<Music> ongoing = loadOngoingEntities();
-        // 제목 검색: 'song' — 시드 제목 'seed song N'
-        Set<UUID> titleExpected = uuidSet(ongoing.stream().filter(m -> m.getTitle().contains("song")).toList());
-        assertThat(uuidSet(getFilterWith(Map.of("searchTerm", "song", "size", ALL)))).isEqualTo(titleExpected);
-        assertThat(titleExpected).isNotEmpty();
-        // 작곡가 닉네임 검색(조인 경로): 'composer' — 시드 곡 소유자 닉네임
-        Set<UUID> nickExpected = uuidSet(ongoing.stream()
-                .filter(m -> m.getUser() != null && m.getUser().getNickname().contains("composer")).toList());
-        assertThat(uuidSet(getFilterWith(Map.of("searchTerm", "composer", "size", ALL)))).isEqualTo(nickExpected);
-        assertThat(nickExpected).isNotEmpty();
-        // 무매칭
+    @DisplayName("페이지 크기보다 결과가 많으면 잘리고, 페이지를 넘기면 이어진다 (페이지 계약)")
+    void pagination_splitsResultsBySize() throws Exception {
+        JsonNode page0 = getFilterWith(Map.of("sortBy", "latest", "size", "4", "page", "0"));
+        JsonNode page1 = getFilterWith(Map.of("sortBy", "latest", "size", "4", "page", "1"));
+
+        assertThat(uuidList(page0)).containsExactly(f, e, d, c);
+        assertThat(uuidList(page1)).containsExactly(b, a);
+        assertThat(page0.path("totalElements").asLong()).isEqualTo(ONGOING_COUNT);
+        assertThat(page0.path("totalPages").asInt()).isEqualTo(2);
+    }
+
+    // --- 검색·필터 ---
+
+    @Test
+    @DisplayName("검색 결과 집합: 제목·작곡가 닉네임(조인) 매칭, 무매칭 0건")
+    void search_resultSetMatchesFixture() throws Exception {
+        assertThat(uuidSet(getFilterWith(Map.of("searchTerm", "song", "size", ONE_PAGE)))).containsExactlyInAnyOrder(a, b, c, d);
+        assertThat(uuidSet(getFilterWith(Map.of("searchTerm", "composer-b", "size", ONE_PAGE)))).containsExactlyInAnyOrder(c, d, f);
         assertThat(getFilterWith(Map.of("searchTerm", "zz-no-such-term-zz")).path("totalElements").asLong()).isZero();
     }
 
     @Test
-    @Transactional // 시드는 장르·해시태그·부제가 모두 같아 필드별 검색 계약을 구분하지 못한다 → 한 곡만 바꾸고 롤백한다.
     @DisplayName("필드별 검색(부제·장르·해시태그)과 장르·해시태그 필터가 정확히 그 곡만 돌려준다")
     void fieldSpecificSearchAndFilters_returnExactUuids() throws Exception {
-        List<Music> ongoing = loadOngoingEntities();
-        Assumptions.assumeTrue(ongoing.size() >= 2, "픽스처에 진행중 곡 2개 이상 필요");
-        Music x = ongoing.get(0);
-        x.setSubtitle("qq-unique-subtitle-qq");
-        x.setMajorGenre("JAZZ");
-        x.setHashtag("#jazzy,#only");
-        musicRepository.save(x);
-        entityManager.flush();
-        UUID xid = x.getMusicUuid();
-        Set<UUID> allOngoing = uuidSet(ongoing);
-        Set<UUID> othersOnly = allOngoing.stream().filter(id -> !id.equals(xid)).collect(Collectors.toSet());
+        // searchTerm 이 부제·장르·해시태그 각각을 타는지 — 정확히 E 하나
+        assertThat(uuidSet(getFilterWith(Map.of("searchTerm", "unique-subtitle", "size", ONE_PAGE)))).containsExactly(e);
+        assertThat(uuidSet(getFilterWith(Map.of("searchTerm", "JAZZ", "size", ONE_PAGE)))).containsExactly(e);
+        assertThat(uuidSet(getFilterWith(Map.of("searchTerm", "#jazzy", "size", ONE_PAGE)))).containsExactly(e);
 
-        // searchTerm 이 부제·장르·해시태그 각각을 타는지 — 정확히 x 하나
-        assertThat(uuidSet(getFilterWith(Map.of("searchTerm", "unique-subtitle", "size", ALL)))).containsExactly(xid);
-        assertThat(uuidSet(getFilterWith(Map.of("searchTerm", "JAZZ", "size", ALL)))).containsExactly(xid);
-        assertThat(uuidSet(getFilterWith(Map.of("searchTerm", "#jazzy", "size", ALL)))).containsExactly(xid);
-
-        // majorGenre 필터(equals): JAZZ → x, POP → 나머지 전부
-        assertThat(uuidSet(getFilterWith(Map.of("majorGenre", "JAZZ", "size", ALL)))).containsExactly(xid);
-        assertThat(uuidSet(getFilterWith(Map.of("majorGenre", "POP", "size", ALL)))).isEqualTo(othersOnly);
+        // majorGenre 필터(equals): JAZZ → E, POP → 진행중 나머지(마감 G 제외)
+        assertThat(uuidSet(getFilterWith(Map.of("majorGenre", "JAZZ", "size", ONE_PAGE)))).containsExactly(e);
+        assertThat(uuidSet(getFilterWith(Map.of("majorGenre", "POP", "size", ONE_PAGE)))).containsExactlyInAnyOrder(a, b, c, d, f);
         assertThat(getFilterWith(Map.of("majorGenre", "NO_SUCH_GENRE")).path("totalElements").asLong()).isZero();
 
-        // hashtag 필터(콤마 분리 AND, 각 LIKE): "#jazzy,#only" → x / "#seed" → 나머지 / 무매칭 0
-        assertThat(uuidSet(getFilterWith(Map.of("hashtag", "#jazzy,#only", "size", ALL)))).containsExactly(xid);
-        assertThat(uuidSet(getFilterWith(Map.of("hashtag", "#seed", "size", ALL)))).isEqualTo(othersOnly);
+        // hashtag 필터(콤마 분리 AND, 각 LIKE): "#jazzy,#only" → E / "#seed" → 나머지 / 무매칭 0
+        assertThat(uuidSet(getFilterWith(Map.of("hashtag", "#jazzy,#only", "size", ONE_PAGE)))).containsExactly(e);
+        assertThat(uuidSet(getFilterWith(Map.of("hashtag", "#seed", "size", ONE_PAGE)))).containsExactlyInAnyOrder(a, b, c, d, f);
         assertThat(getFilterWith(Map.of("hashtag", "#no-such-tag")).path("totalElements").asLong()).isZero();
     }
 
     @Test
-    @DisplayName("가격 경계(min/max)의 결과 집합(UUID)이 coalesce(최고입찰가, 시작가) 기준과 같다")
-    void priceBoundary_resultSetMatchesReference() throws Exception {
-        List<Music> ongoing = loadOngoingEntities();
-        // 시드 가격대(10,000~15,000) 안쪽 경계값으로 포함/제외가 갈리는지 확인한다.
-        Set<UUID> leExpected = uuidSet(ongoing.stream().filter(m -> effectivePrice(m) <= 11000).toList());
-        Set<UUID> geExpected = uuidSet(ongoing.stream().filter(m -> effectivePrice(m) >= 12000).toList());
-        Set<UUID> betweenExpected = uuidSet(ongoing.stream()
-                .filter(m -> effectivePrice(m) >= 11000 && effectivePrice(m) <= 12000).toList());
+    @DisplayName("가격 경계(min/max)의 결과 집합이 coalesce(최고입찰가, 시작가) 기준과 같다")
+    void priceBoundary_resultSetMatchesFixture() throws Exception {
+        // 유효 가격: A 90000, B 90000, C 31000, D 29000, E 11000, F 12000 (경계값 포함)
+        assertThat(uuidSet(getFilterWith(Map.of("maxPrice", "11000", "size", ONE_PAGE)))).containsExactly(e);
+        assertThat(uuidSet(getFilterWith(Map.of("maxPrice", "12000", "size", ONE_PAGE)))).containsExactlyInAnyOrder(e, f);
+        assertThat(uuidSet(getFilterWith(Map.of("minPrice", "29000", "size", ONE_PAGE)))).containsExactlyInAnyOrder(a, b, c, d);
+        assertThat(uuidSet(getFilterWith(Map.of("minPrice", "11000", "maxPrice", "12000", "size", ONE_PAGE)))).containsExactlyInAnyOrder(e, f);
+        // 최고가가 있으면 시작가가 아니라 최고가로 판단한다 — A 는 시작가 10000 이지만 최고가 90000 이라 제외
+        assertThat(uuidSet(getFilterWith(Map.of("maxPrice", "10000", "size", ONE_PAGE)))).isEmpty();
+    }
 
-        assertThat(uuidSet(getFilterWith(Map.of("maxPrice", "11000", "size", ALL)))).isEqualTo(leExpected);
-        assertThat(uuidSet(getFilterWith(Map.of("minPrice", "12000", "size", ALL)))).isEqualTo(geExpected);
-        assertThat(uuidSet(getFilterWith(Map.of("minPrice", "11000", "maxPrice", "12000", "size", ALL)))).isEqualTo(betweenExpected);
-        // 경계 밖 → 0
-        assertThat(getFilterWith(Map.of("maxPrice", "1000")).path("totalElements").asLong()).isZero();
-        // 경계값이 실제로 집합을 가르는지(전부/공집합 아님) — 시드 구조상 보장되지만 명시한다
-        assertThat(leExpected).isNotEmpty().hasSizeLessThan((int) referenceOngoingCount);
+    // --- 커버·음원 ---
+
+    @Test
+    @DisplayName("커버 이미지 바이트가 픽스처 원본과 정확히 일치한다 (필드 존재만이 아니라 바이트)")
+    void coverImageBytes_matchFixture() throws Exception {
+        JsonNode first = getFilter("latest").path("content").get(0); // 최신순 첫 곡 = F
+        assertThat(UUID.fromString(first.path("musicUuid").asText())).isEqualTo(f);
+        assertThat(Base64.getDecoder().decode(first.path("image").asText())).isEqualTo(cover("zeta track"));
     }
 
     @Test
     @DisplayName("무필터 요청(maxPrice 없음)도 커버 포함·audio 제외 계약을 유지한다")
     void noFilterRequest_keepsContract() throws Exception {
-        // maxPrice/searchTerm 없이 순수 최신순 — 필터 유무와 무관하게 같은 프로젝션 경로 (Phase 1 커버 누락 회귀 방지)
         MvcResult res = mockMvc.perform(get(FILTER)
                         .param("page", "0")
                         .with(r -> { r.setRemoteUser(BIDDER); return r; }))
                 .andExpect(status().isOk()).andReturn();
         JsonNode root = objectMapper.readTree(res.getResponse().getContentAsByteArray());
-        JsonNode content = root.path("content");
 
-        assertThat(content.size()).isGreaterThan(0);
-        assertThat(root.path("totalElements").asLong()).isEqualTo(referenceOngoingCount);
-        for (JsonNode el : content) {
+        assertThat(root.path("totalElements").asLong()).isEqualTo(ONGOING_COUNT);
+        for (JsonNode el : root.path("content")) {
             assertThat(el.hasNonNull("image")).as("무필터 커버 이미지 포함").isTrue();
             assertThat(el.has("audio")).as("무필터 audio 부재").isFalse();
         }
@@ -456,7 +430,6 @@ class MusicFilterContractTest {
     @Test
     @DisplayName("검색어(searchTerm) 요청도 커버 포함·audio 제외 계약을 유지한다")
     void searchRequest_keepsContract() throws Exception {
-        // 시드 제목이 'seed song N' 이라 'song' 은 진행중 곡을 매칭한다.
         MvcResult res = mockMvc.perform(get(FILTER)
                         .param("page", "0")
                         .param("sortBy", "latest")
@@ -465,7 +438,7 @@ class MusicFilterContractTest {
                 .andExpect(status().isOk()).andReturn();
         JsonNode content = objectMapper.readTree(res.getResponse().getContentAsByteArray()).path("content");
 
-        assertThat(content.size()).as("검색 결과 존재").isGreaterThan(0);
+        assertThat(content.size()).as("검색 결과 존재").isEqualTo(4);
         for (JsonNode el : content) {
             assertThat(el.hasNonNull("image")).as("검색 커버 이미지 포함").isTrue();
             assertThat(el.has("audio")).as("검색 audio 부재").isFalse();
@@ -478,8 +451,7 @@ class MusicFilterContractTest {
     @DisplayName("모든 정렬/필터 분기 JSON 응답에 audio 필드가 없다")
     void audioAbsentInJson() throws Exception {
         for (String sort : List.of("latest", "price", "like")) {
-            JsonNode content = getFilter(sort).path("content");
-            for (JsonNode el : content) {
+            for (JsonNode el : getFilter(sort).path("content")) {
                 assertThat(el.has("audio")).as("sort=" + sort + " audio 부재").isFalse();
             }
         }
@@ -511,17 +483,17 @@ class MusicFilterContractTest {
     }
 
     @Test
-    @DisplayName("좋아요 조회 쿼리 수가 페이지 크기(1·20·50)에 비례하지 않는다 (N+1 제거)")
+    @DisplayName("좋아요 조회 쿼리 수가 페이지 크기(1·3·6)에 비례하지 않는다 (N+1 제거)")
     void likesQuery_doesNotScaleWithPageSize() throws Exception {
         long q1 = countLikesQueries(1);
-        long q20 = countLikesQueries(20);
-        long q50 = countLikesQueries(50);
+        long q3 = countLikesQueries(3);
+        long q6 = countLikesQueries(6);
 
-        // N+1이면 1, 20, 50 으로 늘어난다. IN 배치면 페이지 크기와 무관하게 최대 1건.
+        // N+1이면 1, 3, 6 으로 늘어난다. IN 배치면 페이지 크기와 무관하게 최대 1건.
         assertThat(q1).as("size=1 likes 쿼리").isLessThanOrEqualTo(1);
-        assertThat(q20).as("size=20 likes 쿼리").isLessThanOrEqualTo(1);
-        assertThat(q50).as("size=50 likes 쿼리").isLessThanOrEqualTo(1);
-        assertThat(q20).as("페이지 크기와 무관하게 일정").isEqualTo(q1);
-        assertThat(q50).as("페이지 크기와 무관하게 일정").isEqualTo(q1);
+        assertThat(q3).as("size=3 likes 쿼리").isLessThanOrEqualTo(1);
+        assertThat(q6).as("size=6 likes 쿼리").isLessThanOrEqualTo(1);
+        assertThat(q3).as("페이지 크기와 무관하게 일정").isEqualTo(q1);
+        assertThat(q6).as("페이지 크기와 무관하게 일정").isEqualTo(q1);
     }
 }
