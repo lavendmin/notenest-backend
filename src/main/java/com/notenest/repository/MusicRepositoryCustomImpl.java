@@ -12,7 +12,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
@@ -31,7 +30,7 @@ public class MusicRepositoryCustomImpl implements MusicRepositoryCustom {
         QMusic m = QMusic.music;
         QUser u = QUser.user;
 
-        BooleanBuilder where = buildWhere(m, u, condition);
+        BooleanBuilder where = buildWhere(m, condition);
 
         // 페이지 본문 — 미디어 바이트는 DB 에 없다. 커버는 객체 키만 조회해 URL 로 바꾼다.
         List<MusicSummaryDTO> rows = queryFactory
@@ -56,39 +55,19 @@ public class MusicRepositoryCustomImpl implements MusicRepositoryCustom {
 
         // 응답 Page 메타데이터(sort.sorted 등)에 실제 적용한 정렬을 담는다 — 기존 필터 경로가 정렬 정보를 가진
         // sortedPageable 을 반환하던 계약을 유지한다.
-        Pageable sortedPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), toSort(sortBy));
+        Pageable sortedPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), MusicListSort.toSort(sortBy));
         return new PageImpl<>(rows, sortedPageable, total == null ? 0L : total);
     }
 
-    // 응답 메타데이터용 Spring Sort — toOrders 와 동일한 정렬 의미를 표현한다.
-    private Sort toSort(String sortBy) {
-        if ("price".equals(sortBy)) {
-            return Sort.by(Sort.Order.desc("currentHighestBid").nullsLast())
-                    .and(Sort.by(Sort.Order.desc("startingPrice")));
-        }
-        if ("like".equals(sortBy)) {
-            return Sort.by(Sort.Direction.DESC, "likeCount");
-        }
-        return Sort.by(Sort.Direction.DESC, "createdAt");
-    }
-
-    private BooleanBuilder buildWhere(QMusic m, QUser u, MusicListCondition condition) {
+    // [NB5] 검색어(searchTerm)는 이 경로에서 다루지 않는다 — 서비스가 검색어가 있으면 검색 포트(Elasticsearch)로 보낸다.
+    // 예전 %keyword% OR 조건은 검색 엔진 전환(ADR-001)으로 제거했다. LIKE 폴백은 P1 후보다.
+    private BooleanBuilder buildWhere(QMusic m, MusicListCondition condition) {
         String majorGenre = condition.majorGenre();
         String hashtags = condition.hashtags();
         Long minPrice = condition.minPrice();
         Long maxPrice = condition.maxPrice();
-        String searchTerm = condition.searchTerm();
         BooleanBuilder where = new BooleanBuilder();
         where.and(m.status.eq(0)); // 진행 중인 곡만
-
-        if (StringUtils.hasText(searchTerm)) {
-            String kw = searchTerm.trim();
-            where.and(m.title.contains(kw)
-                    .or(m.subtitle.contains(kw))
-                    .or(m.majorGenre.contains(kw))
-                    .or(m.hashtag.contains(kw))
-                    .or(u.nickname.contains(kw)));
-        }
 
         if (StringUtils.hasText(majorGenre)) {
             where.and(m.majorGenre.eq(majorGenre));

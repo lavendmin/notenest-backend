@@ -18,6 +18,7 @@ import com.notenest.repository.LikeRepository;
 import com.notenest.repository.MusicListCondition;
 import com.notenest.repository.MusicRepository;
 import com.notenest.repository.UserRepository;
+import com.notenest.search.MusicSearchPort;
 import com.notenest.storage.MediaAssetType;
 import com.notenest.storage.MediaUploadValidator;
 import com.notenest.storage.MediaUrlIssuer;
@@ -78,6 +79,9 @@ public class MusicServiceImpl implements MusicService {
 
     @Autowired
     private ComposerService composerService;
+
+    @Autowired
+    private MusicSearchPort musicSearchPort;
 
     @Override
     public Music createMusic(CreateMusicDTO createMusicDTO, MultipartFile cover, MultipartFile preview,
@@ -297,8 +301,11 @@ public class MusicServiceImpl implements MusicService {
     public Page<MusicSummaryDTO> getAllMusicByFilters(
             MusicListCondition condition, Pageable pageable, String sortBy, String loggedInUserEmail) {
 
-        // QueryDSL DTO 프로젝션 — 엔티티(LOB) 대신 목록에 필요한 컬럼만 SELECT (audio 제외, image 포함).
-        Page<MusicSummaryDTO> page = musicRepository.searchSummaries(condition, sortBy, pageable);
+        // [NB5] 검색어가 있으면 검색 엔진(관련도·한국어 분석), 없으면 기존 QueryDSL DTO 프로젝션. 이후 후처리(커버 URL·좋아요)는 같다.
+        // 검색 엔진 장애는 SearchUnavailableException(503)으로 올라가고, 검색어 없는 목록은 영향받지 않는다.
+        Page<MusicSummaryDTO> page = StringUtils.isNotBlank(condition.searchTerm())
+                ? musicSearchPort.search(condition, sortBy, pageable)
+                : musicRepository.searchSummaries(condition, sortBy, pageable);
         // 커버 키가 있는 곡은 URL 로 준다(서명은 로컬 계산이라 곡마다 네트워크 호출은 없다).
         page.forEach(dto -> dto.setCoverUrl(mediaUrlIssuer.coverUrl(dto.getCoverObjectKey())));
 

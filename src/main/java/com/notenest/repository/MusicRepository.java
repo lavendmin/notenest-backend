@@ -1,6 +1,7 @@
 package com.notenest.repository;
 
 import com.notenest.domain.Music;
+import com.notenest.search.MusicSearchSource;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -21,6 +22,12 @@ public interface MusicRepository extends JpaRepository<Music, UUID>, JpaSpecific
     // (Lob 컬럼을 SELECT 절에서 제외해 대상 식별 단계에서 이미지·음원을 로딩하지 않는다.)
     @Query("SELECT m.musicUuid FROM Music m WHERE m.status = 0 AND m.auctionEndTime IS NOT NULL AND m.auctionEndTime < :now")
     List<UUID> findUuidsToClose(@Param("now") LocalDateTime now);
+
+    // [NB5] 검색 색인 전체 재생성용 원본 — 목록·검색에 필요한 열만 읽는다(미디어 바이트 없음, 종료 곡 포함: 필터는 색인에서 건다).
+    @Query("SELECT new com.notenest.search.MusicSearchSource(m.musicUuid, m.createdAt, m.title, m.subtitle, m.details, m.hashtag, "
+            + "m.majorGenre, u.nickname, m.status, m.startingPrice, m.currentHighestBid, m.auctionEndTime, m.likeCount, "
+            + "m.bpm, m.musicalKey, m.cover.objectKey) FROM Music m JOIN m.user u")
+    List<MusicSearchSource> findAllSearchSources();
 
     // 최신 순으로 곡 리스트 가져오기 (진행 중인 곡만)
     @Query("SELECT m FROM Music m WHERE m.status = 0 ORDER BY m.createdAt DESC")

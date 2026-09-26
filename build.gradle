@@ -21,6 +21,10 @@ configurations {
     }
 }
 
+// NB5 — 테스트 전용 Testcontainers 만 Boot 관리 버전(1.19.7)보다 올린다. 1.19.7 의 docker-java 는 낮은 API 버전으로 요청해
+// Docker Engine 29(최소 API 1.40)가 400 으로 거절한다. 1.21.4 는 API 버전을 협상한다. 운영 의존성에는 영향 없음.
+ext['testcontainers.version'] = '1.21.4'
+
 repositories {
     mavenCentral()
     //iamport 관련
@@ -47,6 +51,8 @@ dependencies {
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
+    // NB5 — 실제 Elasticsearch(+Nori) 통합 테스트는 매번 새 컨테이너를 띄운다(로컬 인덱스 상태에 의존하지 않음). 기본 test 에서는 제외.
+    testImplementation 'org.testcontainers:junit-jupiter'
 
     runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
     runtimeOnly 'com.h2database:h2'
@@ -62,6 +68,10 @@ dependencies {
         exclude group: 'software.amazon.awssdk', module: 'netty-nio-client'
     }
     implementation 'software.amazon.awssdk:url-connection-client'
+
+    // NB5 — 검색 read model(Elasticsearch 8.11.1 + Nori). 버전은 Spring Boot 3.2 의존성 관리(Spring Data Elasticsearch 5.2.x)를 따른다.
+    // 저장소 추상화(Repository)는 쓰지 않고 자동 구성된 ElasticsearchClient 로 색인·검색한다.
+    implementation 'org.springframework.boot:spring-boot-starter-data-elasticsearch'
 
     implementation 'io.jsonwebtoken:jjwt-api:0.12.3'
     implementation 'io.jsonwebtoken:jjwt-impl:0.12.3'
@@ -80,7 +90,10 @@ dependencies {
 }
 
 tasks.named('test') {
-    useJUnitPlatform()
+    // NB5 — 실제 Elasticsearch 가 필요한 테스트(@Tag("es-integration"))는 기본 test 에서 빼고 nb5IntegrationTest 로 돌린다.
+    useJUnitPlatform {
+        excludeTags 'es-integration'
+    }
     // 계약 테스트가 현재(프로젝션 전) 필터 경로를 태우면 곡당 3MB LOB 엔티티가 로딩되어
     // 기본 테스트 힙(512m)을 넘긴다. 프로젝션 리팩터 후에는 가벼워지지만, before 상태
     // 특성화를 돌리기 위해 힙을 넉넉히 준다.
@@ -97,4 +110,22 @@ tasks.register('nb5Eval', JavaExec) {
     workingDir = projectDir
     args = [project.findProperty('run') ?: '', project.findProperty('label') ?: 'run']
     jvmArgs = ['-Dsun.stdout.encoding=UTF-8']
+}
+
+// NB5 — 실제 Elasticsearch 8.11.1 + Nori 통합 테스트. Testcontainers 가 docker/elasticsearch/Dockerfile 로 매번 새 컨테이너를 띄운다
+// (개발자 로컬 인덱스·notenest-es 컨테이너 상태에 의존하지 않음). API 테스트는 기존 계약 테스트처럼 로컬 MariaDB(3311)의 전용 DB 를 쓴다.
+//   ./gradlew nb5IntegrationTest
+tasks.register('nb5IntegrationTest', Test) {
+    group = 'verification'
+    description = 'NB5 검색 — 실제 Elasticsearch(+Nori) 매핑·검색·품질 통합 테스트'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform {
+        includeTags 'es-integration'
+    }
+    maxHeapSize = '2g'
+    // 컨테이너 정리용 Ryuk 이미지를 이 네트워크에서 받지 못한다(Docker Hub CDN 응답 EOF). Ryuk 대신 JVM 종료 훅이 컨테이너를 멈춘다
+    // (ElasticsearchTestContainer). JVM 이 강제 종료되면 테스트 컨테이너가 남을 수 있다 — docker ps -a 로 확인해 지운다.
+    environment 'TESTCONTAINERS_RYUK_DISABLED', 'true'
+    shouldRunAfter tasks.named('test')
 }

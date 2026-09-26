@@ -1,0 +1,43 @@
+{
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 0,
+    "analysis": {
+      "tokenizer": {
+        "nori_mixed": { "type": "nori_tokenizer", "decompound_mode": "mixed", "discard_punctuation": true }
+      },
+      "analyzer": {
+        "ko": { "type": "custom", "tokenizer": "nori_mixed", "filter": ["nori_part_of_speech", "lowercase"] }
+      },
+      "char_filter": {
+        "strip_ws": { "type": "pattern_replace", "pattern": "\\s+", "replacement": "" }
+      },
+      "normalizer": {
+        "compact": { "type": "custom", "char_filter": ["strip_ws"], "filter": ["lowercase"] },
+        "lower": { "type": "custom", "filter": ["lowercase"] }
+      }
+    }
+  },
+  "mappings": {
+    "dynamic": "strict",
+    "properties": {
+      "music_id": { "type": "keyword" },
+      "created_at": { "type": "date" },
+      "title": { "type": "text", "analyzer": "ko", "fields": { "compact": { "type": "keyword", "normalizer": "compact" } } },
+      "subtitle": { "type": "text", "analyzer": "ko" },
+      "details": { "type": "text", "analyzer": "ko" },
+      "hashtag": { "type": "text", "analyzer": "standard", "fields": { "raw": { "type": "keyword", "normalizer": "lower" } } },
+      "genre": { "type": "keyword", "normalizer": "lower" },
+      "seller": { "type": "text", "analyzer": "ko", "fields": { "compact": { "type": "keyword", "normalizer": "compact" } } },
+      "status": { "type": "integer" },
+      "price": { "type": "long" },
+      "starting_price": { "type": "long" },
+      "current_highest_bid": { "type": "long" },
+      "like_count": { "type": "integer" },
+      "auction_end_time": { "type": "date" },
+      "bpm": { "type": "integer" },
+      "musical_key": { "type": "keyword" },
+      "cover_key": { "type": "keyword", "index": false }
+    }
+  }
+}

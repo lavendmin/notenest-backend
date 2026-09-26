@@ -7,6 +7,8 @@ import com.notenest.dto.MusicSummaryDTO;
 import com.notenest.dto.UpdateMusicDTO;
 import com.notenest.domain.InvalidMusicAttributeException;
 import com.notenest.repository.MusicListCondition;
+import com.notenest.search.InvalidSearchRequestException;
+import com.notenest.search.SearchUnavailableException;
 import com.notenest.service.LikeMusicService;
 import com.notenest.service.MusicService;
 import com.notenest.storage.InvalidMediaException;
@@ -138,7 +140,8 @@ public class MusicController {
             @RequestParam(required = false) String musicalKey,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "latest") String sortBy,
+            // [NB5] 생략 시 검색어가 있으면 관련도순, 없으면 최신순. 명시한 latest·price·like 는 두 경로 모두 그대로 적용한다.
+            @RequestParam(required = false) String sortBy,
             @RequestParam(required = false) String searchTerm) {
         MusicListCondition condition;
         try {
@@ -160,6 +163,12 @@ public class MusicController {
             Page<MusicSummaryDTO> musicDTOPage = musicService.getAllMusicByFilters(condition, pageable, sortBy, loggedInUserEmail);
 
             return ResponseEntity.ok(musicDTOPage);
+        } catch (SearchUnavailableException e) {
+            // [NB5] 검색 엔진 장애 — 검색어 경로만 503. 검색어 없는 목록은 이 예외가 나지 않는다(P0 는 LIKE 폴백 없음).
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                    .body(Map.of("message", "검색을 일시적으로 사용할 수 없습니다. 검색어 없이 목록을 볼 수 있습니다."));
+        } catch (InvalidSearchRequestException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }

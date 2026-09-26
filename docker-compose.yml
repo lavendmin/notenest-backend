@@ -15,7 +15,8 @@ services:
 
   # [NB5] 검색 read model — Elasticsearch 8.11.1 + Nori (docker/elasticsearch/Dockerfile).
   # 로컬 단일 노드 전용 설정이다: 보안(xpack.security)을 끄고 인증 없이 9201 로 연다 — 운영 권장 설정이 아니다.
-  # 힙은 512MB 로 고정하고 컨테이너 메모리 상한을 1GB 로 둔다. 데이터 볼륨은 두지 않는다(색인은 DB 에서 다시 만든다).
+  # 힙은 512MB 로 고정한다. 컨테이너 메모리 상한은 1.5GiB — Phase 2 측정에서 1GiB 상한에 닿아(1017MiB, OOM 없음) 올렸다(ADR-001 승인 결정).
+  # Phase 5 재색인·부하 중 최고 메모리를 다시 기록한다. 데이터 볼륨은 두지 않는다(색인은 DB 에서 다시 만든다).
   # 이 서비스만 띄운다: docker compose up -d --build notenest-es
   notenest-es:
     container_name: notenest-es
@@ -27,7 +28,7 @@ services:
       discovery.type: single-node
       xpack.security.enabled: "false"
       ES_JAVA_OPTS: "-Xms512m -Xmx512m"
-    mem_limit: 1g
+    mem_limit: 1536m
 
   # 로컬 가짜 SMTP — 이메일 인증/낙찰 메일을 실제 발송 없이 수신 (웹 UI: http://localhost:5001)
   notenest-smtp:
