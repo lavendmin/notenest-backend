@@ -1,0 +1,50 @@
+
+
+  █ THRESHOLDS 
+
+    http_req_duration{qtype:T1_TITLE}
+    ✓ 'p(90)<60000' p(90)=14.51ms
+
+    http_req_duration{qtype:T2_CONDITION}
+    ✓ 'p(90)<60000' p(90)=14.73ms
+
+    http_req_duration{qtype:T3_MOOD}
+    ✓ 'p(90)<60000' p(90)=15.26ms
+
+    http_req_duration{qtype:T4_SELLER}
+    ✓ 'p(90)<60000' p(90)=14.2ms
+
+    http_req_failed
+    ✓ 'rate==0' rate=0.00%
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 2667    88.756926/s
+    checks_succeeded...: 100.00% 2667 out of 2667
+    checks_failed......: 0.00%   0 out of 2667
+
+    ✓ status 200
+
+    HTTP
+    http_req_duration..............: avg=12.09ms  min=3.85ms   med=10.16ms  p(90)=14.78ms  p(95)=17.27ms  max=340.28ms
+      { expected_response:true }...: avg=12.09ms  min=3.85ms   med=10.16ms  p(90)=14.78ms  p(95)=17.27ms  max=340.28ms
+      { qtype:T1_TITLE }...........: avg=11.33ms  min=3.97ms   med=9.64ms   p(90)=14.51ms  p(95)=17.08ms  max=340.28ms
+      { qtype:T2_CONDITION }.......: avg=12.49ms  min=3.85ms   med=10.38ms  p(90)=14.73ms  p(95)=16.47ms  max=339.33ms
+      { qtype:T3_MOOD }............: avg=12.55ms  min=4.48ms   med=10.85ms  p(90)=15.26ms  p(95)=18.47ms  max=339.33ms
+      { qtype:T4_SELLER }..........: avg=12.53ms  min=5.6ms    med=10.03ms  p(90)=14.2ms   p(95)=18.34ms  max=339.33ms
+    http_req_failed................: 0.00%  0 out of 2667
+    http_reqs......................: 2667   88.756926/s
+
+    EXECUTION
+    iteration_duration.............: avg=112.61ms min=104.29ms med=110.62ms p(90)=115.25ms p(95)=118.03ms max=452.7ms 
+    iterations.....................: 2667   88.756926/s
+    vus............................: 10     min=10        max=10
+    vus_max........................: 10     min=10        max=10
+
+    NETWORK
+    data_received..................: 14 MB  457 kB/s
+    data_sent......................: 375 kB 13 kB/s
+
+
+
