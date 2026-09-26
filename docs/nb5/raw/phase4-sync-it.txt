@@ -1,0 +1,13 @@
+# NB5 Phase 4 — MusicSearchSyncIT 실행 기록 (./gradlew nb5IntegrationTest, Testcontainers ES 8.11.1+Nori, 비동기 쓰기 스레드, 재시도 3회·backoff 200ms, 응답 타임아웃 3s) — 2026-09-26
+[sync] create → searchable in 741 ms
+[sync] bid → price visible in 1045 ms
+[sync] delete → gone in 1022 ms
+[write-block] create response: 201 in 26 ms
+[write-block] sync gave up: attempts=3 cause=com.notenest.search.SearchIndexException: 검색 색인 작업 실패 index=notenest-music-sync-it: [es/index] failed: [cluster_block_exception] index [notenest-music-sync-it] blocked by: [FORBIDDEN/8/index write (api)];
+[write-block] reconcile #1: Result[dbDocuments=2, indexedBefore=1, missing=1, changed=0, stale=0, elapsedMillis=54]
+[write-block] reconcile #2: Result[dbDocuments=2, indexedBefore=2, missing=0, changed=0, stale=0, elapsedMillis=11]
+[timeout] create response while ES paused: 201 in 29 ms
+[timeout] sync gave up after 9767 ms, attempts=3, cause=com.notenest.search.SearchIndexException: 검색 색인 작업 실패 index=notenest-music-sync-it: 3,000 milliseconds timeout on connection http-outgoing-4 [ACTIVE]
+[timeout] after resume, request delivered before the timeout was applied late: true
+[timeout] reconcile #1: Result[dbDocuments=2, indexedBefore=2, missing=0, changed=0, stale=0, elapsedMillis=14]
+[timeout] reconcile #2: Result[dbDocuments=2, indexedBefore=2, missing=0, changed=0, stale=0, elapsedMillis=15]
