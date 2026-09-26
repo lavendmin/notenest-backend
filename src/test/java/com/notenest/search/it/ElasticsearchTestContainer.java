@@ -15,7 +15,7 @@ import java.time.Duration;
 
 /**
  * [NB5] 통합 테스트용 Elasticsearch 8.11.1 + Nori — 저장소의 docker/elasticsearch/Dockerfile 로 이미지를 만들고
- * docker-compose 의 notenest-es 와 같은 설정(단일 노드·보안 끔·힙 512MB·메모리 상한 1.5GiB)으로 JVM 당 한 번 띄운다.
+ * docker-compose 의 notenest-es 와 같은 설정(단일 노드·보안 끔·힙 512MB·메모리 상한 1.5GiB·색인 자동 생성 금지)으로 JVM 당 한 번 띄운다.
  * 로컬 notenest-es 컨테이너나 기존 인덱스를 쓰지 않는다. 컨테이너는 테스트 JVM 이 끝나면 Testcontainers 가 정리한다.
  */
 public final class ElasticsearchTestContainer {
@@ -26,6 +26,7 @@ public final class ElasticsearchTestContainer {
             .withEnv("discovery.type", "single-node")
             .withEnv("xpack.security.enabled", "false")
             .withEnv("ES_JAVA_OPTS", "-Xms512m -Xmx512m")
+            .withEnv("action.auto_create_index", "false")
             .withCreateContainerCmdModifier(cmd -> cmd.getHostConfig().withMemory(1536L * 1024 * 1024))
             .withExposedPorts(9200)
             .waitingFor(Wait.forHttp("/_cluster/health?wait_for_status=yellow&timeout=60s").forStatusCode(200)

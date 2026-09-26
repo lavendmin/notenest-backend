@@ -1,5 +1,6 @@
 package com.notenest.contract;
 
+import com.notenest.search.SearchIndexBootstrap;
 import com.notenest.service.BidServiceImpl;
 import com.notenest.service.EmailService;
 import com.notenest.storage.FakeObjectStorage;
@@ -16,8 +17,10 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -52,6 +55,7 @@ class SearchUnavailableContractTest {
     }
 
     @Autowired private MockMvc mockMvc;
+    @Autowired private SearchIndexBootstrap bootstrap;
 
     @MockBean private BidServiceImpl bidService;
     @MockBean private EmailService emailService;
@@ -70,5 +74,13 @@ class SearchUnavailableContractTest {
 
         mockMvc.perform(get("/api/music/filter")).andExpect(status().isOk());
         mockMvc.perform(get("/api/music/filter").param("searchTerm", "   ")).andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("Elasticsearch 없이도 앱은 기동하고, 기동 부트스트랩은 실패를 경고로만 남긴다(FAILED)")
+    void bootstrapFailureDoesNotBlockStartup() {
+        // 이 테스트가 돈다는 것 자체가 컨텍스트 기동 성공이다. 부트스트랩은 쓰기 스레드에서 비동기로 실패한다.
+        await().atMost(Duration.ofSeconds(30))
+                .until(() -> bootstrap.state() == SearchIndexBootstrap.State.FAILED);
     }
 }

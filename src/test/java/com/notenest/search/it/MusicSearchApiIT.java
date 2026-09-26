@@ -14,6 +14,7 @@ import com.notenest.repository.MusicRepository;
 import com.notenest.repository.PaymentRepository;
 import com.notenest.repository.UserRepository;
 import com.notenest.search.MusicSearchReindexService;
+import com.notenest.search.MusicSearchSynchronizer;
 import com.notenest.service.BidServiceImpl;
 import com.notenest.storage.FakeObjectStorage;
 import jakarta.persistence.EntityManager;
@@ -43,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -99,6 +101,7 @@ class MusicSearchApiIT {
     @Autowired private EntityManager entityManager;
     @Autowired private TransactionTemplate transactionTemplate;
     @Autowired private MusicSearchReindexService reindexService;
+    @Autowired private MusicSearchSynchronizer synchronizer;
     @Autowired private ElasticsearchClient elasticsearchClient;
     @Value("${notenest.search.index}") private String index;
 
@@ -107,7 +110,7 @@ class MusicSearchApiIT {
     private UUID a, b, c, d, e, f, g;
 
     @BeforeEach
-    void createFixturesAndReindex() {
+    void createFixturesAndReindex() throws Exception {
         transactionTemplate.executeWithoutResult(tx -> {
             likeRepository.deleteAll();
             paymentRepository.deleteAll();
@@ -133,7 +136,8 @@ class MusicSearchApiIT {
             like(bidder, a);
             like(bidder, c);
         });
-        assertThat(reindexService.rebuildFromDatabase()).isEqualTo(7);
+        // 색인 쓰기는 모두 단일 쓰기 스레드에서 한다(설계 규칙) — 기동 부트스트랩 대조와 겹치지 않도록 같은 큐로 넣고 기다린다.
+        assertThat(synchronizer.submit(reindexService::rebuildFromDatabase).get(60, TimeUnit.SECONDS)).isEqualTo(7);
     }
 
     // --- 의도한 변화: 관련도순 기본 정렬, 상세 설명 검색 ---

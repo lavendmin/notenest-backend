@@ -105,6 +105,7 @@ class MusicSearchSyncFlowTest {
     @Autowired private MusicSearchReconciler reconciler;
     @Autowired private SearchSyncRecorder recorder;
     @Autowired private BidServiceImpl bidService;
+    @Autowired private SearchIndexBootstrap bootstrap;
 
     @MockBean private EmailService emailService;
 
@@ -314,6 +315,22 @@ class MusicSearchSyncFlowTest {
 
         assertThat(index.get(id.toString())).isEqualTo(once);
         assertThat(reconciler.reconcile().totalChanges()).isZero();
+    }
+
+    @Test
+    @DisplayName("기동 부트스트랩: 기존 DB + 빈 색인에서 쓰기 큐 첫 작업으로 대조가 돌아 전부 채운다")
+    void bootstrapFillsEmptyIndexFromExistingDb() throws Exception {
+        assertThat(bootstrap.state()).as("컨텍스트 기동 때 이미 한 번 실행됨").isEqualTo(SearchIndexBootstrap.State.DONE);
+        UUID a = createSong("첫 곡", 90, "Am");
+        UUID b = createSong("둘째 곡", 100, "C");
+        index.recreate(); // 새(빈) Elasticsearch 와 같은 상태
+
+        bootstrap.start().join();
+
+        assertThat(bootstrap.state()).isEqualTo(SearchIndexBootstrap.State.DONE);
+        assertIndexedAsInDb(a);
+        assertIndexedAsInDb(b);
+        assertThat(index.all()).hasSize(2);
     }
 
     @Test

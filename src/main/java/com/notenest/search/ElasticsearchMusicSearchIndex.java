@@ -48,12 +48,23 @@ public class ElasticsearchMusicSearchIndex implements MusicSearchIndex {
 
     @Override
     public void ensureExists() {
-        call(() -> {
-            if (!client.indices().exists(e -> e.index(index)).value()) {
-                create();
-            }
-            return null;
-        });
+        if (!exists()) {
+            call(() -> {
+                try {
+                    create();
+                } catch (ElasticsearchException e) {
+                    // 동시에 다른 인스턴스가 만든 경우는 성공으로 본다
+                    if (!"resource_already_exists_exception".equals(e.error().type())) {
+                        throw e;
+                    }
+                }
+                return null;
+            });
+        }
+    }
+
+    private boolean exists() {
+        return call(() -> client.indices().exists(e -> e.index(index)).value());
     }
 
     @Override
@@ -73,13 +84,18 @@ public class ElasticsearchMusicSearchIndex implements MusicSearchIndex {
         }
     }
 
+    // 쓰기 전에 매핑 있는 색인을 보장한다 — 색인이 없는 상태(새 ES, 누군가 삭제)에서 문서를 넣으면 Elasticsearch 가
+    // 기본(dynamic) 매핑으로 색인을 자동 생성해 Nori·strict 매핑 없이 굳어 버린다. 로컬·통합 테스트 ES 는
+    // action.auto_create_index=false 로 자동 생성 자체도 막는다(이중 방어). 확인 비용은 쓰기당 존재 조회 1회다.
     @Override
     public void upsert(MusicSearchDocument document) {
+        ensureExists();
         call(() -> client.index(i -> i.index(index).id(document.musicId()).document(document)));
     }
 
     @Override
     public void upsertAll(List<MusicSearchDocument> documents) {
+        ensureExists();
         bulk(documents.stream()
                 .map(doc -> BulkOperation.of(o -> o.index(i -> i.index(index).id(doc.musicId()).document(doc))))
                 .toList());
@@ -87,12 +103,18 @@ public class ElasticsearchMusicSearchIndex implements MusicSearchIndex {
 
     @Override
     public void delete(String musicId) {
-        // 없는 문서 삭제는 결과가 not_found 일 뿐 예외가 아니다(멱등)
+        // 색인이 없으면 지울 것도 없다. 없는 문서 삭제는 결과가 not_found 일 뿐 예외가 아니다(멱등)
+        if (!exists()) {
+            return;
+        }
         call(() -> client.delete(d -> d.index(index).id(musicId)));
     }
 
     @Override
     public void deleteAll(Collection<String> musicIds) {
+        if (!exists()) {
+            return;
+        }
         bulk(musicIds.stream().map(id -> BulkOperation.of(o -> o.delete(d -> d.index(index).id(id)))).toList());
     }
 
