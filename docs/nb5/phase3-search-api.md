@@ -38,7 +38,7 @@ MusicController ──(searchTerm 있음)──▶ MusicServiceImpl ──▶ Mu
 | [ElasticsearchMusicSearchAdapter](../../src/main/java/com/notenest/search/ElasticsearchMusicSearchAdapter.java) | `_source` 로 DTO 조립(DB 재조회 없음). IOException·ElasticsearchException → 503 |
 | [music-index.json](../../src/main/resources/elasticsearch/music-index.json) | Nori(mixed + 품사 필터 + 소문자), compact·lower 노멀라이저, strict 매핑 |
 | [MusicSearchIndexer](../../src/main/java/com/notenest/search/MusicSearchIndexer.java)·[MusicSearchReindexService](../../src/main/java/com/notenest/search/MusicSearchReindexService.java) | 색인 재생성 + bulk 적재(_id = music_id), MariaDB 전체 → 색인 |
-| [SearchIndexStartupRunner](../../src/main/java/com/notenest/search/SearchIndexStartupRunner.java) | `notenest.search.reindex-on-startup=true` 일 때만 기동 시 전체 재색인(기본 false) |
+| ~~SearchIndexStartupRunner~~ | (리뷰 반영으로 [SearchIndexBootstrap](../../src/main/java/com/notenest/search/SearchIndexBootstrap.java) 로 대체 — 기동 시 항상 대조, 옵션이면 전체 재색인) |
 | [MusicListSort](../../src/main/java/com/notenest/repository/MusicListSort.java) | 두 경로가 공유하는 Page 정렬 메타 표현 |
 
 설정([application.properties](../../src/main/resources/application.properties)): `spring.elasticsearch.uris`(기본 `http://localhost:9201`), 연결 1s·응답 3s 타임아웃, `notenest.search.index=notenest-music`, `notenest.search.reindex-on-startup=false`.

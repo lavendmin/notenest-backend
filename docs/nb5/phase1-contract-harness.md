@@ -101,6 +101,8 @@ Elasticsearch 의존성·Docker 서비스는 추가하지 않았다. 기존 `not
 
 ## 6. 미해결 — 측정 스키마에서 CHECK 추가 실패 (환경 문제로 판단)
 
+> **갱신(2026-09-26 리뷰 반영):** CHECK 는 P1 로 분리했다([p1-db-check-constraints.md](p1-db-check-constraints.md)). nb5-01 은 이제 컬럼 추가만 하며, 아래 기록은 분리 전 상태다.
+
 - 현상: `notenest_nb5.music` 에 nb5-01 STEP 3(CHECK 추가, 테이블 복사 ALTER)을 실행하면 `ERROR 1025 … errno: 194 "Tablespace is missing for a table"` 가 난다. 서버 로그는 `Cannot rename './notenest_nb5/music.ibd' … source file does not exist` 이다(파일은 존재한다).
 - 영향: STEP 2(컬럼 추가, instant ALTER)는 성공한다. 실패한 ALTER 는 원자적으로 되돌려져 데이터 손실이 없다(10,000행 유지 확인). 결과적으로 측정 스키마에는 **CHECK 없이 컬럼만** 있다. 앱의 400 검증이 1차 방어이므로 기능과 측정에는 영향이 없다. 실패 확인 중 CHECK 동작을 보려고 실행한 UPDATE 2건은 제약이 없어 반영됐다. 그 뒤 코퍼스를 다시 적재해 값을 되돌렸다(범위 밖 BPM 0건 확인).
 - 재현과 분리:
