@@ -1,0 +1,1316 @@
+[
+ {
+  "qid": "Q01",
+  "type": "T1_TITLE",
+  "searchTerm": "봄비",
+  "params": {},
+  "totalHits": 9,
+  "top": [
+   {
+    "rank": 1,
+    "id": "A01",
+    "score": 103.0,
+    "title": "봄비",
+    "seller": "윤슬"
+   },
+   {
+    "rank": 2,
+    "id": "A06",
+    "score": 3.0,
+    "title": "Neon Drive",
+    "seller": "봄비소리"
+   },
+   {
+    "rank": 3,
+    "id": "I10",
+    "score": 3.0,
+    "title": "Blackout",
+    "seller": "봄비소리"
+   },
+   {
+    "rank": 4,
+    "id": "I01",
+    "score": 3.0,
+    "title": "Midnight Cypher",
+    "seller": "봄비소리"
+   },
+   {
+    "rank": 5,
+    "id": "A07",
+    "score": 3.0,
+    "title": "모래시계",
+    "seller": "봄비소리"
+   },
+   {
+    "rank": 6,
+    "id": "A02",
+    "score": 3.0,
+    "title": "봄비가 내리면",
+    "seller": "레드문"
+   },
+   {
+    "rank": 7,
+    "id": "A03",
+    "score": 3.0,
+    "title": "봄비 오는 날의 재회",
+    "seller": "온음표"
+   },
+   {
+    "rank": 8,
+    "id": "A04",
+    "score": 2.0,
+    "title": "첫사랑",
+    "seller": "달빛작곡"
+   },
+   {
+    "rank": 9,
+    "id": "A05",
+    "score": 1.0,
+    "title": "우산",
+    "seller": "파도소리"
+   }
+  ]
+ },
+ {
+  "qid": "Q02",
+  "type": "T1_TITLE",
+  "searchTerm": "여름밤",
+  "params": {},
+  "totalHits": 4,
+  "top": [
+   {
+    "rank": 1,
+    "id": "B01",
+    "score": 103.0,
+    "title": "여름밤",
+    "seller": "온음표"
+   },
+   {
+    "rank": 2,
+    "id": "B03",
+    "score": 3.0,
+    "title": "한여름밤",
+    "seller": "달빛작곡"
+   },
+   {
+    "rank": 3,
+    "id": "B04",
+    "score": 2.0,
+    "title": "Summer Night",
+    "seller": "MINT"
+   },
+   {
+    "rank": 4,
+    "id": "B05",
+    "score": 2.0,
+    "title": "밤편지",
+    "seller": "파도소리"
+   }
+  ]
+ },
+ {
+  "qid": "Q03",
+  "type": "T1_TITLE",
+  "searchTerm": "여름 밤",
+  "params": {},
+  "totalHits": 2,
+  "top": [
+   {
+    "rank": 1,
+    "id": "B01",
+    "score": 100.0,
+    "title": "여름밤",
+    "seller": "온음표"
+   },
+   {
+    "rank": 2,
+    "id": "B02",
+    "score": 3.0,
+    "title": "여름 밤의 꿈",
+    "seller": "윤슬"
+   }
+  ]
+ },
+ {
+  "qid": "Q04",
+  "type": "T1_TITLE",
+  "searchTerm": "Blue Hour",
+  "params": {},
+  "totalHits": 3,
+  "top": [
+   {
+    "rank": 1,
+    "id": "C01",
+    "score": 103.0,
+    "title": "Blue Hour",
+    "seller": "MINT"
+   },
+   {
+    "rank": 2,
+    "id": "C02",
+    "score": 3.0,
+    "title": "blue hour (acoustic)",
+    "seller": "mintyard"
+   },
+   {
+    "rank": 3,
+    "id": "C04",
+    "score": 2.0,
+    "title": "새벽",
+    "seller": "윤슬"
+   }
+  ]
+ },
+ {
+  "qid": "Q05",
+  "type": "T1_TITLE",
+  "searchTerm": "BLUE HOUR",
+  "params": {},
+  "totalHits": 3,
+  "top": [
+   {
+    "rank": 1,
+    "id": "C01",
+    "score": 103.0,
+    "title": "Blue Hour",
+    "seller": "MINT"
+   },
+   {
+    "rank": 2,
+    "id": "C02",
+    "score": 3.0,
+    "title": "blue hour (acoustic)",
+    "seller": "mintyard"
+   },
+   {
+    "rank": 3,
+    "id": "C04",
+    "score": 2.0,
+    "title": "새벽",
+    "seller": "윤슬"
+   }
+  ]
+ },
+ {
+  "qid": "Q06",
+  "type": "T1_TITLE",
+  "searchTerm": "bluehour",
+  "params": {},
+  "totalHits": 1,
+  "top": [
+   {
+    "rank": 1,
+    "id": "C01",
+    "score": 100.0,
+    "title": "Blue Hour",
+    "seller": "MINT"
+   }
+  ]
+ },
+ {
+  "qid": "Q07",
+  "type": "T1_TITLE",
+  "searchTerm": "너의 이름을 부르면",
+  "params": {},
+  "totalHits": 1,
+  "top": [
+   {
+    "rank": 1,
+    "id": "D01",
+    "score": 103.0,
+    "title": "너의 이름을 부르면",
+    "seller": "달빛작곡"
+   }
+  ]
+ },
+ {
+  "qid": "Q08",
+  "type": "T1_TITLE",
+  "searchTerm": "너의 이름",
+  "params": {},
+  "totalHits": 2,
+  "top": [
+   {
+    "rank": 1,
+    "id": "D01",
+    "score": 3.0,
+    "title": "너의 이름을 부르면",
+    "seller": "달빛작곡"
+   },
+   {
+    "rank": 2,
+    "id": "D03",
+    "score": 3.0,
+    "title": "너의 이름은",
+    "seller": "온음표"
+   }
+  ]
+ },
+ {
+  "qid": "Q09",
+  "type": "T1_TITLE",
+  "searchTerm": "love",
+  "params": {},
+  "totalHits": 488,
+  "top": [
+   {
+    "rank": 1,
+    "id": "E01",
+    "score": 103.0,
+    "title": "Love",
+    "seller": "레드문"
+   },
+   {
+    "rank": 2,
+    "id": "F04084",
+    "score": 3.0,
+    "title": "Love Blue",
+    "seller": "filler_seller_123"
+   },
+   {
+    "rank": 3,
+    "id": "F08208",
+    "score": 3.0,
+    "title": "Road Love",
+    "seller": "filler_seller_152"
+   },
+   {
+    "rank": 4,
+    "id": "F06887",
+    "score": 3.0,
+    "title": "Love City",
+    "seller": "filler_seller_195"
+   },
+   {
+    "rank": 5,
+    "id": "F06359",
+    "score": 3.0,
+    "title": "Love Wave",
+    "seller": "filler_seller_144"
+   },
+   {
+    "rank": 6,
+    "id": "F04496",
+    "score": 3.0,
+    "title": "Wave Love",
+    "seller": "filler_seller_079"
+   },
+   {
+    "rank": 7,
+    "id": "F05960",
+    "score": 3.0,
+    "title": "Blue Love",
+    "seller": "filler_seller_070"
+   },
+   {
+    "rank": 8,
+    "id": "F04517",
+    "score": 3.0,
+    "title": "Moon Love",
+    "seller": "filler_seller_124"
+   },
+   {
+    "rank": 9,
+    "id": "F06317",
+    "score": 3.0,
+    "title": "Love Light",
+    "seller": "filler_seller_068"
+   },
+   {
+    "rank": 10,
+    "id": "F01142",
+    "score": 3.0,
+    "title": "Love Wave",
+    "seller": "filler_seller_022"
+   }
+  ]
+ },
+ {
+  "qid": "Q10",
+  "type": "T2_CONDITION",
+  "searchTerm": "비트",
+  "params": {
+   "majorGenre": "hiphop",
+   "maxPrice": "200000"
+  },
+  "totalHits": 46,
+  "top": [
+   {
+    "rank": 1,
+    "id": "F08264",
+    "score": 2.0,
+    "title": "길의 길",
+    "seller": "filler_seller_134"
+   },
+   {
+    "rank": 2,
+    "id": "F02162",
+    "score": 2.0,
+    "title": "Wave Wave",
+    "seller": "filler_seller_172"
+   },
+   {
+    "rank": 3,
+    "id": "F05727",
+    "score": 2.0,
+    "title": "별의 마음",
+    "seller": "filler_seller_007"
+   },
+   {
+    "rank": 4,
+    "id": "F04115",
+    "score": 2.0,
+    "title": "Heart Star",
+    "seller": "filler_seller_164"
+   },
+   {
+    "rank": 5,
+    "id": "F04912",
+    "score": 2.0,
+    "title": "기억의 길",
+    "seller": "filler_seller_101"
+   },
+   {
+    "rank": 6,
+    "id": "F05037",
+    "score": 2.0,
+    "title": "Summer Road",
+    "seller": "filler_seller_076"
+   },
+   {
+    "rank": 7,
+    "id": "F09361",
+    "score": 2.0,
+    "title": "Heart Wave",
+    "seller": "filler_seller_170"
+   },
+   {
+    "rank": 8,
+    "id": "F07146",
+    "score": 2.0,
+    "title": "길의 편지",
+    "seller": "filler_seller_125"
+   },
+   {
+    "rank": 9,
+    "id": "F05636",
+    "score": 2.0,
+    "title": "눈의 꿈",
+    "seller": "filler_seller_141"
+   },
+   {
+    "rank": 10,
+    "id": "F00031",
+    "score": 2.0,
+    "title": "바람의 밤",
+    "seller": "filler_seller_052"
+   }
+  ]
+ },
+ {
+  "qid": "Q11",
+  "type": "T2_CONDITION",
+  "searchTerm": "힙합",
+  "params": {
+   "maxPrice": "200000"
+  },
+  "totalHits": 363,
+  "top": [
+   {
+    "rank": 1,
+    "id": "I05",
+    "score": 4.0,
+    "title": "Old School",
+    "seller": "온음표"
+   },
+   {
+    "rank": 2,
+    "id": "F08376",
+    "score": 2.0,
+    "title": "하늘의 별",
+    "seller": "filler_seller_191"
+   },
+   {
+    "rank": 3,
+    "id": "F00110",
+    "score": 2.0,
+    "title": "Rain Moon",
+    "seller": "filler_seller_093"
+   },
+   {
+    "rank": 4,
+    "id": "F00347",
+    "score": 2.0,
+    "title": "편지의 하늘",
+    "seller": "filler_seller_170"
+   },
+   {
+    "rank": 5,
+    "id": "F05189",
+    "score": 2.0,
+    "title": "Moon Light",
+    "seller": "filler_seller_183"
+   },
+   {
+    "rank": 6,
+    "id": "F06234",
+    "score": 2.0,
+    "title": "Fire Wave",
+    "seller": "filler_seller_189"
+   },
+   {
+    "rank": 7,
+    "id": "F06033",
+    "score": 2.0,
+    "title": "Road Love",
+    "seller": "filler_seller_097"
+   },
+   {
+    "rank": 8,
+    "id": "F04721",
+    "score": 2.0,
+    "title": "Road Moon",
+    "seller": "filler_seller_121"
+   },
+   {
+    "rank": 9,
+    "id": "F00206",
+    "score": 2.0,
+    "title": "Dream Wave",
+    "seller": "filler_seller_178"
+   },
+   {
+    "rank": 10,
+    "id": "F07591",
+    "score": 2.0,
+    "title": "Love Fire",
+    "seller": "filler_seller_006"
+   }
+  ]
+ },
+ {
+  "qid": "Q12",
+  "type": "T2_CONDITION",
+  "searchTerm": "BPM 90",
+  "params": {},
+  "totalHits": 1,
+  "top": [
+   {
+    "rank": 1,
+    "id": "I01",
+    "score": 1.0,
+    "title": "Midnight Cypher",
+    "seller": "봄비소리"
+   }
+  ]
+ },
+ {
+  "qid": "Q13",
+  "type": "T2_CONDITION",
+  "searchTerm": "hiphop",
+  "params": {
+   "bpmMin": "85",
+   "bpmMax": "95",
+   "musicalKey": "Am"
+  },
+  "totalHits": 12,
+  "top": [
+   {
+    "rank": 1,
+    "id": "F03111",
+    "score": 1.0,
+    "title": "달의 눈",
+    "seller": "filler_seller_020"
+   },
+   {
+    "rank": 2,
+    "id": "F02571",
+    "score": 1.0,
+    "title": "새벽의 사랑",
+    "seller": "filler_seller_160"
+   },
+   {
+    "rank": 3,
+    "id": "A06",
+    "score": 1.0,
+    "title": "Neon Drive",
+    "seller": "봄비소리"
+   },
+   {
+    "rank": 4,
+    "id": "F08052",
+    "score": 1.0,
+    "title": "Fire Dream",
+    "seller": "filler_seller_079"
+   },
+   {
+    "rank": 5,
+    "id": "F00226",
+    "score": 1.0,
+    "title": "Dream Light",
+    "seller": "filler_seller_044"
+   },
+   {
+    "rank": 6,
+    "id": "I10",
+    "score": 1.0,
+    "title": "Blackout",
+    "seller": "봄비소리"
+   },
+   {
+    "rank": 7,
+    "id": "I01",
+    "score": 1.0,
+    "title": "Midnight Cypher",
+    "seller": "봄비소리"
+   },
+   {
+    "rank": 8,
+    "id": "I05",
+    "score": 1.0,
+    "title": "Old School",
+    "seller": "온음표"
+   },
+   {
+    "rank": 9,
+    "id": "I03",
+    "score": 1.0,
+    "title": "Lo-fi Study",
+    "seller": "파도소리"
+   },
+   {
+    "rank": 10,
+    "id": "F02312",
+    "score": 1.0,
+    "title": "꿈의 밤",
+    "seller": "filler_seller_106"
+   }
+  ]
+ },
+ {
+  "qid": "Q14",
+  "type": "T2_CONDITION",
+  "searchTerm": "120",
+  "params": {},
+  "totalHits": 56,
+  "top": [
+   {
+    "rank": 1,
+    "id": "F01205",
+    "score": 4.0,
+    "title": "City Dream",
+    "seller": "filler_seller_120"
+   },
+   {
+    "rank": 2,
+    "id": "F08573",
+    "score": 3.0,
+    "title": "빛의 달",
+    "seller": "filler_seller_120"
+   },
+   {
+    "rank": 3,
+    "id": "F06174",
+    "score": 3.0,
+    "title": "Blue Heart",
+    "seller": "filler_seller_120"
+   },
+   {
+    "rank": 4,
+    "id": "F08018",
+    "score": 3.0,
+    "title": "계절의 별",
+    "seller": "filler_seller_120"
+   },
+   {
+    "rank": 5,
+    "id": "F07199",
+    "score": 3.0,
+    "title": "하늘의 눈",
+    "seller": "filler_seller_120"
+   },
+   {
+    "rank": 6,
+    "id": "F09249",
+    "score": 3.0,
+    "title": "City Star",
+    "seller": "filler_seller_120"
+   },
+   {
+    "rank": 7,
+    "id": "F09394",
+    "score": 3.0,
+    "title": "Home Home",
+    "seller": "filler_seller_120"
+   },
+   {
+    "rank": 8,
+    "id": "F06065",
+    "score": 3.0,
+    "title": "바람의 마음",
+    "seller": "filler_seller_120"
+   },
+   {
+    "rank": 9,
+    "id": "F06177",
+    "score": 3.0,
+    "title": "달의 편지",
+    "seller": "filler_seller_120"
+   },
+   {
+    "rank": 10,
+    "id": "F06272",
+    "score": 3.0,
+    "title": "Light Dream",
+    "seller": "filler_seller_120"
+   }
+  ]
+ },
+ {
+  "qid": "Q15",
+  "type": "T2_CONDITION",
+  "searchTerm": "Am",
+  "params": {
+   "majorGenre": "hiphop"
+  },
+  "totalHits": 153,
+  "top": [
+   {
+    "rank": 1,
+    "id": "F03469",
+    "score": 3.0,
+    "title": "Blue Dream",
+    "seller": "filler_seller_057"
+   },
+   {
+    "rank": 2,
+    "id": "F07029",
+    "score": 3.0,
+    "title": "City Dream",
+    "seller": "filler_seller_119"
+   },
+   {
+    "rank": 3,
+    "id": "F04995",
+    "score": 3.0,
+    "title": "Dream Rain",
+    "seller": "filler_seller_079"
+   },
+   {
+    "rank": 4,
+    "id": "F00206",
+    "score": 3.0,
+    "title": "Dream Wave",
+    "seller": "filler_seller_178"
+   },
+   {
+    "rank": 5,
+    "id": "F09469",
+    "score": 3.0,
+    "title": "Dream Heart",
+    "seller": "filler_seller_127"
+   },
+   {
+    "rank": 6,
+    "id": "F05854",
+    "score": 3.0,
+    "title": "Star Dream",
+    "seller": "filler_seller_121"
+   },
+   {
+    "rank": 7,
+    "id": "F02467",
+    "score": 3.0,
+    "title": "Dream Home",
+    "seller": "filler_seller_144"
+   },
+   {
+    "rank": 8,
+    "id": "F06900",
+    "score": 3.0,
+    "title": "Dream Blue",
+    "seller": "filler_seller_200"
+   },
+   {
+    "rank": 9,
+    "id": "F07585",
+    "score": 3.0,
+    "title": "Dream Home",
+    "seller": "filler_seller_017"
+   },
+   {
+    "rank": 10,
+    "id": "F03397",
+    "score": 3.0,
+    "title": "Dream City",
+    "seller": "filler_seller_093"
+   }
+  ]
+ },
+ {
+  "qid": "Q20",
+  "type": "T3_MOOD",
+  "searchTerm": "잔잔한 피아노",
+  "params": {},
+  "totalHits": 3,
+  "top": [
+   {
+    "rank": 1,
+    "id": "G01",
+    "score": 2.0,
+    "title": "달의 뒷면",
+    "seller": "온음표"
+   },
+   {
+    "rank": 2,
+    "id": "F02",
+    "score": 1.0,
+    "title": "새벽 세시",
+    "seller": "윤슬"
+   },
+   {
+    "rank": 3,
+    "id": "G03",
+    "score": 1.0,
+    "title": "고요",
+    "seller": "달빛작곡"
+   }
+  ]
+ },
+ {
+  "qid": "Q21",
+  "type": "T3_MOOD",
+  "searchTerm": "신나는 댄스",
+  "params": {},
+  "totalHits": 2,
+  "top": [
+   {
+    "rank": 1,
+    "id": "H03",
+    "score": 2.0,
+    "title": "Party Tonight",
+    "seller": "MINT"
+   },
+   {
+    "rank": 2,
+    "id": "H02",
+    "score": 1.0,
+    "title": "불꽃놀이",
+    "seller": "레드문"
+   }
+  ]
+ },
+ {
+  "qid": "Q22",
+  "type": "T3_MOOD",
+  "searchTerm": "이별",
+  "params": {},
+  "totalHits": 3,
+  "top": [
+   {
+    "rank": 1,
+    "id": "F01",
+    "score": 3.0,
+    "title": "이별택시",
+    "seller": "달빛작곡"
+   },
+   {
+    "rank": 2,
+    "id": "F02",
+    "score": 2.0,
+    "title": "새벽 세시",
+    "seller": "윤슬"
+   },
+   {
+    "rank": 3,
+    "id": "F03",
+    "score": 1.0,
+    "title": "마지막 인사",
+    "seller": "파도소리"
+   }
+  ]
+ },
+ {
+  "qid": "Q23",
+  "type": "T3_MOOD",
+  "searchTerm": "sad",
+  "params": {},
+  "totalHits": 1333,
+  "top": [
+   {
+    "rank": 1,
+    "id": "F02012",
+    "score": 1.5,
+    "title": "바람의 기억",
+    "seller": "filler_seller_146"
+   },
+   {
+    "rank": 2,
+    "id": "F03340",
+    "score": 1.5,
+    "title": "별의 꿈",
+    "seller": "filler_seller_138"
+   },
+   {
+    "rank": 3,
+    "id": "F06045",
+    "score": 1.5,
+    "title": "Blue Night",
+    "seller": "filler_seller_074"
+   },
+   {
+    "rank": 4,
+    "id": "F06240",
+    "score": 1.5,
+    "title": "Fire Night",
+    "seller": "filler_seller_055"
+   },
+   {
+    "rank": 5,
+    "id": "F00492",
+    "score": 1.5,
+    "title": "Heart Road",
+    "seller": "filler_seller_113"
+   },
+   {
+    "rank": 6,
+    "id": "F08353",
+    "score": 1.5,
+    "title": "마음의 꿈",
+    "seller": "filler_seller_166"
+   },
+   {
+    "rank": 7,
+    "id": "F01826",
+    "score": 1.5,
+    "title": "바다의 편지",
+    "seller": "filler_seller_063"
+   },
+   {
+    "rank": 8,
+    "id": "F07123",
+    "score": 1.5,
+    "title": "달의 하늘",
+    "seller": "filler_seller_154"
+   },
+   {
+    "rank": 9,
+    "id": "F02872",
+    "score": 1.5,
+    "title": "꿈의 눈",
+    "seller": "filler_seller_132"
+   },
+   {
+    "rank": 10,
+    "id": "F00347",
+    "score": 1.5,
+    "title": "편지의 하늘",
+    "seller": "filler_seller_170"
+   }
+  ]
+ },
+ {
+  "qid": "Q24",
+  "type": "T3_MOOD",
+  "searchTerm": "피아노 발라드",
+  "params": {},
+  "totalHits": 2019,
+  "top": [
+   {
+    "rank": 1,
+    "id": "G01",
+    "score": 4.0,
+    "title": "달의 뒷면",
+    "seller": "온음표"
+   },
+   {
+    "rank": 2,
+    "id": "D01",
+    "score": 3.0,
+    "title": "너의 이름을 부르면",
+    "seller": "달빛작곡"
+   },
+   {
+    "rank": 3,
+    "id": "F04604",
+    "score": 2.0,
+    "title": "Rain Wave",
+    "seller": "filler_seller_026"
+   },
+   {
+    "rank": 4,
+    "id": "F06579",
+    "score": 2.0,
+    "title": "시간의 하늘",
+    "seller": "filler_seller_004"
+   },
+   {
+    "rank": 5,
+    "id": "F06478",
+    "score": 2.0,
+    "title": "편지의 사랑",
+    "seller": "filler_seller_098"
+   },
+   {
+    "rank": 6,
+    "id": "F02848",
+    "score": 2.0,
+    "title": "마음의 노래",
+    "seller": "filler_seller_040"
+   },
+   {
+    "rank": 7,
+    "id": "F02665",
+    "score": 2.0,
+    "title": "꿈의 여행",
+    "seller": "filler_seller_035"
+   },
+   {
+    "rank": 8,
+    "id": "F00882",
+    "score": 2.0,
+    "title": "편지의 별",
+    "seller": "filler_seller_016"
+   },
+   {
+    "rank": 9,
+    "id": "F08337",
+    "score": 2.0,
+    "title": "기억의 시간",
+    "seller": "filler_seller_191"
+   },
+   {
+    "rank": 10,
+    "id": "F02091",
+    "score": 2.0,
+    "title": "마음의 여행",
+    "seller": "filler_seller_147"
+   }
+  ]
+ },
+ {
+  "qid": "Q25",
+  "type": "T3_MOOD",
+  "searchTerm": "발라드",
+  "params": {},
+  "totalHits": 2764,
+  "top": [
+   {
+    "rank": 1,
+    "id": "F04604",
+    "score": 4.0,
+    "title": "Rain Wave",
+    "seller": "filler_seller_026"
+   },
+   {
+    "rank": 2,
+    "id": "F09278",
+    "score": 4.0,
+    "title": "새벽의 편지",
+    "seller": "filler_seller_024"
+   },
+   {
+    "rank": 3,
+    "id": "F09553",
+    "score": 4.0,
+    "title": "사랑의 편지",
+    "seller": "filler_seller_128"
+   },
+   {
+    "rank": 4,
+    "id": "F06649",
+    "score": 4.0,
+    "title": "Rain Dream",
+    "seller": "filler_seller_189"
+   },
+   {
+    "rank": 5,
+    "id": "F08345",
+    "score": 4.0,
+    "title": "거리의 사랑",
+    "seller": "filler_seller_014"
+   },
+   {
+    "rank": 6,
+    "id": "F04016",
+    "score": 4.0,
+    "title": "꿈의 사랑",
+    "seller": "filler_seller_037"
+   },
+   {
+    "rank": 7,
+    "id": "F08802",
+    "score": 4.0,
+    "title": "밤의 새벽",
+    "seller": "filler_seller_046"
+   },
+   {
+    "rank": 8,
+    "id": "F09181",
+    "score": 4.0,
+    "title": "Fire Fire",
+    "seller": "filler_seller_063"
+   },
+   {
+    "rank": 9,
+    "id": "F04498",
+    "score": 4.0,
+    "title": "Light Star",
+    "seller": "filler_seller_040"
+   },
+   {
+    "rank": 10,
+    "id": "F04374",
+    "score": 4.0,
+    "title": "Night Rain",
+    "seller": "filler_seller_050"
+   }
+  ]
+ },
+ {
+  "qid": "Q30",
+  "type": "T4_SELLER",
+  "searchTerm": "새벽공방",
+  "params": {},
+  "totalHits": 7,
+  "top": [
+   {
+    "rank": 1,
+    "id": "S04",
+    "score": 103.0,
+    "title": "소나기",
+    "seller": "새벽공방"
+   },
+   {
+    "rank": 2,
+    "id": "S02",
+    "score": 103.0,
+    "title": "Workshop",
+    "seller": "새벽공방"
+   },
+   {
+    "rank": 3,
+    "id": "S01",
+    "score": 103.0,
+    "title": "파란 새벽",
+    "seller": "새벽공방"
+   },
+   {
+    "rank": 4,
+    "id": "S03",
+    "score": 103.0,
+    "title": "첫차",
+    "seller": "새벽공방"
+   },
+   {
+    "rank": 5,
+    "id": "D02",
+    "score": 3.0,
+    "title": "이름 없는 밤",
+    "seller": "새벽공방스튜디오"
+   },
+   {
+    "rank": 6,
+    "id": "S06",
+    "score": 3.0,
+    "title": "새벽공방에서 쓴 노래",
+    "seller": "윤슬"
+   },
+   {
+    "rank": 7,
+    "id": "I02",
+    "score": 3.0,
+    "title": "Drill Season",
+    "seller": "새벽공방스튜디오"
+   }
+  ]
+ },
+ {
+  "qid": "Q31",
+  "type": "T4_SELLER",
+  "searchTerm": "mint",
+  "params": {},
+  "totalHits": 10,
+  "top": [
+   {
+    "rank": 1,
+    "id": "E05",
+    "score": 103.0,
+    "title": "Clover",
+    "seller": "MINT"
+   },
+   {
+    "rank": 2,
+    "id": "B04",
+    "score": 103.0,
+    "title": "Summer Night",
+    "seller": "MINT"
+   },
+   {
+    "rank": 3,
+    "id": "I06",
+    "score": 103.0,
+    "title": "City Lights",
+    "seller": "MINT"
+   },
+   {
+    "rank": 4,
+    "id": "C01",
+    "score": 103.0,
+    "title": "Blue Hour",
+    "seller": "MINT"
+   },
+   {
+    "rank": 5,
+    "id": "H03",
+    "score": 103.0,
+    "title": "Party Tonight",
+    "seller": "MINT"
+   },
+   {
+    "rank": 6,
+    "id": "F04",
+    "score": 103.0,
+    "title": "Goodbye",
+    "seller": "MINT"
+   },
+   {
+    "rank": 7,
+    "id": "C02",
+    "score": 3.0,
+    "title": "blue hour (acoustic)",
+    "seller": "mintyard"
+   },
+   {
+    "rank": 8,
+    "id": "E06",
+    "score": 3.0,
+    "title": "첫눈",
+    "seller": "mintyard"
+   },
+   {
+    "rank": 9,
+    "id": "M01",
+    "score": 3.0,
+    "title": "Mint Chocolate",
+    "seller": "레드문"
+   },
+   {
+    "rank": 10,
+    "id": "I07",
+    "score": 3.0,
+    "title": "Bounce",
+    "seller": "mintyard"
+   }
+  ]
+ },
+ {
+  "qid": "Q32",
+  "type": "T4_SELLER",
+  "searchTerm": "윤슬",
+  "params": {},
+  "totalHits": 8,
+  "top": [
+   {
+    "rank": 1,
+    "id": "F02",
+    "score": 103.0,
+    "title": "새벽 세시",
+    "seller": "윤슬"
+   },
+   {
+    "rank": 2,
+    "id": "I08",
+    "score": 103.0,
+    "title": "Grind",
+    "seller": "윤슬"
+   },
+   {
+    "rank": 3,
+    "id": "S06",
+    "score": 103.0,
+    "title": "새벽공방에서 쓴 노래",
+    "seller": "윤슬"
+   },
+   {
+    "rank": 4,
+    "id": "A01",
+    "score": 103.0,
+    "title": "봄비",
+    "seller": "윤슬"
+   },
+   {
+    "rank": 5,
+    "id": "B02",
+    "score": 103.0,
+    "title": "여름 밤의 꿈",
+    "seller": "윤슬"
+   },
+   {
+    "rank": 6,
+    "id": "W01",
+    "score": 103.0,
+    "title": "윤슬",
+    "seller": "파도소리"
+   },
+   {
+    "rank": 7,
+    "id": "E03",
+    "score": 103.0,
+    "title": "Love Me Again",
+    "seller": "윤슬"
+   },
+   {
+    "rank": 8,
+    "id": "C04",
+    "score": 103.0,
+    "title": "새벽",
+    "seller": "윤슬"
+   }
+  ]
+ },
+ {
+  "qid": "Q33",
+  "type": "T4_SELLER",
+  "searchTerm": "새벽 공방",
+  "params": {},
+  "totalHits": 5,
+  "top": [
+   {
+    "rank": 1,
+    "id": "S04",
+    "score": 100.0,
+    "title": "소나기",
+    "seller": "새벽공방"
+   },
+   {
+    "rank": 2,
+    "id": "S02",
+    "score": 100.0,
+    "title": "Workshop",
+    "seller": "새벽공방"
+   },
+   {
+    "rank": 3,
+    "id": "S01",
+    "score": 100.0,
+    "title": "파란 새벽",
+    "seller": "새벽공방"
+   },
+   {
+    "rank": 4,
+    "id": "S03",
+    "score": 100.0,
+    "title": "첫차",
+    "seller": "새벽공방"
+   },
+   {
+    "rank": 5,
+    "id": "S07",
+    "score": 2.0,
+    "title": "공방",
+    "seller": "온음표"
+   }
+  ]
+ }
+]

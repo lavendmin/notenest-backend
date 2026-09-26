@@ -1,0 +1,5 @@
+--------------
+ALTER TABLE music ADD FULLTEXT INDEX ft_ngram (title) WITH PARSER ngram
+--------------
+
+ERROR 1128 (HY000) at line 1: Function 'ngram' is not defined

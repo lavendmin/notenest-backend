@@ -1,0 +1,4 @@
+notenest-es mem=1017MiB / 1GiB cpu=0.87%
+notenest-db mem=330.2MiB / 15.37GiB cpu=0.03%
+image size=747893491
+{"nodes":{"PREO7cn0Q2OQc5yLQYcQ7Q":{"jvm":{"mem":{"heap_used_in_bytes":242558864,"heap_max_in_bytes":536870912}}}}}OOMKilled=false Restarts=0 Status=running

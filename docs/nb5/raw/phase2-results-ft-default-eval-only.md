@@ -1,0 +1,173 @@
+# phase2-results — ft-default-eval-only
+
+## Q01 T1_TITLE `봄비` 
+- hits=1
+   1. A01     100.0000  봄비 / 윤슬
+
+## Q02 T1_TITLE `여름밤` 
+- hits=2
+   1. B01     109.2493  여름밤 / 온음표
+   2. B04       6.1662  Summer Night / MINT
+
+## Q03 T1_TITLE `여름 밤` 
+- hits=1
+   1. B01     100.0000  여름밤 / 온음표
+
+## Q04 T1_TITLE `Blue Hour` 
+- hits=3
+   1. C01     112.6994  Blue Hour / MINT
+   2. C02      12.6994  blue hour (acoustic) / mintyard
+   3. C04       6.1662  새벽 / 윤슬
+
+## Q05 T1_TITLE `BLUE HOUR` 
+- hits=3
+   1. C01     112.6994  Blue Hour / MINT
+   2. C02      12.6994  blue hour (acoustic) / mintyard
+   3. C04       6.1662  새벽 / 윤슬
+
+## Q06 T1_TITLE `bluehour` 
+- hits=1
+   1. C01     100.0000  Blue Hour / MINT
+
+## Q07 T1_TITLE `너의 이름을 부르면` 
+- hits=1
+   1. D01     118.4986  너의 이름을 부르면 / 달빛작곡
+
+## Q08 T1_TITLE `너의 이름` 
+- hits=0
+
+## Q09 T1_TITLE `love` 
+- hits=3
+   1. E01     106.3497  Love / 레드문
+   2. E03       6.3497  Love Me Again / 윤슬
+   3. E06       6.1662  첫눈 / mintyard
+
+## Q10 T2_CONDITION `비트` {'majorGenre': 'hiphop', 'maxPrice': '200000'}
+- hits=0
+
+## Q11 T2_CONDITION `힙합` {'maxPrice': '200000'}
+- hits=7
+   1. I08       2.0000  Grind / 윤슬
+   2. I01       2.0000  Midnight Cypher / 봄비소리
+   3. I05       2.0000  Old School / 온음표
+   4. I03       2.0000  Lo-fi Study / 파도소리
+   5. E04       2.0000  Glove / 파도소리
+   6. I07       2.0000  Bounce / mintyard
+   7. I02       2.0000  Drill Season / 새벽공방스튜디오
+
+## Q12 T2_CONDITION `BPM 90` 
+- hits=7
+   1. I06       0.8295  City Lights / MINT
+   2. I08       0.8295  Grind / 윤슬
+   3. I10       0.8295  Blackout / 봄비소리
+   4. I01       0.8295  Midnight Cypher / 봄비소리
+   5. I05       0.8295  Old School / 온음표
+   6. A01       0.8295  봄비 / 윤슬
+   7. I04       0.8295  Trap Anthem / 레드문
+
+## Q13 T2_CONDITION `hiphop` {'bpmMin': '85', 'bpmMax': '95', 'musicalKey': 'Am'}
+- hits=5
+   1. A06       0.5105  Neon Drive / 봄비소리
+   2. I10       0.5105  Blackout / 봄비소리
+   3. I01       0.5105  Midnight Cypher / 봄비소리
+   4. I05       0.5105  Old School / 온음표
+   5. I03       0.5105  Lo-fi Study / 파도소리
+
+## Q14 T2_CONDITION `120` 
+- hits=2
+   1. I09       6.1662  청춘 / 레드문
+   2. I08       3.0831  Grind / 윤슬
+
+## Q15 T2_CONDITION `Am` {'majorGenre': 'hiphop'}
+- hits=0
+
+## Q20 T3_MOOD `잔잔한 피아노` 
+- hits=5
+   1. G01      10.3993  달의 뒷면 / 온음표
+   2. G04       4.2331  기억의 조각 / 레드문
+   3. F02       3.7518  새벽 세시 / 윤슬
+   4. G03       3.7518  고요 / 달빛작곡
+   5. D01       1.6352  너의 이름을 부르면 / 달빛작곡
+
+## Q21 T3_MOOD `신나는 댄스` 
+- hits=3
+   1. H03       4.2331  Party Tonight / MINT
+   2. H01       4.2331  Jump / 온음표
+   3. H02       3.0831  불꽃놀이 / 레드문
+
+## Q22 T3_MOOD `이별` 
+- hits=0
+
+## Q23 T3_MOOD `sad` 
+- hits=17
+   1. F01       0.3415  이별택시 / 달빛작곡
+   2. B05       0.3415  밤편지 / 파도소리
+   3. D01       0.3415  너의 이름을 부르면 / 달빛작곡
+   4. C02       0.3415  blue hour (acoustic) / mintyard
+   5. F02       0.3415  새벽 세시 / 윤슬
+   6. A04       0.3415  첫사랑 / 달빛작곡
+   7. A07       0.3415  모래시계 / 봄비소리
+   8. A01       0.3415  봄비 / 윤슬
+   9. F04       0.3415  Goodbye / MINT
+  10. A02       0.3415  봄비가 내리면 / 레드문
+
+## Q24 T3_MOOD `피아노 발라드` 
+- hits=21
+   1. G01      12.3993  달의 뒷면 / 온음표
+   2. S01       6.2331  파란 새벽 / 새벽공방
+   3. D01       4.9665  너의 이름을 부르면 / 달빛작곡
+   4. F02       3.6352  새벽 세시 / 윤슬
+   5. G03       3.6352  고요 / 달빛작곡
+   6. A04       3.3313  첫사랑 / 달빛작곡
+   7. A01       3.3313  봄비 / 윤슬
+   8. A02       3.3313  봄비가 내리면 / 레드문
+   9. F01       2.0000  이별택시 / 달빛작곡
+  10. B05       2.0000  밤편지 / 파도소리
+
+## Q25 T3_MOOD `발라드` 
+- hits=21
+   1. S01       6.2331  파란 새벽 / 새벽공방
+   2. G01       6.2331  달의 뒷면 / 온음표
+   3. D01       3.3313  너의 이름을 부르면 / 달빛작곡
+   4. A04       3.3313  첫사랑 / 달빛작곡
+   5. A01       3.3313  봄비 / 윤슬
+   6. A02       3.3313  봄비가 내리면 / 레드문
+   7. F01       2.0000  이별택시 / 달빛작곡
+   8. B05       2.0000  밤편지 / 파도소리
+   9. C02       2.0000  blue hour (acoustic) / mintyard
+  10. F02       2.0000  새벽 세시 / 윤슬
+
+## Q30 T4_SELLER `새벽공방` 
+- hits=4
+   1. S04     103.0000  소나기 / 새벽공방
+   2. S02     103.0000  Workshop / 새벽공방
+   3. S01     103.0000  파란 새벽 / 새벽공방
+   4. S03     103.0000  첫차 / 새벽공방
+
+## Q31 T4_SELLER `mint` 
+- hits=7
+   1. E05     103.0000  Clover / MINT
+   2. B04     103.0000  Summer Night / MINT
+   3. I06     103.0000  City Lights / MINT
+   4. C01     103.0000  Blue Hour / MINT
+   5. H03     103.0000  Party Tonight / MINT
+   6. F04     103.0000  Goodbye / MINT
+   7. M01       9.2493  Mint Chocolate / 레드문
+
+## Q32 T4_SELLER `윤슬` 
+- hits=8
+   1. F02     100.0000  새벽 세시 / 윤슬
+   2. I08     100.0000  Grind / 윤슬
+   3. S06     100.0000  새벽공방에서 쓴 노래 / 윤슬
+   4. A01     100.0000  봄비 / 윤슬
+   5. B02     100.0000  여름 밤의 꿈 / 윤슬
+   6. W01     100.0000  윤슬 / 파도소리
+   7. E03     100.0000  Love Me Again / 윤슬
+   8. C04     100.0000  새벽 / 윤슬
+
+## Q33 T4_SELLER `새벽 공방` 
+- hits=4
+   1. S04     100.0000  소나기 / 새벽공방
+   2. S02     100.0000  Workshop / 새벽공방
+   3. S01     100.0000  파란 새벽 / 새벽공방
+   4. S03     100.0000  첫차 / 새벽공방
