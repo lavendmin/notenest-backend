@@ -12,6 +12,7 @@
 
   python scripts/nb5/phase2/ft_spike.py setup --total 57
   python scripts/nb5/phase2/ft_spike.py run   --total 57 --label ft-default-eval-only
+  python scripts/nb5/phase2/ft_spike.py run   --total 57 --label like-rules-eval-only --mode like-rules   # 사후 대조군
   python scripts/nb5/phase2/ft_spike.py bench --total 10000 --label ft-default-n10000 --reps 20
   docker stop nb5-ft-probe
 
@@ -89,6 +90,27 @@ def search_sql(query: dict, size: int) -> str:
             f"ORDER BY score DESC, m.created_at DESC, m.music_uuid ASC LIMIT {size}")
 
 
+def like_rules_sql(query: dict, size: int) -> str:
+    """[사후 추가 대조군] 엔진 없이 같은 질의 규칙만 쓴 순위: 필드별 LIKE 적중 여부에 같은 가중치를 곱해 합산하고
+    정확 일치·장르 별칭 boost 를 더한다. FULLTEXT·Elasticsearch 의 개선분 중 '질의 규칙' 몫을 분리하려고 FULLTEXT
+    기본 설정 결과를 본 뒤 추가했다. 가중치는 nb5_query 의 사전 고정값 그대로다(조정 없음)."""
+    term = query["searchTerm"].strip()
+    kw = nb5_corpus.q("%" + term.replace("!", "!!").replace("%", "!%").replace("_", "!_") + "%")
+    cq = nb5_corpus.q(nq.compact(term))
+    w = nq.WEIGHTS
+    cols = {"title": "m.title", "seller": "u.nickname", "subtitle": "m.subtitle", "hashtag": "m.hashtag",
+            "genre": "m.major_genre", "details": "m.details"}
+    score = " + ".join([f"{w[f]} * (COALESCE({c}, '') LIKE {kw} ESCAPE '!')" for f, c in cols.items()] + [
+        f"{nq.EXACT_BOOST} * (LOWER(REPLACE(m.title, ' ', '')) = {cq})",
+        f"{nq.EXACT_BOOST} * (LOWER(REPLACE(u.nickname, ' ', '')) = {cq})",
+    ] + [f"{nq.GENRE_ALIAS_BOOST} * (m.major_genre = {nb5_corpus.q(c)})" for c in nq.genre_codes(term)])
+    base = search_sql(query, size)
+    where = base[base.index(" WHERE ") + 7:base.index(" HAVING ")]
+    return (f"SELECT m.music_uuid, ({score}) AS score, COUNT(*) OVER () AS hits "
+            f"FROM music m JOIN user u ON u.user_uuid = m.user_uuid WHERE {where} HAVING score > 0 "
+            f"ORDER BY score DESC, m.created_at DESC, m.music_uuid ASC LIMIT {size}")
+
+
 def cmd_setup(args):
     mariadb(args.container, SCHEMA.read_text(encoding="utf-8"), db=None)
     sql = subprocess.run([sys.executable, str(Path(nb5_corpus.__file__)), "--total", str(args.total)],
@@ -112,7 +134,8 @@ def cmd_run(args):
     by_uuid = {nb5_corpus.music_uuid(s["id"]): s for s in nb5_corpus.build_songs(args.total)}
     runs = []
     for query in nq.load_queries():
-        rows = [l.split("\t") for l in mariadb(args.container, search_sql(query, nq.SIZE) + ";").splitlines() if l]
+        sql = like_rules_sql(query, nq.SIZE) if args.mode == "like-rules" else search_sql(query, nq.SIZE)
+        rows = [l.split("\t") for l in mariadb(args.container, sql + ";").splitlines() if l]
         top = []
         for rank, (uuid, score, hits) in enumerate(rows, 1):
             s = by_uuid[uuid]
@@ -125,10 +148,10 @@ def cmd_run(args):
 def cmd_bench(args):
     """서버 측 실행 시간(SHOW PROFILES). 질의마다 reps 회 반복하고, 비교용으로 현재 LIKE SQL 도 같은 세션 조건에서 잰다."""
     queries = nq.load_queries()
-    results = {"fulltext": {}, "like": {}}
+    results = {"fulltext": {}, "like": {}, "like-rules": {}}
     for engine in results:
         for query in queries:
-            sql = search_sql(query, nq.SIZE) if engine == "fulltext" else like_sql(query, nq.SIZE)
+            sql = {"fulltext": search_sql, "like": like_sql, "like-rules": like_rules_sql}[engine](query, nq.SIZE)
             script = "SET profiling = 1; SET profiling_history_size = 100;\n" + (sql + ";\n") * args.reps + "SHOW PROFILES;\n"
             out = mariadb(args.container, script)
             durations = [float(l.split("\t")[1]) * 1000 for l in out.splitlines() if re.match(r"^\d+\t[\d.]+\t", l)]
@@ -139,10 +162,9 @@ def cmd_bench(args):
     for engine, per_q in results.items():
         allv = sorted(v for vs in per_q.values() for v in vs)
         lines.append(f"| {engine} | {pct(allv, 50):.3f} | {pct(allv, 90):.3f} | {pct(allv, 99):.3f} | {sum(allv) / len(allv):.3f} |")
-    lines += ["", "| qid | fulltext p50 | like p50 |", "|---|---|---|"]
+    lines += ["", "| qid | fulltext p50 | like p50 | like-rules p50 |", "|---|---|---|---|"]
     for qd in queries:
-        lines.append(f"| {qd['qid']} | {pct(sorted(results['fulltext'][qd['qid']]), 50):.3f} | "
-                     f"{pct(sorted(results['like'][qd['qid']]), 50):.3f} |")
+        lines.append(f"| {qd['qid']} | " + " | ".join(f"{pct(sorted(results[e][qd['qid']]), 50):.3f}" for e in results) + " |")
     out = nq.RAW / f"phase2-bench-{args.label}.md"
     out.write_text("\n".join(lines), encoding="utf-8")
     print("\n".join(lines[:9]))
@@ -188,6 +210,7 @@ def main():
     ap.add_argument("--total", type=int, required=True)
     ap.add_argument("--label", default="ft")
     ap.add_argument("--reps", type=int, default=20)
+    ap.add_argument("--mode", choices=["fulltext", "like-rules"], default="fulltext", help="run 대상 순위 방식")
     args = ap.parse_args()
     {"setup": cmd_setup, "run": cmd_run, "bench": cmd_bench}[args.command](args)
 
