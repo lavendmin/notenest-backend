@@ -8,6 +8,10 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.security.MessageDigest;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -36,6 +40,18 @@ class QrelsIntegrityTest {
         songs = corpus.stream().collect(Collectors.toMap(Song::id, s -> s));
         queries = EvalData.queries();
         qrels = EvalData.qrels();
+    }
+
+    // 2026-09-26 소민님 승인으로 고정한 v1 의 내용 해시. 등급을 바꿔야 하면 이 값을 고치지 말고 qrels-v2 를 새로 만든다.
+    private static final String QRELS_V1_SHA256 = "839dadd640a0663393d96aa38e1db9edbc26d089148e537342346e7898d0a50f";
+
+    @Test
+    @DisplayName("qrels v1 은 승인 후 고정되어 있다 — 내용이 바뀌면 실패한다(변경은 v2 로 분리)")
+    void qrelsV1IsFrozen() throws Exception {
+        byte[] normalized = new String(Files.readAllBytes(EvalData.QRELS), StandardCharsets.UTF_8)
+                .replace("\r\n", "\n").getBytes(StandardCharsets.UTF_8);
+        String hex = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(normalized));
+        assertThat(hex).as("qrels-v1.jsonl 이 승인본과 다르다 — v1 은 고치지 않고 v2 로 분리한다").isEqualTo(QRELS_V1_SHA256);
     }
 
     @Test
