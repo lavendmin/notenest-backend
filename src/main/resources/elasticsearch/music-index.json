@@ -37,7 +37,8 @@
       "auction_end_time": { "type": "date" },
       "bpm": { "type": "integer" },
       "musical_key": { "type": "keyword" },
-      "cover_key": { "type": "keyword", "index": false }
+      "cover_key": { "type": "keyword", "index": false },
+      "source_hash": { "type": "keyword" }
     }
   }
 }

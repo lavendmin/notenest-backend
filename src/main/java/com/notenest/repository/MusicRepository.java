@@ -12,6 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -28,6 +29,12 @@ public interface MusicRepository extends JpaRepository<Music, UUID>, JpaSpecific
             + "m.majorGenre, u.nickname, m.status, m.startingPrice, m.currentHighestBid, m.auctionEndTime, m.likeCount, "
             + "m.bpm, m.musicalKey, m.cover.objectKey) FROM Music m JOIN m.user u")
     List<MusicSearchSource> findAllSearchSources();
+
+    // [NB5] 단건 동기화용 — 곡이 없으면(삭제됨) 빈 결과 → 색인에서 지운다.
+    @Query("SELECT new com.notenest.search.MusicSearchSource(m.musicUuid, m.createdAt, m.title, m.subtitle, m.details, m.hashtag, "
+            + "m.majorGenre, u.nickname, m.status, m.startingPrice, m.currentHighestBid, m.auctionEndTime, m.likeCount, "
+            + "m.bpm, m.musicalKey, m.cover.objectKey) FROM Music m JOIN m.user u WHERE m.musicUuid = :musicUuid")
+    Optional<MusicSearchSource> findSearchSource(@Param("musicUuid") UUID musicUuid);
 
     // 최신 순으로 곡 리스트 가져오기 (진행 중인 곡만)
     @Query("SELECT m FROM Music m WHERE m.status = 0 ORDER BY m.createdAt DESC")

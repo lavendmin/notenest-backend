@@ -4,6 +4,7 @@ import com.notenest.domain.Likes;
 import com.notenest.domain.Music;
 import com.notenest.domain.User;
 import com.notenest.dto.MusicListDTO;
+import com.notenest.search.MusicSearchEvents;
 import com.notenest.storage.MediaUrlIssuer;
 import com.notenest.repository.LikeRepository;
 import com.notenest.repository.MusicRepository;
@@ -28,13 +29,15 @@ public class LikeMusicService {
     private final UserRepository userRepository;
     private  final MusicRepository musicRepository;
     private final MediaUrlIssuer mediaUrlIssuer;
+    private final MusicSearchEvents musicSearchEvents;
 
     public LikeMusicService(LikeRepository likeRepository, UserRepository userRepository, MusicRepository musicRepository,
-                            MusicService musicService, MediaUrlIssuer mediaUrlIssuer) {
+                            MusicService musicService, MediaUrlIssuer mediaUrlIssuer, MusicSearchEvents musicSearchEvents) {
         this.likeRepository = likeRepository;
         this.userRepository = userRepository;
         this.musicRepository = musicRepository;
         this.mediaUrlIssuer = mediaUrlIssuer;
+        this.musicSearchEvents = musicSearchEvents;
     }
 
     // 로그인한 유저 가져오기
@@ -67,6 +70,8 @@ public class LikeMusicService {
         }
 
         Likes existingLike = likeRepository.findByUserAndMusic(user, music);
+        // [NB5] 좋아요 수가 바뀐다 — 이 메서드 트랜잭션이 커밋된 뒤 검색 문서 동기화(롤백되면 하지 않음)
+        musicSearchEvents.changed(musicUuid, "like");
 
         if (existingLike == null) {
             // 찜하기

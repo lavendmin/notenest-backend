@@ -18,6 +18,7 @@ import com.notenest.repository.LikeRepository;
 import com.notenest.repository.MusicListCondition;
 import com.notenest.repository.MusicRepository;
 import com.notenest.repository.UserRepository;
+import com.notenest.search.MusicSearchEvents;
 import com.notenest.search.MusicSearchPort;
 import com.notenest.storage.MediaAssetType;
 import com.notenest.storage.MediaUploadValidator;
@@ -82,6 +83,9 @@ public class MusicServiceImpl implements MusicService {
 
     @Autowired
     private MusicSearchPort musicSearchPort;
+
+    @Autowired
+    private MusicSearchEvents musicSearchEvents;
 
     @Override
     public Music createMusic(CreateMusicDTO createMusicDTO, MultipartFile cover, MultipartFile preview,
@@ -170,12 +174,16 @@ public class MusicServiceImpl implements MusicService {
 
         // 업로드 뒤 DB 저장이 실패하면 올린 파일을 지운다(고아 객체 방지). 이 메서드는 트랜잭션 밖이라
         // save 자체의 커밋까지 끝난 뒤 반환되므로, 커밋 실패도 여기서 잡힌다.
+        Music saved;
         try {
-            return musicRepository.save(music);
+            saved = musicRepository.save(music);
         } catch (RuntimeException e) {
             musicMediaStorage.deleteQuietly(MusicMediaStorage.keysOf(stored.values()));
             throw e;
         }
+        // [NB5] 저장(커밋) 뒤 검색 문서 동기화 — 색인 실패가 등록 성공을 되돌리지 않는다.
+        musicSearchEvents.changed(saved.getMusicUuid(), "create");
+        return saved;
     }
 
 
@@ -194,6 +202,7 @@ public class MusicServiceImpl implements MusicService {
 
         List<String> keys = MusicMediaStorage.keysOf(Arrays.asList(music.getCover(), music.getPreview(), music.getFullDemo()));
         musicRepository.delete(music);
+        musicSearchEvents.changed(musicUuid, "delete");
         // 객체는 DB 삭제가 성공한 뒤에만 지운다. 이 정리가 실패해도 곡은 이미 삭제됐으므로 남은 객체는 고아로 기록된다.
         musicMediaStorage.deleteQuietly(keys);
     }
@@ -275,6 +284,7 @@ public class MusicServiceImpl implements MusicService {
             musicMediaStorage.deleteQuietly(MusicMediaStorage.keysOf(stored.values()));
             throw e;
         }
+        musicSearchEvents.changed(musicUuid, "update");
         // 옛 객체 정리는 DB 전환이 성공한 뒤에만 한다. 실패해도 새 파일이 이미 연결돼 있으므로 옛 객체는 고아로 기록된다.
         musicMediaStorage.deleteQuietly(replacedKeys);
         return saved;

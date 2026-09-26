@@ -4,7 +4,7 @@ import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import com.notenest.dto.MusicSummaryDTO;
 import com.notenest.repository.MusicListCondition;
 import com.notenest.search.ElasticsearchMusicSearchAdapter;
-import com.notenest.search.MusicSearchIndexer;
+import com.notenest.search.ElasticsearchMusicSearchIndex;
 import com.notenest.search.MusicSearchQueryFactory;
 import com.notenest.search.eval.EvalData;
 import com.notenest.search.eval.EvalDocuments;
@@ -44,9 +44,10 @@ class MusicSearchQualityIT {
     @BeforeAll
     static void indexEvalCorpus() {
         ElasticsearchClient client = ElasticsearchTestContainer.client();
-        MusicSearchIndexer indexer = new MusicSearchIndexer(client, INDEX);
-        indexer.recreateIndex();
-        indexer.indexAll(EvalDocuments.documents(EvalData.corpus()));
+        ElasticsearchMusicSearchIndex index = new ElasticsearchMusicSearchIndex(client, INDEX);
+        index.recreate();
+        index.upsertAll(EvalDocuments.documents(EvalData.corpus()));
+        index.refresh();
         adapter = new ElasticsearchMusicSearchAdapter(client, new MusicSearchQueryFactory(), INDEX);
     }
 

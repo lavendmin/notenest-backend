@@ -9,6 +9,7 @@ import com.notenest.repository.MusicRepository;
 import com.notenest.repository.UserRepository;
 import com.notenest.service.BidServiceImpl;
 import com.notenest.service.ComposerService;
+import com.notenest.search.MusicSearchEvents;
 import com.notenest.service.MusicServiceImpl;
 import com.notenest.storage.MediaUploadValidator;
 import com.notenest.storage.MusicMediaStorage;
@@ -48,6 +49,7 @@ class MusicCreateAmountTest {
     @Mock private ComposerService composerService;
     @Spy private MediaUploadValidator mediaUploadValidator = new MediaUploadValidator();
     @Mock private MusicMediaStorage musicMediaStorage;
+    @Mock private MusicSearchEvents musicSearchEvents;
 
     @InjectMocks private MusicServiceImpl musicService;
 

@@ -1,5 +1,6 @@
 package com.notenest.batch;
 
+import com.notenest.search.MusicSearchEvents;
 import com.notenest.config.QueryDslConfig;
 import com.notenest.domain.Bid;
 import com.notenest.domain.Music;
@@ -51,7 +52,8 @@ import java.time.LocalDateTime;
 @DataJpaTest
 @ActiveProfiles("test")
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Import({QueryDslConfig.class, BidServiceImpl.class, FixedClockTestConfig.class})
+// [NB5] BidServiceImpl 이 경매 마감 후 검색 동기화 이벤트를 발행한다 — 슬라이스에는 리스너가 없어 발행만 하고 끝난다.
+@Import({QueryDslConfig.class, BidServiceImpl.class, FixedClockTestConfig.class, MusicSearchEvents.class})
 @TestPropertySource(properties = {
         // user 는 H2 예약어라 @Table(name="user") DDL/쿼리가 깨진다 → NON_KEYWORDS 로 제외.
         "spring.datasource.url=jdbc:h2:mem:auction-char;MODE=MySQL;DB_CLOSE_DELAY=-1;NON_KEYWORDS=USER",

@@ -1,5 +1,6 @@
 package com.notenest.payment;
 
+import com.notenest.search.MusicSearchEvents;
 import com.notenest.batch.FixedClockTestConfig;
 import com.notenest.config.QueryDslConfig;
 import com.notenest.domain.Bid;
@@ -53,7 +54,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @DataJpaTest
 @ActiveProfiles("test")
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Import({QueryDslConfig.class, BidServiceImpl.class, PaymentService.class,
+@Import({QueryDslConfig.class, BidServiceImpl.class, MusicSearchEvents.class, PaymentService.class,
         FixedClockTestConfig.class, PaymentAmountFlowIntegrationTest.GatewayConfig.class})
 @TestPropertySource(properties = {
         "spring.datasource.url=jdbc:h2:mem:payment-flow;MODE=MySQL;DB_CLOSE_DELAY=-1;NON_KEYWORDS=USER",

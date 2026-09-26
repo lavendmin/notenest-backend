@@ -1,5 +1,6 @@
 package com.notenest.service;
 
+import com.notenest.search.MusicSearchEvents;
 import com.notenest.domain.Bid;
 import com.notenest.domain.Payment;
 import com.notenest.payment.KrwAmounts;
@@ -56,6 +57,9 @@ public class BidServiceImpl implements BidService {
     @Autowired
     private MediaUrlIssuer mediaUrlIssuer;
 
+    @Autowired
+    private MusicSearchEvents musicSearchEvents;
+
     // 시간 소스 — 운영은 시스템 시계, 테스트는 고정 Clock 주입(반복 실행 멱등성 검증용)
     @Autowired
     private Clock clock;
@@ -95,7 +99,10 @@ public class BidServiceImpl implements BidService {
         // 최고 입찰가 업데이트
         music.setCurrentHighestBid(createBidDTO.getPrice());
 
-        return bidRepository.save(bid);
+        Bid saved = bidRepository.save(bid);
+        // [NB5] 현재가가 바뀌었다 — 입찰 저장 커밋 뒤(트랜잭션 없는 경로라 즉시) 검색 문서 동기화
+        musicSearchEvents.changed(music.getMusicUuid(), "bid");
+        return saved;
     }
 
 
@@ -201,6 +208,8 @@ public class BidServiceImpl implements BidService {
             // 음악 상태 업데이트 (0→1, 마감 잡 대상에서 빠짐)
             music.setStatus(1);
             musicRepository.save(music);
+            // [NB5] 경매 종료 → 검색 노출 제외. 스케줄러 사이클 트랜잭션이 커밋된 뒤 동기화된다(롤백되면 하지 않음).
+            musicSearchEvents.changed(musicUuid, "auction-end");
 
             List<Bid> highestBids = bidRepository.findByMusicOrderByPriceDescCreatedAtAsc(music);
 
