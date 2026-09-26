@@ -5,6 +5,7 @@ import co.elastic.clients.json.jackson.JacksonJsonpMapper;
 import co.elastic.clients.transport.rest_client.RestClientTransport;
 import org.apache.http.HttpHost;
 import org.elasticsearch.client.RestClient;
+import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.images.builder.ImageFromDockerfile;
@@ -40,6 +41,15 @@ public final class ElasticsearchTestContainer {
             Runtime.getRuntime().addShutdownHook(new Thread(CONTAINER::stop));
         }
         return "http://" + CONTAINER.getHost() + ":" + CONTAINER.getMappedPort(9200);
+    }
+
+    /** 장애 재현 — 프로세스를 얼려 연결은 되지만 응답하지 않게 한다(포트 매핑 유지). 클라이언트는 응답 타임아웃으로 실패한다. */
+    public static void pause() {
+        DockerClientFactory.instance().client().pauseContainerCmd(CONTAINER.getContainerId()).exec();
+    }
+
+    public static void unpause() {
+        DockerClientFactory.instance().client().unpauseContainerCmd(CONTAINER.getContainerId()).exec();
     }
 
     /** Spring 컨텍스트 없이 쓰는 클라이언트(품질 테스트용). */
