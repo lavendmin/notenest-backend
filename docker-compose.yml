@@ -13,6 +13,22 @@ services:
     volumes:
       - ./mariadb:/var/lib/mysql
 
+  # [NB5] 검색 read model — Elasticsearch 8.11.1 + Nori (docker/elasticsearch/Dockerfile).
+  # 로컬 단일 노드 전용 설정이다: 보안(xpack.security)을 끄고 인증 없이 9201 로 연다 — 운영 권장 설정이 아니다.
+  # 힙은 512MB 로 고정하고 컨테이너 메모리 상한을 1GB 로 둔다. 데이터 볼륨은 두지 않는다(색인은 DB 에서 다시 만든다).
+  # 이 서비스만 띄운다: docker compose up -d --build notenest-es
+  notenest-es:
+    container_name: notenest-es
+    build: ./docker/elasticsearch
+    image: notenest-es:8.11.1-nori
+    ports:
+      - "9201:9200"
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+    mem_limit: 1g
+
   # 로컬 가짜 SMTP — 이메일 인증/낙찰 메일을 실제 발송 없이 수신 (웹 UI: http://localhost:5001)
   notenest-smtp:
     container_name: notenest-smtp

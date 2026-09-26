@@ -122,15 +122,12 @@ def q(v):
     return "'" + str(v).replace("\\", "\\\\").replace("'", "''") + "'"
 
 
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--total", type=int, required=True, help="전체 곡 수(평가 코퍼스 + filler)")
-    args = ap.parse_args()
-
+def build_songs(total: int):
+    """평가 코퍼스 + filler 를 만들고 등록 시각(created)·키 코드를 채운다. SQL 적재와 검색 스파이크가 같은 문서를 쓰도록 공유한다."""
     corpus = load_corpus()
-    if args.total < len(corpus):
+    if total < len(corpus):
         sys.exit(f"--total 은 평가 코퍼스 수({len(corpus)}) 이상이어야 합니다")
-    fillers = filler_rows(args.total - len(corpus))
+    fillers = filler_rows(total - len(corpus))
     for s, (bpm, key) in zip(fillers, filler_attributes(len(fillers))):
         s["bpm"], s["key_code"] = bpm, key
     for s in corpus:
@@ -139,7 +136,18 @@ def main():
 
     ranked = sorted(songs, key=lambda s: hash_rank_key(s["id"]))
     step = timedelta(seconds=max(1, (7 * 24 * 3600) // len(ranked)))
-    created = {s["id"]: BASE_TIME + step * idx for idx, s in enumerate(ranked)}
+    for idx, s in enumerate(ranked):
+        s["created"] = BASE_TIME + step * idx
+    return songs
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--total", type=int, required=True, help="전체 곡 수(평가 코퍼스 + filler)")
+    args = ap.parse_args()
+
+    songs = build_songs(args.total)
+    created = {s["id"]: s["created"] for s in songs}
 
     sys.stdout.reconfigure(encoding="utf-8")  # Windows 기본 콘솔 인코딩(cp949) 대신 UTF-8 로 출력
     out = sys.stdout
