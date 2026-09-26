@@ -127,17 +127,40 @@ class MusicSearchBootstrapIT {
 
     // 설정은 반드시 커맨드라인 인자(--key=value)로 넘긴다. SpringApplicationBuilder.properties() 는 "기본값"(최하위 우선순위)이라
     // application-local.properties 의 datasource(로컬 notenest DB)·ddl-auto 에 덮인다 — 실제로 그렇게 로컬 DB 에 행이 들어간 적이 있다.
-    // 기동 직후 실제 연결 대상을 확인해, 다르면 아무것도 쓰기 전에 멈춘다.
+    // 가드는 ApplicationContextInitializer 로 둔다: 환경(커맨드라인 인자 포함)이 확정된 뒤, 빈 생성 전에 실행되므로
+    // 전용 DB·전용 색인이 아니면 Hibernate DDL(ddl-auto)·데이터 쓰기·ES 접근이 일어나기 전에 기동을 멈춘다.
     private static ConfigurableApplicationContext start(String[] properties) {
         String[] args = java.util.Arrays.stream(properties).map(p -> "--" + p).toArray(String[]::new);
-        ConfigurableApplicationContext context = new SpringApplicationBuilder(NoteNestApplication.class).run(args);
-        String url = context.getEnvironment().getProperty("spring.datasource.url");
+        return new SpringApplicationBuilder(NoteNestApplication.class)
+                .initializers(context -> requireIsolatedTargets(context.getEnvironment()))
+                .run(args);
+    }
+
+    static void requireIsolatedTargets(org.springframework.core.env.Environment env) {
+        String url = env.getProperty("spring.datasource.url");
         if (url == null || !url.contains("/notenest_es_boot_it?")) {
-            context.close();
-            throw new IllegalStateException("테스트 전용 DB 가 아닌 곳에 연결됨: " + url);
+            throw new IllegalStateException("테스트 전용 DB 가 아닌 곳으로 기동하려 함 — JPA 초기화 전에 중단: " + url);
         }
-        assertThat(context.getEnvironment().getProperty("notenest.search.index")).isEqualTo(INDEX);
-        return context;
+        if (!INDEX.equals(env.getProperty("notenest.search.index"))) {
+            throw new IllegalStateException("테스트 전용 색인이 아님: " + env.getProperty("notenest.search.index"));
+        }
+    }
+
+    @Test
+    @DisplayName("가드: 전용 DB 가 아니면 빈 생성(JPA·DDL) 전에 기동이 중단된다")
+    void guardStopsBeforeJpaInitialization() {
+        String[] wrongDb = java.util.Arrays.stream(properties("create", false))
+                .map(p -> p.startsWith("spring.datasource.url=")
+                        ? "spring.datasource.url=jdbc:mariadb://localhost:1/not_the_test_db?serverTimezone=Asia/Seoul" : p)
+                .map(p -> "--" + p).toArray(String[]::new);
+        long start = System.nanoTime();
+        assertThatThrownBy(() -> new SpringApplicationBuilder(NoteNestApplication.class)
+                .initializers(context -> requireIsolatedTargets(context.getEnvironment()))
+                .run(wrongDb))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("JPA 초기화 전에 중단");
+        // 포트 1 의 DB 에 접속을 시도했다면 연결 실패 예외가 났을 것이다 — 가드 예외라는 것은 DataSource·Hibernate 전에 멈췄다는 뜻
+        assertThat((System.nanoTime() - start) / 1_000_000).isLessThan(10_000);
     }
 
     private static User user(String email, String nickname) {
