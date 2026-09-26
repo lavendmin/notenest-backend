@@ -26,14 +26,12 @@ public class MusicRepositoryCustomImpl implements MusicRepositoryCustom {
     }
 
     @Override
-    public Page<MusicSummaryDTO> searchSummaries(
-            String majorGenre, String hashtags, Long minPrice, Long maxPrice,
-            String searchTerm, String sortBy, Pageable pageable) {
+    public Page<MusicSummaryDTO> searchSummaries(MusicListCondition condition, String sortBy, Pageable pageable) {
 
         QMusic m = QMusic.music;
         QUser u = QUser.user;
 
-        BooleanBuilder where = buildWhere(m, u, majorGenre, hashtags, minPrice, maxPrice, searchTerm);
+        BooleanBuilder where = buildWhere(m, u, condition);
 
         // 페이지 본문 — 미디어 바이트는 DB 에 없다. 커버는 객체 키만 조회해 URL 로 바꾼다.
         List<MusicSummaryDTO> rows = queryFactory
@@ -74,8 +72,12 @@ public class MusicRepositoryCustomImpl implements MusicRepositoryCustom {
         return Sort.by(Sort.Direction.DESC, "createdAt");
     }
 
-    private BooleanBuilder buildWhere(QMusic m, QUser u, String majorGenre, String hashtags,
-                                      Long minPrice, Long maxPrice, String searchTerm) {
+    private BooleanBuilder buildWhere(QMusic m, QUser u, MusicListCondition condition) {
+        String majorGenre = condition.majorGenre();
+        String hashtags = condition.hashtags();
+        Long minPrice = condition.minPrice();
+        Long maxPrice = condition.maxPrice();
+        String searchTerm = condition.searchTerm();
         BooleanBuilder where = new BooleanBuilder();
         where.and(m.status.eq(0)); // 진행 중인 곡만
 
@@ -108,6 +110,17 @@ public class MusicRepositoryCustomImpl implements MusicRepositoryCustom {
             where.and(price.goe(minPrice));
         } else if (maxPrice != null) {
             where.and(price.loe(maxPrice));
+        }
+
+        // [NB5] BPM 포함 범위·키 정확 일치. 값이 없는(null) 곡은 필터가 있으면 비교가 거짓이라 제외된다.
+        if (condition.bpmMin() != null) {
+            where.and(m.bpm.goe(condition.bpmMin()));
+        }
+        if (condition.bpmMax() != null) {
+            where.and(m.bpm.loe(condition.bpmMax()));
+        }
+        if (condition.musicalKey() != null) {
+            where.and(m.musicalKey.eq(condition.musicalKey()));
         }
 
         return where;

@@ -7,6 +7,7 @@ import com.notenest.dto.MusicDTO;
 import com.notenest.dto.MusicDetailDTO;
 import com.notenest.dto.MusicSummaryDTO;
 import com.notenest.dto.UpdateMusicDTO;
+import com.notenest.repository.MusicListCondition;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -28,8 +29,7 @@ public interface MusicService {
     MusicDetailDTO getMusicDetail(UUID musicUuid);
 
     Page<MusicSummaryDTO> getAllMusicByFilters(
-            String majorGenre, String hashtags, Long minPrice, Long maxPrice,
-            Pageable pageable, String sortBy, String loggedInUserEmail, String searchTerm);
+            MusicListCondition condition, Pageable pageable, String sortBy, String loggedInUserEmail);
 
     Page<MusicDTO> getMusicByUser(Pageable pageable, String loggedInUserEmail, String searchTerm, String sortBy);
 }

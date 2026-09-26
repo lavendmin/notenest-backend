@@ -21,6 +21,8 @@ public class MusicDetailDTO {
     private Integer musicPeriod;
     private String details;
     private String hashtag;
+    private Integer bpm;          // [NB5] 없으면 JSON 에서 빠진다(non_null)
+    private String musicalKey;    // [NB5] enum 이름(A_MINOR 등)
     // 커버·미리듣기는 만료 시간 있는 URL. 미리듣기가 없는 기존 곡은 previewUrl 이 null 이다(전체 데모로 대체하지 않는다).
     private String coverUrl;
     private String previewUrl;
@@ -44,6 +46,8 @@ public class MusicDetailDTO {
         musicDetailDTO.setMusicPeriod(music.getMusicPeriod());
         musicDetailDTO.setDetails(music.getDetails());
         musicDetailDTO.setHashtag(music.getHashtag());
+        musicDetailDTO.setBpm(music.getBpm());
+        musicDetailDTO.setMusicalKey(music.getMusicalKey() == null ? null : music.getMusicalKey().name());
         musicDetailDTO.setCoverUrl(mediaUrls.coverUrl(music.getCover()));
         musicDetailDTO.setPreviewUrl(mediaUrls.previewUrl(music.getPreview()));
 

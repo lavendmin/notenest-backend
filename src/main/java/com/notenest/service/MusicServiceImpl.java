@@ -1,8 +1,10 @@
 package com.notenest.service;
 
+import com.notenest.domain.Bpm;
 import com.notenest.domain.Composer;
 import com.notenest.domain.MediaObject;
 import com.notenest.domain.Music;
+import com.notenest.domain.MusicalKey;
 import com.notenest.domain.User;
 import com.notenest.dto.BidListDTO;
 import com.notenest.dto.CreateMusicDTO;
@@ -13,6 +15,7 @@ import com.notenest.dto.UpdateMusicDTO;
 import com.notenest.payment.KrwAmounts;
 import com.notenest.repository.BidRepository;
 import com.notenest.repository.LikeRepository;
+import com.notenest.repository.MusicListCondition;
 import com.notenest.repository.MusicRepository;
 import com.notenest.repository.UserRepository;
 import com.notenest.storage.MediaAssetType;
@@ -102,6 +105,9 @@ public class MusicServiceImpl implements MusicService {
         if (createMusicDTO.getShowAllBids() == null) {
             throw new IllegalArgumentException("입찰 공개 여부를 선택하세요.");
         }
+        // [NB5] 선택 속성 — 형식이 틀리면 파일을 올리기 전에 거부한다(400).
+        Integer bpm = Bpm.requireValidOrNull(createMusicDTO.getBpm(), "bpm");
+        MusicalKey musicalKey = MusicalKey.parseOrNull(createMusicDTO.getMusicalKey());
 
         // 파일 검증은 업로드보다 먼저 한다 — 하나라도 규칙을 어기면 아무것도 올리지 않는다. 미리듣기는 신규 곡 필수.
         List<MusicMediaStorage.Upload> uploads = List.of(
@@ -120,6 +126,8 @@ public class MusicServiceImpl implements MusicService {
         // 최고 입찰가는 서버가 초기화한다(클라이언트 입력 무시) — 곡 생성으로 상한 초과 최고가를 심어
         // 입찰 범위 검증을 우회하는 것을 막는다. 실제 최고가는 입찰(createBid)에서만 갱신된다.
         music.setCurrentHighestBid(null);
+        music.setBpm(bpm);
+        music.setMusicalKey(musicalKey);
 
         try {
             // 작곡가 정보 가져오기
@@ -196,6 +204,10 @@ public class MusicServiceImpl implements MusicService {
             throw new IllegalArgumentException("해당 곡의 작성자만 수정할 수 있습니다.");
         }
 
+        // [NB5] BPM·키는 첫 입찰 후에도 수정할 수 있다(곡 설명 메타데이터). 형식 검증은 파일 업로드보다 먼저 한다.
+        Integer bpm = Bpm.requireValidOrNull(updateMusicDTO.getBpm(), "bpm");
+        MusicalKey musicalKey = MusicalKey.parseOrNull(updateMusicDTO.getMusicalKey());
+
         // 첫 입찰 발생 후 전체 데모 교체 금지 — 입찰자가 검토한 곡과 거래 대상이 달라지지 않게 한다.
         if (fullDemo != null && bidRepository.existsByMusic(music)) {
             throw new IllegalStateException("입찰이 시작된 곡은 전체 데모를 교체할 수 없습니다.");
@@ -225,6 +237,13 @@ public class MusicServiceImpl implements MusicService {
         }
         if (updateMusicDTO.getShowAllBids() != null) {
             music.setShowAllBids(updateMusicDTO.getShowAllBids());
+        }
+        // null(또는 빈 키)은 "변경 없음" — P0 에서는 값을 지우는 요청을 두지 않는다.
+        if (bpm != null) {
+            music.setBpm(bpm);
+        }
+        if (musicalKey != null) {
+            music.setMusicalKey(musicalKey);
         }
 
         // 새 키로 올린다(옛 객체를 덮어쓰지 않음). 업로드 중 실패하면 MusicMediaStorage 가 새로 올린 것만 지운다.
@@ -276,12 +295,10 @@ public class MusicServiceImpl implements MusicService {
     // 공개 경매 곡 목록 — 무필터·검색·필터·정렬 전 분기가 이 단일 경로(QueryDSL 프로젝션)를 탄다.
     @Override
     public Page<MusicSummaryDTO> getAllMusicByFilters(
-            String majorGenre, String hashtags, Long minPrice, Long maxPrice,
-            Pageable pageable, String sortBy, String loggedInUserEmail, String searchTerm) {
+            MusicListCondition condition, Pageable pageable, String sortBy, String loggedInUserEmail) {
 
         // QueryDSL DTO 프로젝션 — 엔티티(LOB) 대신 목록에 필요한 컬럼만 SELECT (audio 제외, image 포함).
-        Page<MusicSummaryDTO> page = musicRepository.searchSummaries(
-                majorGenre, hashtags, minPrice, maxPrice, searchTerm, sortBy, pageable);
+        Page<MusicSummaryDTO> page = musicRepository.searchSummaries(condition, sortBy, pageable);
         // 커버 키가 있는 곡은 URL 로 준다(서명은 로컬 계산이라 곡마다 네트워크 호출은 없다).
         page.forEach(dto -> dto.setCoverUrl(mediaUrlIssuer.coverUrl(dto.getCoverObjectKey())));
 

@@ -1,0 +1,48 @@
+# nb5-01 적용: notenest_nb5 재생성 후(ddl-auto 가 컬럼 생성, 10,000곡 적재 상태) — 2026-09-26
+# 참고: 재생성 전 기존 notenest_nb5.music 에서는 STEP 3(CHECK 추가, 테이블 복사)이 Windows 바인드 마운트 rename 오류(errno 194)로 실패했다 — phase1 보고서 참고
++------------+
+| music_rows |
++------------+
+|      10000 |
++------------+
++----------------+
+| already_exists |
++----------------+
+| bpm            |
+| musical_key    |
++----------------+
+--------------
+ALTER TABLE music
+    ADD CONSTRAINT IF NOT EXISTS chk_music_bpm_range CHECK (bpm IS NULL OR bpm BETWEEN 40 AND 250),
+    ADD CONSTRAINT IF NOT EXISTS chk_music_musical_key CHECK (musical_key IS NULL OR musical_key IN (
+        'C_MAJOR', 'D_FLAT_MAJOR', 'D_MAJOR', 'E_FLAT_MAJOR', 'E_MAJOR', 'F_MAJOR',
+        'F_SHARP_MAJOR', 'G_MAJOR', 'A_FLAT_MAJOR', 'A_MAJOR', 'B_FLAT_MAJOR', 'B_MAJOR',
+        'C_MINOR', 'C_SHARP_MINOR', 'D_MINOR', 'E_FLAT_MINOR', 'E_MINOR', 'F_MINOR',
+        'F_SHARP_MINOR', 'G_MINOR', 'G_SHARP_MINOR', 'A_MINOR', 'B_FLAT_MINOR', 'B_MINOR'))
+--------------
+
+ERROR 1025 (HY000) at line 34: Error on rename of './notenest_nb5/music' to './notenest_nb5/#sql-backup-1-15d' (errno: 194 "Tablespace is missing for a table")
+# 재실행(멱등)
++------------+
+| music_rows |
++------------+
+|      10000 |
++------------+
++----------------+
+| already_exists |
++----------------+
+| bpm            |
+| musical_key    |
++----------------+
+--------------
+ALTER TABLE music
+    ADD CONSTRAINT IF NOT EXISTS chk_music_bpm_range CHECK (bpm IS NULL OR bpm BETWEEN 40 AND 250),
+    ADD CONSTRAINT IF NOT EXISTS chk_music_musical_key CHECK (musical_key IS NULL OR musical_key IN (
+        'C_MAJOR', 'D_FLAT_MAJOR', 'D_MAJOR', 'E_FLAT_MAJOR', 'E_MAJOR', 'F_MAJOR',
+        'F_SHARP_MAJOR', 'G_MAJOR', 'A_FLAT_MAJOR', 'A_MAJOR', 'B_FLAT_MAJOR', 'B_MAJOR',
+        'C_MINOR', 'C_SHARP_MINOR', 'D_MINOR', 'E_FLAT_MINOR', 'E_MINOR', 'F_MINOR',
+        'F_SHARP_MINOR', 'G_MINOR', 'G_SHARP_MINOR', 'A_MINOR', 'B_FLAT_MINOR', 'B_MINOR'))
+--------------
+
+ERROR 1025 (HY000) at line 34: Error on rename of './notenest_nb5/music' to './notenest_nb5/#sql-backup-1-15e' (errno: 194 "Tablespace is missing for a table")
+# 제약 확인: 범위 밖 값 UPDATE 거부

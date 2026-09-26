@@ -4,7 +4,8 @@
 - 성능용 곡: 고정 시드 난수로 만든 filler. --total 로 전체 곡 수(평가 + filler)를 정한다.
 
 출력 SQL 은 항상 `notenest_nb5` 스키마만 대상으로 한다(USE 고정). 기존 `notenest` DB 는 건드리지 않는다.
-bpm·key 는 아직 스키마에 없으므로 적재하지 않는다(Phase 1 스키마 확정 후 사용할 정답 속성).
+[Phase 1] bpm·musical_key 를 함께 적재한다(nb5-01 스키마). 평가 곡은 설계 속성, filler 는 별도 시드의 결정적 값이다.
+filler 의 제목·가격 등은 Phase 0 과 같은 난수열을 쓰므로 Phase 0 filler 와 동일하다(속성만 추가).
 
 사용법 (레포 루트):
   python scripts/nb5/nb5_corpus.py --total 57    > build/nb5/eval-only.sql
@@ -25,6 +26,7 @@ CORPUS = ROOT / "docs" / "nb5" / "eval" / "corpus-v0.jsonl"
 TARGET_DB = "notenest_nb5"
 NS = uuid.UUID("5b1d6c3e-0e0a-4b5e-9f3a-6e6b0c0d0b05")  # NB5 코퍼스 전용 네임스페이스
 FILLER_SEED = 20260926
+ATTR_SEED = 20260927  # filler BPM·키 — FILLER_SEED 난수열을 건드리지 않도록 분리
 BASE_TIME = datetime(2026, 9, 1, 0, 0, 0)
 ONGOING_END = "2030-12-31 00:00:00"
 ENDED_END = "2026-09-01 00:00:00"
@@ -39,6 +41,33 @@ EN_WORDS = ["Love", "Night", "Dream", "Blue", "Light", "Road", "Heart", "Summer"
             "Fire", "Wave", "Moon", "City", "Home"]
 KO_SUB = ["감성 발라드", "미디엄 템포 팝", "그루브한 비트", "밝은 댄스곡", "쓸쓸한 어쿠스틱",
           "트로트 메들리", "몽환적인 신스", "잔잔한 연주곡"]
+
+
+# com.notenest.domain.MusicalKey 와 같은 순서(음높이 0~11)
+MAJOR_CODES = ["C_MAJOR", "D_FLAT_MAJOR", "D_MAJOR", "E_FLAT_MAJOR", "E_MAJOR", "F_MAJOR",
+               "F_SHARP_MAJOR", "G_MAJOR", "A_FLAT_MAJOR", "A_MAJOR", "B_FLAT_MAJOR", "B_MAJOR"]
+MINOR_CODES = ["C_MINOR", "C_SHARP_MINOR", "D_MINOR", "E_FLAT_MINOR", "E_MINOR", "F_MINOR",
+               "F_SHARP_MINOR", "G_MINOR", "G_SHARP_MINOR", "A_MINOR", "B_FLAT_MINOR", "B_MINOR"]
+PITCH = {"C": 0, "C#": 1, "Db": 1, "D": 2, "D#": 3, "Eb": 3, "E": 4, "F": 5, "F#": 6, "Gb": 6,
+         "G": 7, "G#": 8, "Ab": 8, "A": 9, "A#": 10, "Bb": 10, "B": 11}
+
+
+def key_code(short):
+    """코퍼스의 짧은 표기(Am, F#m, Eb …)를 enum 이름으로. 코퍼스 표기는 QrelsIntegrityTest 가 Java 파서로도 검증한다."""
+    if short is None:
+        return None
+    minor = short.endswith("m")
+    return (MINOR_CODES if minor else MAJOR_CODES)[PITCH[short[:-1] if minor else short]]
+
+
+def filler_attributes(count: int):
+    rng = random.Random(ATTR_SEED)
+    attrs = []
+    for _ in range(count):
+        bpm = rng.randint(60, 180) if rng.random() >= 0.15 else None  # 15% 는 값 없는 기존 곡
+        key = rng.choice(MAJOR_CODES + MINOR_CODES) if rng.random() >= 0.2 else None
+        attrs.append((bpm, key))
+    return attrs
 
 
 def music_uuid(song_id: str) -> str:
@@ -101,7 +130,12 @@ def main():
     corpus = load_corpus()
     if args.total < len(corpus):
         sys.exit(f"--total 은 평가 코퍼스 수({len(corpus)}) 이상이어야 합니다")
-    songs = corpus + filler_rows(args.total - len(corpus))
+    fillers = filler_rows(args.total - len(corpus))
+    for s, (bpm, key) in zip(fillers, filler_attributes(len(fillers))):
+        s["bpm"], s["key_code"] = bpm, key
+    for s in corpus:
+        s["key_code"] = key_code(s["key"])
+    songs = corpus + fillers
 
     ranked = sorted(songs, key=lambda s: hash_rank_key(s["id"]))
     step = timedelta(seconds=max(1, (7 * 24 * 3600) // len(ranked)))
@@ -123,7 +157,7 @@ def main():
 
     cols = ("music_uuid, auction_end_time, auction_failure_email_sent, created_at, current_highest_bid, details, hashtag, "
             "hit_song_composer, like_count, major_genre, music_period, popular_composer, show_all_bids, starting_price, "
-            "status, steady_work_composer, subtitle, title, user_uuid, cover_object_key, cover_content_type")
+            "status, steady_work_composer, subtitle, title, user_uuid, cover_object_key, cover_content_type, bpm, musical_key")
     for chunk in range(0, len(songs), 500):
         vals = []
         for s in songs[chunk:chunk + 500]:
@@ -139,6 +173,7 @@ def main():
                 q(s["status"]), "0",
                 q(s["subtitle"]), q(s["title"]), q(user_uuid(s["seller"])),
                 q(COVER_KEY), q("image/jpeg"),
+                q(s["bpm"]), q(s["key_code"]),
             ]) + ")")
         out.write(f"INSERT INTO music ({cols}) VALUES\n" + ",\n".join(vals) + ";\n")
     out.write("COMMIT;\n")

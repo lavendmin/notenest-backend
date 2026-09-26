@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.notenest.domain.Likes;
 import com.notenest.domain.MediaObject;
 import com.notenest.domain.Music;
+import com.notenest.domain.MusicalKey;
 import com.notenest.domain.User;
 import com.notenest.repository.BidRepository;
 import com.notenest.repository.LikeRepository;
@@ -72,6 +73,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * F  | zeta track    | composer-b | POP  | #seed          | 10000 | 12000 | 4     | 10         |
  * G  | ended song    | composer-a | POP  | #seed          | 10000 | 11000 | 9     | 5          |   (status=1 마감 → 제외)
  * </pre>
+ *
+ * [NB5] BPM·키(검색 필터)와 상세 설명: A 90 A_MINOR / B 120 C_MAJOR / C 없음 / D 95 A_MINOR /
+ *       E 140 F_SHARP_MINOR, 상세 설명 qq-details-only-qq / F 88 키 없음 / G 90 A_MINOR(마감).
  *
  * 인증: JWT 필터를 끄고(@AutoConfigureMockMvc(addFilters=false)) @WithMockUser 로
  *       SecurityContext 의 name 을 bidder 이메일로 채운다 → 서비스가 findByEmail 로 조회해 좋아요 여부를 채운다.
@@ -166,7 +170,23 @@ class MusicFilterContractTest {
 
             like(bidder, a);
             like(bidder, c);
+
+            setAttributes(a, 90, MusicalKey.A_MINOR, null);
+            setAttributes(b, 120, MusicalKey.C_MAJOR, null);
+            setAttributes(d, 95, MusicalKey.A_MINOR, null);
+            setAttributes(e, 140, MusicalKey.F_SHARP_MINOR, "qq-details-only-qq");
+            setAttributes(f, 88, null, null);
+            setAttributes(g, 90, MusicalKey.A_MINOR, null);
         });
+    }
+
+    private void setAttributes(UUID id, Integer bpm, MusicalKey key, String details) {
+        entityManager.createQuery("update Music m set m.bpm = :bpm, m.musicalKey = :key, m.details = :details where m.musicUuid = :id")
+                .setParameter("bpm", bpm)
+                .setParameter("key", key)
+                .setParameter("details", details)
+                .setParameter("id", id)
+                .executeUpdate();
     }
 
     // --- 픽스처 헬퍼 ---
@@ -252,6 +272,14 @@ class MusicFilterContractTest {
         for (var entry : params.entrySet()) req = req.param(entry.getKey(), entry.getValue());
         MvcResult res = mockMvc.perform(req).andExpect(status().isOk()).andReturn();
         return objectMapper.readTree(res.getResponse().getContentAsByteArray());
+    }
+
+    // 400 이 기대되는 요청 — 본문 message 를 돌려준다.
+    private String getFilterExpectingBadRequest(Map<String, String> params) throws Exception {
+        var req = get(FILTER).with(r -> { r.setRemoteUser(BIDDER); return r; });
+        for (var entry : params.entrySet()) req = req.param(entry.getKey(), entry.getValue());
+        MvcResult res = mockMvc.perform(req).andExpect(status().isBadRequest()).andReturn();
+        return res.getResponse().getContentAsString(StandardCharsets.UTF_8);
     }
 
     // 응답 content 의 musicUuid 를 순서 있는 리스트 / 집합으로 — 결과 집합·순서 비교용.
@@ -513,5 +541,109 @@ class MusicFilterContractTest {
         assertThat(q6).as("size=6 likes 쿼리").isLessThanOrEqualTo(1);
         assertThat(q3).as("페이지 크기와 무관하게 일정").isEqualTo(q1);
         assertThat(q6).as("페이지 크기와 무관하게 일정").isEqualTo(q1);
+    }
+
+    // --- [NB5] 검색어 경로 기능 동등성: Phase 3 에서 검색 엔진으로 옮길 때 유지해야 할 계약 ---
+
+    @Test
+    @DisplayName("[NB5] 검색어 + 가격·장르·해시태그 필터는 AND 로 결합된다")
+    void search_combinesWithFilters() throws Exception {
+        assertThat(uuidSet(getFilterWith(Map.of("searchTerm", "song", "maxPrice", "30000", "size", ONE_PAGE)))).containsExactly(d);
+        assertThat(uuidSet(getFilterWith(Map.of("searchTerm", "track", "majorGenre", "POP", "size", ONE_PAGE)))).containsExactly(f);
+        assertThat(uuidSet(getFilterWith(Map.of("searchTerm", "composer-a", "hashtag", "#seed", "size", ONE_PAGE))))
+                .containsExactlyInAnyOrder(a, b);
+    }
+
+    @Test
+    @DisplayName("[NB5] 검색어가 있어도 명시한 정렬(최신·가격·좋아요)이 그대로 적용된다")
+    void search_honorsExplicitSort() throws Exception {
+        assertThat(uuidList(getFilterWith(Map.of("searchTerm", "song", "sortBy", "latest")))).containsExactly(d, c, b, a);
+        assertThat(uuidList(getFilterWith(Map.of("searchTerm", "song", "sortBy", "price")))).containsExactly(b, a, c, d);
+        assertThat(uuidList(getFilterWith(Map.of("searchTerm", "song", "sortBy", "like")))).containsExactly(a, b, c, d);
+    }
+
+    @Test
+    @DisplayName("[NB5] 검색 결과도 페이지 계약(size·page·totalElements·totalPages·sort)과 좋아요 여부를 유지한다")
+    void search_keepsPageAndLikeContract() throws Exception {
+        JsonNode page0 = getFilterWith(Map.of("searchTerm", "song", "sortBy", "latest", "size", "3", "page", "0"));
+        JsonNode page1 = getFilterWith(Map.of("searchTerm", "song", "sortBy", "latest", "size", "3", "page", "1"));
+        assertThat(uuidList(page0)).containsExactly(d, c, b);
+        assertThat(uuidList(page1)).containsExactly(a);
+        assertThat(page0.path("totalElements").asLong()).isEqualTo(4);
+        assertThat(page0.path("totalPages").asInt()).isEqualTo(2);
+        assertThat(page0.path("sort").path("sorted").asBoolean()).isTrue();
+
+        Map<UUID, Boolean> liked = new HashMap<>();
+        for (JsonNode el : getFilterWith(Map.of("searchTerm", "song", "size", ONE_PAGE)).path("content")) {
+            liked.put(UUID.fromString(el.path("musicUuid").asText()), el.path("likedByUser").asBoolean());
+        }
+        assertThat(liked).containsOnly(Map.entry(a, true), Map.entry(b, false), Map.entry(c, true), Map.entry(d, false));
+    }
+
+    @Test
+    @DisplayName("[NB5] 검색어로도 마감 곡은 나오지 않는다")
+    void search_excludesEndedMusic() throws Exception {
+        assertThat(getFilterWith(Map.of("searchTerm", "ended")).path("totalElements").asLong()).isZero();
+    }
+
+    @Test
+    @DisplayName("[NB5] 공백뿐인 검색어는 검색하지 않은 것과 같고, 대소문자는 구분하지 않는다")
+    void search_blankTermAndCaseInsensitivity() throws Exception {
+        assertThat(getFilterWith(Map.of("searchTerm", "   ")).path("totalElements").asLong()).isEqualTo(ONGOING_COUNT);
+        assertThat(uuidSet(getFilterWith(Map.of("searchTerm", "ALPHA SONG")))).containsExactly(a);
+    }
+
+    @Test
+    @DisplayName("[NB5] 검색어의 % · _ 는 와일드카드가 아니라 문자 그대로다")
+    void search_escapesLikeWildcards() throws Exception {
+        assertThat(getFilterWith(Map.of("searchTerm", "%")).path("totalElements").asLong()).isZero();
+        assertThat(getFilterWith(Map.of("searchTerm", "_")).path("totalElements").asLong()).isZero();
+    }
+
+    @Test
+    @DisplayName("[NB5] 현재 계약: 상세 설명(details)은 검색 대상이 아니다 — 결정 1 에 따라 Phase 3 검색 엔진 경로에서 신규 대상이 된다")
+    void search_doesNotMatchDetailsInCurrentContract() throws Exception {
+        assertThat(getFilterWith(Map.of("searchTerm", "qq-details-only-qq")).path("totalElements").asLong()).isZero();
+    }
+
+    // --- [NB5] BPM·키 필터 ---
+
+    @Test
+    @DisplayName("[NB5] BPM 포함 범위 필터 — 값 없는 곡(C)은 제외, 한쪽 경계만도 가능")
+    void bpmRangeFilter() throws Exception {
+        assertThat(uuidSet(getFilterWith(Map.of("bpmMin", "88", "bpmMax", "95", "size", ONE_PAGE)))).containsExactlyInAnyOrder(a, d, f);
+        assertThat(uuidSet(getFilterWith(Map.of("bpmMin", "120", "size", ONE_PAGE)))).containsExactlyInAnyOrder(b, e);
+        assertThat(uuidSet(getFilterWith(Map.of("bpmMax", "89", "size", ONE_PAGE)))).containsExactly(f);
+        assertThat(uuidSet(getFilterWith(Map.of("bpmMin", "90", "bpmMax", "90", "size", ONE_PAGE)))).containsExactly(a);
+    }
+
+    @Test
+    @DisplayName("[NB5] 키 정확 일치 필터 — 영문 표기와 enum 이름이 같은 결과, 값 없는 곡은 제외")
+    void musicalKeyFilter() throws Exception {
+        for (String key : List.of("Am", "A minor", "a min", "A_MINOR")) {
+            assertThat(uuidSet(getFilterWith(Map.of("musicalKey", key, "size", ONE_PAGE)))).as(key).containsExactlyInAnyOrder(a, d);
+        }
+        assertThat(uuidSet(getFilterWith(Map.of("musicalKey", "C", "size", ONE_PAGE)))).containsExactly(b);
+        assertThat(uuidSet(getFilterWith(Map.of("musicalKey", "Gbm", "size", ONE_PAGE)))).containsExactly(e);
+    }
+
+    @Test
+    @DisplayName("[NB5] BPM·키 필터는 검색어·가격·정렬과 결합된다")
+    void bpmAndKeyCombineWithSearchAndSort() throws Exception {
+        assertThat(uuidList(getFilterWith(Map.of("searchTerm", "song", "musicalKey", "Am", "sortBy", "latest")))).containsExactly(d, a);
+        assertThat(uuidSet(getFilterWith(Map.of("searchTerm", "song", "musicalKey", "Am", "bpmMax", "92")))).containsExactly(a);
+        assertThat(uuidSet(getFilterWith(Map.of("bpmMin", "88", "maxPrice", "30000", "size", ONE_PAGE)))).containsExactlyInAnyOrder(d, e, f);
+    }
+
+    @Test
+    @DisplayName("[NB5] 잘못된 BPM·키 필터는 조용히 무시하지 않고 400 으로 거부한다")
+    void invalidAttributeFiltersAreRejected() throws Exception {
+        assertThat(getFilterExpectingBadRequest(Map.of("bpmMin", "39"))).contains("bpmMin");
+        assertThat(getFilterExpectingBadRequest(Map.of("bpmMax", "251"))).contains("bpmMax");
+        assertThat(getFilterExpectingBadRequest(Map.of("bpmMin", "100", "bpmMax", "90"))).contains("bpmMin");
+        assertThat(getFilterExpectingBadRequest(Map.of("musicalKey", "AM"))).contains("모호");
+        assertThat(getFilterExpectingBadRequest(Map.of("musicalKey", "라단조"))).contains("musicalKey");
+        mockMvc.perform(get(FILTER).param("bpmMin", "90.5")).andExpect(status().isBadRequest());
+        mockMvc.perform(get(FILTER).param("bpmMin", "fast")).andExpect(status().isBadRequest());
     }
 }

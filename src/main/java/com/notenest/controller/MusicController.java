@@ -5,6 +5,8 @@ import com.notenest.dto.MusicDTO;
 import com.notenest.dto.MusicDetailDTO;
 import com.notenest.dto.MusicSummaryDTO;
 import com.notenest.dto.UpdateMusicDTO;
+import com.notenest.domain.InvalidMusicAttributeException;
+import com.notenest.repository.MusicListCondition;
 import com.notenest.service.LikeMusicService;
 import com.notenest.service.MusicService;
 import com.notenest.storage.InvalidMediaException;
@@ -126,15 +128,25 @@ public class MusicController {
     }
 
     @GetMapping("/filter")
-    public ResponseEntity<Page<MusicSummaryDTO>> getAllMusic(
+    public ResponseEntity<?> getAllMusic(
             @RequestParam(required = false) String majorGenre,
             @RequestParam(required = false) String hashtag,
             @RequestParam(required = false) Long minPrice,
             @RequestParam(required = false) Long maxPrice,
+            @RequestParam(required = false) Integer bpmMin,
+            @RequestParam(required = false) Integer bpmMax,
+            @RequestParam(required = false) String musicalKey,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "latest") String sortBy,
             @RequestParam(required = false) String searchTerm) {
+        MusicListCondition condition;
+        try {
+            // [NB5] BPM 범위·키 표기가 계약을 어기면 조회 전에 400 으로 거부한다(오류를 조용히 무시하지 않는다).
+            condition = MusicListCondition.of(majorGenre, hashtag, minPrice, maxPrice, bpmMin, bpmMax, musicalKey, searchTerm);
+        } catch (InvalidMusicAttributeException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
         try {
             // 목록은 비로그인에게도 공개한다. 익명 인증 토큰도 isAuthenticated()=true 라서 타입으로 구분한다.
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -145,8 +157,7 @@ public class MusicController {
 
             // 필터·검색 유무와 관계없이 단일 조회 경로(QueryDSL 프로젝션)를 탄다.
             // 조건이 없으면 sortBy 만 적용된다 — sortBy 단독 요청(예: ?sortBy=price)도 정렬이 반영된다.
-            Page<MusicSummaryDTO> musicDTOPage = musicService.getAllMusicByFilters(
-                    majorGenre, hashtag, minPrice, maxPrice, pageable, sortBy, loggedInUserEmail, searchTerm);
+            Page<MusicSummaryDTO> musicDTOPage = musicService.getAllMusicByFilters(condition, pageable, sortBy, loggedInUserEmail);
 
             return ResponseEntity.ok(musicDTOPage);
         } catch (Exception e) {

@@ -50,6 +50,15 @@ public class Music {
     @Column(name = "hashtag")
     private String hashtag;
 
+    // [NB5] 템포 — 40~250 정수(Bpm). 기존 곡은 null. 첫 입찰 후에도 수정할 수 있다.
+    @Column(name = "bpm")
+    private Integer bpm;
+
+    // [NB5] 조성 — 24개 enum 이름으로 저장. 네이티브 ENUM 대신 VARCHAR 로 둔다(값 추가 시 ALTER 불필요, nb5-01 과 일치).
+    @Enumerated(EnumType.STRING)
+    @Column(name = "musical_key", columnDefinition = "varchar(20)")
+    private MusicalKey musicalKey;
+
     // [NB1] 곡 미디어는 객체 저장소(S3, private 버킷)에 두고 DB 에는 키·메타데이터만 남긴다.
     // 예전 image/audio LOB 컬럼은 백필·대조 후 nb1-03 마이그레이션으로 삭제했다.
     @Embedded
