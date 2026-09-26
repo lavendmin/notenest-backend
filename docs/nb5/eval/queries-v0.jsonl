@@ -1,0 +1,25 @@
+{"qid": "Q01", "type": "T1_TITLE", "searchTerm": "봄비", "params": {}, "primary": ["A01"], "intent": "제목이 정확히 '봄비'인 진행 중 곡(A01)이 1위. 같은 제목의 종료 곡(A08)은 노출되지 않는다."}
+{"qid": "Q02", "type": "T1_TITLE", "searchTerm": "여름밤", "params": {}, "primary": ["B01"], "intent": "제목 '여름밤'(B01)이 1위. '한여름밤'·부제에 '여름밤'이 있는 곡은 그 아래."}
+{"qid": "Q03", "type": "T1_TITLE", "searchTerm": "여름 밤", "params": {}, "primary": ["B01", "B02"], "intent": "띄어쓰기 변형. 의도는 제목 '여름밤'(B01)과 '여름 밤의 꿈'(B02)."}
+{"qid": "Q04", "type": "T1_TITLE", "searchTerm": "Blue Hour", "params": {}, "primary": ["C01"], "intent": "제목 'Blue Hour'(C01)가 1위. 변형 제목(C02)·부제 언급(C04)은 그 아래."}
+{"qid": "Q05", "type": "T1_TITLE", "searchTerm": "BLUE HOUR", "params": {}, "primary": ["C01"], "intent": "대소문자 변형. Q04와 같은 결과여야 한다."}
+{"qid": "Q06", "type": "T1_TITLE", "searchTerm": "bluehour", "params": {}, "primary": ["C01"], "intent": "공백 누락 변형. 의도는 'Blue Hour'(C01)."}
+{"qid": "Q07", "type": "T1_TITLE", "searchTerm": "너의 이름을 부르면", "params": {}, "primary": ["D01"], "intent": "긴 제목 정확 입력. D01이 1위."}
+{"qid": "Q08", "type": "T1_TITLE", "searchTerm": "너의 이름", "params": {}, "primary": ["D01", "D03"], "intent": "제목 앞부분 입력. D01·D03이 상위."}
+{"qid": "Q09", "type": "T1_TITLE", "searchTerm": "love", "params": {}, "primary": ["E01"], "intent": "제목 'Love'(E01)가 1위. 'Glove'·'Clover'처럼 부분 문자열만 겹치는 곡은 관련이 낮다."}
+{"qid": "Q10", "type": "T2_CONDITION", "searchTerm": "비트", "params": {"majorGenre": "hiphop", "maxPrice": "200000"}, "primary": ["I02", "I03"], "intent": "힙합·현재가(없으면 시작가) 20만 원 이하·'비트' 텍스트를 모두 만족."}
+{"qid": "Q11", "type": "T2_CONDITION", "searchTerm": "힙합", "params": {"maxPrice": "200000"}, "primary": ["I01", "I02", "I03", "I05", "I07", "I08", "E04"], "intent": "한글 장르명 입력. 의도는 장르 hiphop 중 20만 원 이하."}
+{"qid": "Q12", "type": "T2_CONDITION", "searchTerm": "BPM 90", "params": {}, "primary": ["A06", "A07", "D02", "E04", "I01", "I03", "I05", "I10"], "intent": "템포 조건을 텍스트로 입력. 의도는 BPM 90 근처(예: 85~95) 곡."}
+{"qid": "Q13", "type": "T2_CONDITION", "searchTerm": "hiphop", "params": {"bpmMin": "85", "bpmMax": "95", "musicalKey": "Am"}, "primary": ["A06", "I01", "I03", "I05", "I10"], "intent": "계획한 구조화 필터(BPM 85~95, 키 A minor). 현재 API 에는 해당 파라미터가 없다 — 무시되는지 확인한다."}
+{"qid": "Q14", "type": "T2_CONDITION", "searchTerm": "120", "params": {}, "primary": ["C03", "I08"], "intent": "BPM 120 곡을 찾으려는 숫자 입력. 의도는 BPM 120(I08, C03)."}
+{"qid": "Q15", "type": "T2_CONDITION", "searchTerm": "Am", "params": {"majorGenre": "hiphop"}, "primary": ["A06", "I01", "I03", "I05", "I10"], "intent": "키 조건을 텍스트로 입력. 의도는 A minor 힙합 곡."}
+{"qid": "Q20", "type": "T3_MOOD", "searchTerm": "잔잔한 피아노", "params": {}, "primary": null, "intent": "부제·설명·태그에 잔잔한 피아노 특성이 있는 곡(G01, G02, G03, F02 등)."}
+{"qid": "Q21", "type": "T3_MOOD", "searchTerm": "신나는 댄스", "params": {}, "primary": null, "intent": "신나는 댄스 특성의 곡(H01, H02, H03 등)."}
+{"qid": "Q22", "type": "T3_MOOD", "searchTerm": "이별", "params": {}, "primary": null, "intent": "이별 주제 곡(F01, F02, F03 등)."}
+{"qid": "Q23", "type": "T3_MOOD", "searchTerm": "sad", "params": {}, "primary": null, "intent": "#sad 태그 곡. 태그 외 특성이 더 맞는 곡이 상위."}
+{"qid": "Q24", "type": "T3_MOOD", "searchTerm": "피아노 발라드", "params": {}, "primary": null, "intent": "피아노 중심 발라드(G01, D01, A01 등)."}
+{"qid": "Q25", "type": "T3_MOOD", "searchTerm": "발라드", "params": {}, "primary": null, "intent": "한글 장르명 입력. 의도는 장르 balad 곡."}
+{"qid": "Q30", "type": "T4_SELLER", "searchTerm": "새벽공방", "params": {}, "primary": ["S01", "S02", "S03", "S04"], "intent": "판매자 '새벽공방'의 진행 중 곡(S01~S04)이 상위. 종료 곡(S05)은 제외."}
+{"qid": "Q31", "type": "T4_SELLER", "searchTerm": "mint", "params": {}, "primary": ["B04", "C01", "E05", "F04", "H03", "I06"], "intent": "판매자 'MINT'의 곡이 상위. 'mintyard'·제목 'Mint Chocolate'은 그 아래."}
+{"qid": "Q32", "type": "T4_SELLER", "searchTerm": "윤슬", "params": {}, "primary": null, "intent": "의도 모호 — 판매자 '윤슬'인지 제목 '윤슬'(W01)인지. Phase 1 qrels 에서 등급 규칙을 정한다."}
+{"qid": "Q33", "type": "T4_SELLER", "searchTerm": "새벽 공방", "params": {}, "primary": ["S01", "S02", "S03", "S04"], "intent": "띄어쓰기 변형. 의도는 판매자 '새벽공방'."}

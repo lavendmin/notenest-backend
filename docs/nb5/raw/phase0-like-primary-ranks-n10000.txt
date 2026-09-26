@@ -1,0 +1,19 @@
+# N=10000, 전체 결과(size=3000, page=0)에서 primary 곡의 순위 — 2026-09-26, 608e7e0, sortBy 기본 latest
+Q01 '봄비'  total=8 {'A01': 6}
+Q02 '여름밤'  total=4 {'B01': 4}
+Q03 '여름 밤'  total=1 {'B01': None, 'B02': 1}
+Q04 'Blue Hour'  total=3 {'C01': 2}
+Q05 'BLUE HOUR'  total=3 {'C01': 2}
+Q06 'bluehour'  total=0 {'C01': None}
+Q07 '너의 이름을 부르면'  total=1 {'D01': 1}
+Q08 '너의 이름'  total=2 {'D01': 1, 'D03': 2}
+Q09 'love'  total=488 {'E01': 358}
+Q10 '비트' {'majorGenre': 'hiphop', 'maxPrice': '200000'} total=46 {'I02': 38, 'I03': 21}
+Q11 '힙합' {'maxPrice': '200000'} total=1 {'I01': None, 'I02': None, 'I03': None, 'I05': 1, 'I07': None, 'I08': None, 'E04': None}
+Q12 'BPM 90'  total=0 {'A06': None, 'A07': None, 'D02': None, 'E04': None, 'I01': None, 'I03': None, 'I05': None, 'I10': None}
+Q13 'hiphop' {'bpmMin': '85', 'bpmMax': '95', 'musicalKey': 'Am'} total=2004 {'A06': 310, 'I01': 558, 'I03': 790, 'I05': 687, 'I10': 535}
+Q14 '120'  total=40 {'C03': None, 'I08': None}
+Q15 'Am' {'majorGenre': 'hiphop'} total=151 {'A06': None, 'I01': None, 'I03': None, 'I05': None, 'I10': None}
+Q30 '새벽공방'  total=7 {'S01': 5, 'S02': 4, 'S03': 6, 'S04': 3}
+Q31 'mint'  total=10 {'B04': 2, 'C01': 5, 'E05': 1, 'F04': 7, 'H03': 6, 'I06': 4}
+Q33 '새벽 공방'  total=1 {'S01': None, 'S02': None, 'S03': None, 'S04': None}

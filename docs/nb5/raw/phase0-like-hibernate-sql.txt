@@ -1,0 +1,51 @@
+# 캡처: 2026-09-26, 코드 608e7e0, 앱 로그(org.hibernate.SQL)에서 발췌
+# 요청: GET /api/music/filter?searchTerm=봄비&size=10 (비로그인, sortBy 기본 latest)
+# 요청당 SQL 2개(본문 + count). 비로그인이라 좋아요 IN 조회는 없다.
+# 바인딩: status=0, like 5개 모두 '%봄비%' (QueryDSL contains — 입력의 % _ ! 는 '!' 로 이스케이프)
+
+-- 1) 본문
+select
+    m1_0.music_uuid,
+    m1_0.title,
+    m1_0.starting_price,
+    u1_0.nickname,
+    m1_0.current_highest_bid,
+    m1_0.auction_end_time,
+    m1_0.like_count,
+    m1_0.cover_object_key
+from
+    music m1_0
+left join
+    user u1_0
+        on u1_0.user_uuid=m1_0.user_uuid
+where
+    m1_0.status=?
+    and (
+        m1_0.title like ? escape '!'
+        or m1_0.subtitle like ? escape '!'
+        or m1_0.major_genre like ? escape '!'
+        or m1_0.hashtag like ? escape '!'
+        or u1_0.nickname like ? escape '!'
+    )
+order by
+    m1_0.created_at desc
+limit
+    ?, ?
+
+-- 2) count
+select
+    count(m1_0.music_uuid)
+from
+    music m1_0
+left join
+    user u1_0
+        on u1_0.user_uuid=m1_0.user_uuid
+where
+    m1_0.status=?
+    and (
+        m1_0.title like ? escape '!'
+        or m1_0.subtitle like ? escape '!'
+        or m1_0.major_genre like ? escape '!'
+        or m1_0.hashtag like ? escape '!'
+        or u1_0.nickname like ? escape '!'
+    )
