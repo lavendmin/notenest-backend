@@ -4,7 +4,8 @@
 filler 곡은 F##### id 로 표시된다.
 
 사용법 (레포 루트):
-  python scripts/nb5/nb5_capture.py --base http://localhost:8096 --label eval-only --out docs/nb5/raw
+  python scripts/nb5/nb5_capture.py --label eval-only --total 57                                   # Phase 0
+  python scripts/nb5/nb5_capture.py --label eval-only --total 57 --prefix phase1-like-results      # Phase 1
 """
 import argparse
 import json
@@ -27,6 +28,7 @@ def main():
     ap.add_argument("--total", type=int, required=True, help="적재한 전체 곡 수(filler id 역매핑용)")
     ap.add_argument("--size", type=int, default=10)
     ap.add_argument("--out", default=str(ROOT / "docs" / "nb5" / "raw"))
+    ap.add_argument("--prefix", default="phase0-like-results", help="출력 파일 접두사 (Phase 1: phase1-like-results)")
     args = ap.parse_args()
     sys.stdout.reconfigure(encoding="utf-8")  # Windows 기본 콘솔 인코딩(cp949) 대신 UTF-8 로 출력
 
@@ -64,7 +66,7 @@ def main():
 
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
-    (out / f"phase0-like-results-{args.label}.json").write_text(
+    (out / f"{args.prefix}-{args.label}.json").write_text(
         json.dumps(results, ensure_ascii=False, indent=1), encoding="utf-8")
 
     lines = [f"# 현재 LIKE 검색 결과 순서 — {args.label} (곡 {args.total}건, size={args.size}, 비로그인, sortBy 기본 latest)", ""]
@@ -74,7 +76,7 @@ def main():
         for t in r["top"]:
             lines.append(f"  {t['rank']:>2}. {t['id']:<6} {t['title']} / {t['seller']}")
         lines.append("")
-    (out / f"phase0-like-results-{args.label}.md").write_text("\n".join(lines), encoding="utf-8")
+    (out / f"{args.prefix}-{args.label}.md").write_text("\n".join(lines), encoding="utf-8")
     print("\n".join(lines))
 
 

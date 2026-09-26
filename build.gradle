@@ -86,3 +86,15 @@ tasks.named('test') {
     // 특성화를 돌리기 위해 힙을 넉넉히 준다.
     maxHeapSize = '2g'
 }
+
+// NB5 검색 품질 평가 — 캡처한 검색 결과(run)를 qrels-v1 로 채점한다. 기본 test 와 별개로 수동 실행한다.
+//   ./gradlew nb5Eval -Prun=docs/nb5/raw/phase1-like-results-eval-only.json -Plabel=phase1-like-eval-only
+tasks.register('nb5Eval', JavaExec) {
+    group = 'verification'
+    description = 'NB5 검색 결과(run)를 qrels 로 채점해 nDCG@5·MRR@5 를 기록한다'
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.notenest.search.eval.SearchEvalCli'
+    workingDir = projectDir
+    args = [project.findProperty('run') ?: '', project.findProperty('label') ?: 'run']
+    jvmArgs = ['-Dsun.stdout.encoding=UTF-8']
+}
