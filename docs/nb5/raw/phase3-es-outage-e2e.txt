@@ -1,0 +1,7 @@
+# Phase 3 E2E — 실행 중인 앱(8096, notenest_nb5 57곡)에서 notenest-es 를 멈춘 뒤 요청 — 2026-09-26 (curl)
+## ES 동작 중
+GET /api/music/filter?searchTerm=봄비            -> 200 0.023s
+## docker compose stop notenest-es 후
+GET /api/music/filter?searchTerm=봄비            -> 503 0.011s  {"message":"검색을 일시적으로 사용할 수 없습니다. 검색어 없이 목록을 볼 수 있습니다."}
+GET /api/music/filter?size=5 (검색어 없음)        -> 200 0.093s
+GET /api/music/filter?searchTerm=%20%20 (공백)    -> 200 0.018s
