@@ -6,6 +6,7 @@
 //
 // 비로그인 호출(목록은 공개 API). 부하 형태는 기존 list-api-perf.js 와 같다(10 VU × 30s, 반복 사이 0.1s).
 // 그래서 처리량은 스크립트 상한(≈ 10 ÷ (0.1s + 지연))에 묶인다 — 처리량은 참고값으로만 본다.
+// [Phase 5] -e SLEEP=0 이면 반복 사이 대기 없이 돌려 처리량 상한(포화)을 잰다.
 //
 // 실행 (레포 루트, 앱이 BASE 에 떠 있고 notenest_nb5 에 코퍼스가 적재된 상태):
 //   k6 run -e MODE=search   -e BASE=http://localhost:8096 scripts/k6/nb5-search-baseline.js
@@ -16,6 +17,7 @@ import { check, sleep } from 'k6';
 
 const BASE = __ENV.BASE || 'http://localhost:8096';
 const MODE = __ENV.MODE || 'search';
+const SLEEP = __ENV.SLEEP !== undefined ? Number(__ENV.SLEEP) : 0.1;
 const QUERIES = open('../../docs/nb5/eval/queries-v0.jsonl')
     .split('\n').filter((l) => l.trim()).map((l) => JSON.parse(l));
 
@@ -48,5 +50,5 @@ export default function () {
     }
     const res = http.get(url, { tags });
     check(res, { 'status 200': (r) => r.status === 200 });
-    sleep(0.1);
+    if (SLEEP > 0) sleep(SLEEP);
 }
